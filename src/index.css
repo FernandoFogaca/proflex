@@ -1,0 +1,130 @@
+/* Fundo da página inicial (Home) */
+.home-container {
+  background: linear-gradient(to bottom, #43494a, #fff); /* fundo azul claro para branco */
+  font-family: sans-serif;      /* fonte simples e sem serifa */
+  margin: 0;                    /* remove margem da página */
+  padding: 0;                   /* remove espaço interno */
+  text-align: center;          /* centraliza textos */
+  height: 100vh;               /* ocupa toda a altura da tela */
+  position: relative;          /* permite posicionar elementos com 'absolute' dentro */
+}
+
+/* Estilo geral para as frases com animação */
+.Fadetext-1, .Fadetext-2, .Fadetext-3 {
+  position: absolute;              /* deixa a frase flutuando livre na tela */
+  top: 30%;                        /* distância do topo */
+  left: 50%;                       /* centraliza horizontalmente */
+  transform: translateX(-50%);     /* corrige para o centro exato */
+  font-size: 3rem;                 /* tamanho da fonte */
+  opacity: 0;                      /* invisível no início */
+  animation-name: fadeInOut;       /* nome da animação aplicada */
+  animation-duration: 12s;         /* tempo total da animação (3 frases de 4s) */
+  animation-timing-function: ease-in-out; /* suaviza entrada e saída */
+  animation-iteration-count: infinite;    /* repete para sempre */
+  font-weight: 600;
+color: transparent; /* mantém o centro das letras invisível */
+text-shadow: 
+  0 0 4px rgba(0, 0, 0, 0.5),     /* sombra mais escura */
+  0 0 8px rgba(255, 255, 255, 1); /* brilho suave esbranquiçado */
+-webkit-text-stroke:  1px #2c2c2c;;  /* contorno puxando pro preto */
+letter-spacing: 2px;
+
+}
+
+/* Primeira frase: aparece no início (0s até 4s) */
+.Fadetext-1 {
+  animation-delay: 0s;
+}
+
+/* Segunda frase: aparece depois de 4 segundos */
+.Fadetext-2 {
+  animation-delay: 4s;
+}
+
+/* Terceira frase: aparece depois de 8 segundos */
+.Fadetext-3 {
+  animation-delay: 8s;
+}
+
+/* Animação que aparece, fica visível e depois desaparece */
+@keyframes fadeInOut {
+  0% { opacity: 0; }     /* começa invisível */
+  8% { opacity: 1; }     /* começa a aparecer */
+  25% { opacity: 1; }    /* fica visível por um tempo */
+  33% { opacity: 0; }    /* começa a desaparecer */
+  100% { opacity: 0; }   /* fica invisível até o próximo ciclo */
+}
+
+/* Estilo do botão "Start now" */
+.btn.btn-outline-info {
+  background: linear-gradient(135deg, #00bcd4, #607d8b); /* azul petróleo → cinza azulado */
+  color: white;
+  position: absolute;
+  top: 60%; /* posição vertical ajustada */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: none;
+  padding: 1rem 2rem; /* botão maior */
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: background 0.5s, transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.custom-button:hover {
+  background: linear-gradient(135deg, #0097a7, #455a64); /* tons escuros esfumaçados */
+  transform: translate(-50%, -53%); /* sobe só um pouquinho */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+
+
+.bottom-text {
+  position: absolute;
+  bottom: 10px;
+  width: 100%;
+  text-align: center;
+  font-size: 1rem;
+  color: #333;
+  opacity: 0.6;
+}
+
+.developer-button:hover {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #888;
+  background: transparent;
+}
+
+.footer span {
+  margin-left: 1rem;
+}
+
+.dev-access {
+  background: none;
+  border: none;
+  color: #888;
+  text-decoration: underline;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-right: 1rem;
+  opacity: 0.4;
+  transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+.dev-access:hover {
+  opacity: 1;
+  color: #fff;
+}
