@@ -1,4 +1,12 @@
 /* Fundo da página inicial (Home) */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
 .home-container {
   background: linear-gradient(to bottom, #43494a, #fff); /* fundo azul claro para branco */
   font-family: sans-serif;      /* fonte simples e sem serifa */
