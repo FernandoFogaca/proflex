@@ -1,78 +1,118 @@
+/* Estilos globais */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #f8f9fa;
+}
+
+/* 🔷 Bootstrap Custom Theme: substitui azul padrão por #4390a1 */
+.btn-primary,
+.bg-primary,
+.text-primary {
+  background-color: #4390a1 !important;
+  border-color: #4390a1 !important;
+  color: white !important;
+}
+
+.btn-primary:hover,
+.bg-primary:hover {
+  background-color: #367c8c !important;
+  border-color: #367c8c !important;
+}
+
+.btn-info {
+  background-color: #4390a1 !important;
+  border-color: #4390a1 !important;
+  color: white !important;
+}
+
+.btn-info:hover {
+  background-color: #367c8c !important;
+  border-color: #367c8c !important;
+}
+
+.btn-link {
+  color: #4390a1 !important;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: #367c8c !important;
+}
+
+a.text-white.text-decoration-none {
+  color: #ffffff !important;
+}
+
+a.text-white.text-decoration-none:hover {
+  color: #ccecf3 !important;
+  text-decoration: underline;
+}
+
 /* Fundo da página inicial (Home) */
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-
-
-
 .home-container {
-  background: linear-gradient(to bottom, #43494a, #fff); /* fundo azul claro para branco */
-  font-family: sans-serif;      /* fonte simples e sem serifa */
-  margin: 0;                    /* remove margem da página */
-  padding: 0;                   /* remove espaço interno */
-  text-align: center;          /* centraliza textos */
-  height: 100vh;               /* ocupa toda a altura da tela */
-  position: relative;          /* permite posicionar elementos com 'absolute' dentro */
+  background: linear-gradient(to bottom, #43494a, #fff);
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  height: 100vh;
+  position: relative;
 }
 
-/* Estilo geral para as frases com animação */
-.Fadetext-1, .Fadetext-2, .Fadetext-3 {
-  position: absolute;              /* deixa a frase flutuando livre na tela */
-  top: 30%;                        /* distância do topo */
-  left: 50%;                       /* centraliza horizontalmente */
-  transform: translateX(-50%);     /* corrige para o centro exato */
-  font-size: 3rem;                 /* tamanho da fonte */
-  opacity: 0;                      /* invisível no início */
-  animation-name: fadeInOut;       /* nome da animação aplicada */
-  animation-duration: 12s;         /* tempo total da animação (3 frases de 4s) */
-  animation-timing-function: ease-in-out; /* suaviza entrada e saída */
-  animation-iteration-count: infinite;    /* repete para sempre */
+/* Frases com animação */
+.Fadetext-1,
+.Fadetext-2,
+.Fadetext-3 {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 3rem;
+  opacity: 0;
+  animation-name: fadeInOut;
+  animation-duration: 12s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
   font-weight: 600;
-color: transparent; /* mantém o centro das letras invisível */
-text-shadow: 
-  0 0 4px rgba(0, 0, 0, 0.5),     /* sombra mais escura */
-  0 0 8px rgba(255, 255, 255, 1); /* brilho suave esbranquiçado */
--webkit-text-stroke:  1px #2c2c2c;;  /* contorno puxando pro preto */
-letter-spacing: 2px;
-
+  color: transparent;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.5),
+    0 0 8px rgba(255, 255, 255, 1);
+  -webkit-text-stroke: 1px #2c2c2c;
+  letter-spacing: 2px;
 }
 
-/* Primeira frase: aparece no início (0s até 4s) */
 .Fadetext-1 {
   animation-delay: 0s;
 }
-
-/* Segunda frase: aparece depois de 4 segundos */
 .Fadetext-2 {
   animation-delay: 4s;
 }
-
-/* Terceira frase: aparece depois de 8 segundos */
 .Fadetext-3 {
   animation-delay: 8s;
+  top: 24%;
 }
 
-/* Animação que aparece, fica visível e depois desaparece */
 @keyframes fadeInOut {
-  0% { opacity: 0; }     /* começa invisível */
-  8% { opacity: 1; }     /* começa a aparecer */
-  25% { opacity: 1; }    /* fica visível por um tempo */
-  33% { opacity: 0; }    /* começa a desaparecer */
-  100% { opacity: 0; }   /* fica invisível até o próximo ciclo */
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  25% { opacity: 1; }
+  33% { opacity: 0; }
+  100% { opacity: 0; }
 }
 
-/* Estilo do botão "Start now" */
+/* Botão estilo 'Start Now' */
 .btn.btn-outline-info {
-  background: linear-gradient(135deg, #00bcd4, #607d8b); /* azul petróleo → cinza azulado */
+  background: linear-gradient(135deg, #00bcd4, #607d8b);
   color: white;
   position: absolute;
-  top: 60%; /* posição vertical ajustada */
+  top: 60%;
   left: 50%;
   transform: translate(-50%, -50%);
   border: none;
-  padding: 1rem 2rem; /* botão maior */
+  padding: 1rem 2rem;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 12px;
@@ -81,13 +121,12 @@ letter-spacing: 2px;
 }
 
 .custom-button:hover {
-  background: linear-gradient(135deg, #0097a7, #455a64); /* tons escuros esfumaçados */
-  transform: translate(-50%, -53%); /* sobe só um pouquinho */
+  background: linear-gradient(135deg, #0097a7, #455a64);
+  transform: translate(-50%, -53%);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
-
-
+/* Rodapé da Home */
 .bottom-text {
   position: absolute;
   bottom: 10px;
@@ -96,11 +135,6 @@ letter-spacing: 2px;
   font-size: 1rem;
   color: #333;
   opacity: 0.6;
-}
-
-.developer-button:hover {
-  opacity: 1;
-  transition: opacity 0.3s ease;
 }
 
 .footer {

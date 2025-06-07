@@ -1,18 +1,23 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import DevLogin from "./components/DevLogin";
-import './index.css';
+import Header from "./components/Header";
+import Login from "./pages/Login";
+import Agenda from "./pages/Agenda";
 
-function App() {
+export default function App() {
+  const location = useLocation();
+
   return (
-    <Router>
+    <>
+      {location.pathname === "/" && <Header />}
+
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/devlogin" element={<DevLogin />} />
+         <Route path="/agenda" element={<Agenda />} />
       </Routes>
-    </Router>
+    </>
   );
 }
-
-export default App;
