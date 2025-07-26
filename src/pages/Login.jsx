@@ -10,13 +10,9 @@ export default function Login() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    // Lógica de verificação (exemplo simples)
-   /* if (email === "admin@proflex.com" && senha === "123456") {
-      setMensagem("✅ Login realizado com sucesso!");
-      setTimeout(() => navigate("/"), 1500); // redireciona para Home depois de 1,5s
-    } else {
-      setMensagem("❌ Email ou senha incorretos.");
-    }*/
+    // verificação 
+   /* admin@proflex.com senha === "123456") {
+   */
   }
 
   return (

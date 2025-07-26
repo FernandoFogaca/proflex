@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header";
+import Header from "../components/Header"; 
 
 export default function Agenda() {
   const navigate = useNavigate();
@@ -45,25 +45,8 @@ export default function Agenda() {
   };
 
   return (
-    
     <div className="min-vh-100 bg-light">
-      {/* Header fixo com fundo azul */}
-      <header className="bg-primary text-white py-3 mb-0">
-        <div className="container d-flex justify-content-between align-items-center">
-          <h1 className="h4 m-0">ProFlex</h1>
-         <nav className="d-flex gap-3">
-  <button className="btn btn-link text-white text-decoration-none fw-semibold opacity-100" onClick={() => navigate("/")}>
-    Home
-  </button>
-  <button className="btn btn-link text-white text-decoration-none fw-semibold opacity-100" onClick={() => navigate("/agenda")}>
-    Agenda
-  </button>
-  <button className="btn btn-link text-white text-decoration-none fw-semibold opacity-100" onClick={() => navigate("/clientes")}>
-    Clientes
-  </button>
-</nav>
-        </div>
-      </header>
+    
 
       {/* Saudação, data e tempo */}
       <div className="text-center p-4">
