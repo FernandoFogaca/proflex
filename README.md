@@ -1,111 +1,136 @@
-📘 Proflex System
+# 📘 ProFlex System
 
-🇬🇧 English (UK)
+## 🇬🇧 English (UK)
 
-Proflex is a modern, responsive scheduling system designed to assist professionals in managing appointments, client data, and reminders. Built with ReactJS and styled using Bootstrap, it also includes smart animations and features that make the experience simple and intuitive.
+**ProFlex** is a modern, responsive scheduling system built to assist professionals in managing appointments, client data, reminders and evaluations. Built with ReactJS and styled using Bootstrap, it also includes animations and persuasive UI components that make the user experience intuitive and engaging.
 
-🔧 Tech Stack
+---
+
+## 🔧 Tech Stack
+
 - ReactJS (with Vite)
-- React Router
-- Bootstrap (customised)
+- React Router DOM
+- Bootstrap (customized theme)
 - Custom CSS (animations, gradients)
+- Public API consumption (Reqres.in for mock users)
 
-🚀 Features
-- Welcome screen with animated multilingual greetings
-- Responsive and modern interface (mobile-first)
-- Fixed navigation header for Home, Agenda, and Clients
-- Login screen with styled inputs and primary color theme
-- Weather and greeting logic based on time and location
-- Dev access with password protection
+---
 
-🔒 Developer Access
-Restricted area accessed via the footer. A password is required to enter and unlock developer tools.
+## 🚀 Features
 
-📂 Folder structure
+- Welcome screen with multilingual animated greetings
+- Modern and mobile-first responsive UI
+- Persistent navigation header across all pages
+- Styled login screen
+- Weather and greeting logic based on real-time geolocation
+- Protected Developer Access
+- Persuasive "Sign Up" marketing page with client testimonials and benefits
+- Cards styled with Bootstrap and custom shadows for a professional appearance
+
+---
+
+## 🔒 Developer Access
+
+Developer-only section accessed via footer ("Dev Access" button). Requires password to access internal tools.
+
+---
+
+## 📂 Folder Structure
+
+```
 ├── src
 │   ├── components
 │   │   ├── Header.jsx
-│   │   └── DevLogin.jsx
+│   │   ├── DevLogin.jsx
+│   │   ├── AvaliacaoUsuario.jsx
 │   ├── pages
 │   │   ├── Home.jsx
 │   │   ├── Login.jsx
-│   │   └── Agenda.jsx
+│   │   ├── Agenda.jsx
+│   │   ├── Marketing.jsx
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css
+```
 
-🛠️ How to run locally
-1. Clone this repository
+---
+
+## 🛠️ How to Run Locally
+
 ```bash
 git clone https://github.com/FernandoFogaca/proflex.git
-```
-
-2. Enter the folder
-```bash
 cd proflex
-```
-
-3. Install dependencies
-```bash
 npm install
-```
-
-4. Run the project
-```bash
 npm run dev
 ```
 
-🇧🇷 Português (BR)
+---
 
-Proflex é um sistema moderno e responsivo de agendamentos, voltado a profissionais que desejam gerenciar compromissos, dados de clientes e lembretes de forma centralizada. Criado com ReactJS e estilizado com Bootstrap e animações CSS inteligentes, oferece uma experiência simples, direta e eficiente.
+## 🇧🇷 Português (BR)
 
-🔧 Tecnologias usadas
+**ProFlex** é um sistema moderno e responsivo de agendamentos, voltado a profissionais como fisioterapeutas, médicos, veterinários, petshops e autônomos. Ele ajuda a organizar compromissos, clientes, lembretes e avaliações em um só lugar.
+
+---
+
+## 🔧 Tecnologias usadas
+
 - ReactJS (com Vite)
-- React Router
-- Bootstrap (customizado)
-- CSS com animações e gradientes personalizados
+- React Router DOM
+- Bootstrap (tema personalizado)
+- CSS com gradientes e animações
+- Consumo de API pública (Reqres para usuários simulados)
 
-🚀 Funcionalidades
-- Tela de boas-vindas com mensagens animadas em três idiomas
-- Interface moderna e responsiva (focada em mobile)
-- Cabeçalho fixo com menu para Home, Agenda e Clientes
-- Tela de login estilizada com inputs otimizados
-- Previsão do tempo automática com saudação baseada na hora
-- Acesso restrito ao desenvolvedor com senha
+---
 
-🔒 Área do Desenvolvedor
-Área reservada acessada discretamente no rodapé. Protegida com senha para evitar acessos não autorizados.
+## 🚀 Funcionalidades
 
-📂 Estrutura de pastas
+- Tela de boas-vindas com frases animadas
+- Interface responsiva e moderna (foco em mobile)
+- Cabeçalho de navegação fixo em todas as páginas
+- Tela de login estilizada
+- Saudação personalizada com clima local
+- Página de marketing com depoimentos e cards persuasivos
+- Acesso restrito ao desenvolvedor (senha)
+- Layout com foco em conversão (botão "Assine Já")
+
+---
+
+## 🔒 Área do Desenvolvedor
+
+Área protegida por senha com botão de acesso no rodapé. Visível apenas para quem sabe o caminho.
+
+---
+
+## 📂 Estrutura de Pastas
+
+```
 ├── src
 │   ├── components
 │   │   ├── Header.jsx
-│   │   └── DevLogin.jsx
+│   │   ├── DevLogin.jsx
+│   │   ├── AvaliacaoUsuario.jsx
 │   ├── pages
 │   │   ├── Home.jsx
 │   │   ├── Login.jsx
-│   │   └── Agenda.jsx
+│   │   ├── Agenda.jsx
+│   │   ├── Marketing.jsx
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css
+```
 
-🛠️ Como rodar localmente
-1. Clone este repositório
+---
+
+## 🛠️ Como Rodar Localmente
+
+
 ```bash
 git clone https://github.com/FernandoFogaca/proflex.git
-```
-
-2. Entre na pasta
-```bash
 cd proflex
-```
-
-3. Instale as dependências
-```bash
 npm install
-```
-
-4. Rode o projeto
-```bash
 npm run dev
 ```
+
+---
+
+>  Designed by Fernando Fogaça  | Projeto ProFlex (React + Bootstrap + API + PWA Ready)
