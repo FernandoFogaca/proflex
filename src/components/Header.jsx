@@ -9,7 +9,7 @@ export default function Header() {
         <nav className="d-flex gap-3">
           <Link to="/marketing" className="text-white text-decoration-none">Assinar</Link>
           <Link to="/agenda" className="text-white text-decoration-none">Agenda</Link>
-          <Link to="/clientes" className="text-white text-decoration-none">Clientes</Link>
+          <Link to="/clientes" className="text-white text-decoration-none">Cadastro</Link>
           <Link to="/" className="text-white text-decoration-none">Home</Link>
           
         </nav>

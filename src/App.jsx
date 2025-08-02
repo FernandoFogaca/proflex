@@ -5,6 +5,7 @@ import DevLogin from "./components/DevLogin";
 import Header from "./components/Header";
 import Login from "./pages/Login";
 import Agenda from "./pages/Agenda";
+import AgendamentoPage from "./pages/AgendamentoPage";
 
 
 export default function App() {
@@ -15,7 +16,8 @@ export default function App() {
        <Header />
 
       <Routes>
-          <Route path="/marketing" element={<Marketing/>}  />
+        <Route path="/agendar" element={<AgendamentoPage />} />
+        <Route path="/marketing" element={<Marketing/>}  />
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
