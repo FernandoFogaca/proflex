@@ -1,0 +1,190 @@
+/* Estilos globais */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #f8f9fa;
+}
+
+/* 🔷 Bootstrap Custom Theme: substitui azul padrão por #4390a1 */
+.btn-primary,
+.bg-primary,
+.text-primary {
+  background-color: #4390a1 !important;
+  border-color: #4390a1 !important;
+  color: white !important;
+}
+
+.btn-primary:hover,
+.bg-primary:hover {
+  background-color: #367c8c !important;
+  border-color: #367c8c !important;
+}
+
+.btn-info {
+  background-color: #4390a1 !important;
+  border-color: #4390a1 !important;
+  color: white !important;
+}
+
+.btn-info:hover {
+  background-color: #367c8c !important;
+  border-color: #367c8c !important;
+}
+
+.btn-link {
+  color: #4390a1 !important;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: #367c8c !important;
+}
+
+a.text-white.text-decoration-none {
+  color: #ffffff !important;
+}
+
+a.text-white.text-decoration-none:hover {
+  color: #ccecf3 !important;
+  text-decoration: underline;
+}
+
+/* Fundo da página inicial (Home) */
+.home-container {
+  background: linear-gradient(to bottom, #43494a, #fff);
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  height: 100vh;
+  position: relative;
+}
+
+/* Frases com animação */
+.Fadetext-1,
+.Fadetext-2,
+.Fadetext-3 {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 3rem;
+  opacity: 0;
+  animation-name: fadeInOut;
+  animation-duration: 12s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  font-weight: 600;
+  color: transparent;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.5),
+    0 0 8px rgba(255, 255, 255, 1);
+  -webkit-text-stroke: 1px #2c2c2c;
+  letter-spacing: 2px;
+}
+
+.Fadetext-1 {
+  animation-delay: 0s;
+}
+.Fadetext-2 {
+  animation-delay: 4s;
+}
+.Fadetext-3 {
+  animation-delay: 8s;
+  top: 24%;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  25% { opacity: 1; }
+  33% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Botão estilo 'Start Now' */
+.btn.btn-outline-info {
+  background: linear-gradient(135deg, #00bcd4, #607d8b);
+  color: white;
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: background 0.5s, transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.custom-button:hover {
+  background: linear-gradient(135deg, #0097a7, #455a64);
+  transform: translate(-50%, -53%);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Rodapé da Home */
+.bottom-text {
+  position: absolute;
+  bottom: 10px;
+  width: 100%;
+  text-align: center;
+  font-size: 1rem;
+  color: #333;
+  opacity: 0.6;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #888;
+  background: transparent;
+}
+
+.footer span {
+  margin-left: 1rem;
+}
+
+.dev-access {
+  background: none;
+  border: none;
+  color: #888;
+  text-decoration: underline;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-right: 1rem;
+  opacity: 0.4;
+  transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+.dev-access:hover {
+  opacity: 1;
+  color: #fff;
+}
+.proflex-button {
+  background: linear-gradient(135deg, #00bcd4, #607d8b);
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.5s, transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.proflex-button:hover {
+  background: linear-gradient(135deg, #0097a7, #455a64);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
