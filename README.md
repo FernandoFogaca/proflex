@@ -1,198 +1,169 @@
-📘 ProFlex System
-🇬🇧 English (UK)
+# 📘 ProFlex System
 
-ProFlex is a modern, responsive scheduling system built to assist professionals in managing appointments, client/patient data and reminders — with a clean, mobile-first UI.
+---
 
-Built with React (Vite) and Bootstrap, it includes protected routes, a “Next 4 hours” panel with mobile swipe, pull-to-refresh, and quick reminders with browser notifications.
+## 🇬🇧 English (UK)
 
-🔧 Tech Stack
+**ProFlex** is a modern, responsive scheduling system built to assist professionals in managing appointments, client data, reminders and evaluations.
 
-React (Vite)
+Built with **ReactJS** and styled using **Bootstrap**, it includes animations and persuasive UI components for an intuitive and engaging experience.
 
-React Router DOM
+---
 
-Bootstrap (custom styles)
+### 🔧 Tech Stack
+- ReactJS (with Vite)
+- React Router DOM
+- Bootstrap (custom theme)
+- Custom CSS (animations, gradients)
+- Public API usage (Reqres.in for mock users)
 
-Context API (global state)
+---
 
-LocalStorage (session & data persistence)
+### 🚀 Features
+- Welcome screen with multilingual animated greetings
+- Modern, mobile-first responsive UI
+- Persistent navigation header across all pages
+- Styled login screen
+- Real-time geolocation-based greetings and weather
+- Protected Developer Access
+- Persuasive "Sign Up" marketing page with testimonials and visual cards
 
-Browser Notifications (reminders)
+---
 
-Vitest + Testing Library (unit tests)
+### 🔒 Developer Access
+A developer-only section accessible via footer ("Dev Access" button). Password-protected access to internal tools.
 
-🚀 Features
+---
 
-Login with session (localStorage) and protected routes.
+### 📂 Folder Structure
+├── src
+│ ├── components
+│ │ ├── Header.jsx
+│ │ ├── DevLogin.jsx
+│ │ ├── AvaliacaoUsuario.jsx
+│ ├── pages
+│ │ ├── Home.jsx
+│ │ ├── Login.jsx
+│ │ ├── Agenda.jsx
+│ │ ├── Marketing.jsx
+│ ├── App.jsx
+│ ├── main.jsx
+│ └── index.css
 
-Daily agenda with time slots and status (confirmed, completed, cancelled).
+yaml
+Copier
+Modifier
 
-“Next 4 hours” (today only; ignores cancelled) with simple swipe on mobile:
+---
 
-Swipe right → mark completed.
-
-Swipe left → mark cancelled.
-
-Pull-to-refresh (mobile) on the Agenda screen.
-
-Quick reminders: browser notification + alert, with a WhatsApp shortcut (opens wa.me).
-
-Main pages: Home, Login, Agenda, Clients, Personal Tasks (Compromissos), Marketing.
-
-Developer Access via footer for internal tests.
-
-Note: automatic WhatsApp sending requires a backend + WhatsApp Cloud API.
-Currently, the app opens WhatsApp with a pre-filled message.
-
-🔒 Developer Access
-
-A developer-only section reachable from the footer (“Dev Access” button). Password-protected access to internal tools.
-
-📂 Folder Structure
-src/
-  App.jsx
-  main.jsx
-  components/
-    Header.jsx
-    PersonalAppointmentModal.jsx
-    AgendaProximos.jsx
-    AgendaLembretes.jsx
-    DevLogin.jsx
-  pages/
-    Home.jsx
-    Login.jsx
-    Agenda.jsx
-    Clientes.jsx
-    Compromissos.jsx
-    AgendamentoPage.jsx
-    Marketing.jsx
-  authentication/
-    ProtectedRoute.jsx
-    session.jsx
-  __tests__/
-    Header.test.jsx
-    RoutesProtected.test.jsx
-  test/
-    setupTests.js
-public/
-vite.config.js
-package.json
-
-🛠️ How to Run Locally
+### 🛠️ How to Run Locally
+```bash
 git clone https://github.com/FernandoFogaca/proflex.git
 cd proflex
 npm install
 npm run dev
-
-🔨 Build
-npm run build
-# output: dist/
-
-✅ Tests
-npm run test:run
-
-🔑 Demo Credentials
-
-Email: 
-
-Password: 
-
 🇧🇷 Português (BR)
-
-ProFlex é um sistema moderno e responsivo para profissionais gerenciarem agenda, clientes/pacientes e lembretes — com interface limpa e foco em mobile.
-
-Feito com React (Vite) e Bootstrap, traz rotas protegidas, painel de “Próximas 4 horas” com swipe (mobile), pull-to-refresh e lembretes rápidos com notificações do navegador.
+ProFlex é um sistema moderno e responsivo de agendamentos, voltado a profissionais como fisioterapeutas, médicos, veterinários, petshops e autônomos. Ele ajuda a organizar compromissos, clientes, lembretes e avaliações em um só lugar.
 
 🔧 Tecnologias usadas
-
-React (Vite)
+ReactJS (com Vite)
 
 React Router DOM
 
-Bootstrap (estilos)
+Bootstrap (tema personalizado)
 
-Context API (estado global)
+CSS com gradientes e animações
 
-LocalStorage (sessão e persistência)
-
-Notificações do navegador (lembretes)
-
-Vitest + Testing Library (testes unitários)
+Consumo de API pública (Reqres para usuários simulados)
 
 🚀 Funcionalidades
+Tela de boas-vindas com frases animadas
 
-Login com sessão (localStorage) e rotas protegidas.
+Interface responsiva e moderna (foco em mobile)
 
-Agenda do dia por horários, com status (confirmado, concluído, cancelado).
+Cabeçalho de navegação fixo em todas as páginas
 
-Painel “Próximas 4 horas” (somente hoje; ignora cancelados) com swipe simples no celular:
+Tela de login estilizada
 
-Arrastar para a direita → marcar concluído.
+Saudação personalizada com clima local
 
-Arrastar para a esquerda → marcar cancelado.
+Página de marketing com depoimentos e cards persuasivos
 
-Pull-to-refresh (mobile) na tela de Agenda.
+Acesso restrito ao desenvolvedor (senha)
 
-Lembretes rápidos: notificação do navegador + alerta, com atalho para WhatsApp (abre wa.me).
-
-Páginas principais: Home, Login, Agenda, Clientes, Compromissos, Marketing.
-
-Acesso do Desenvolvedor pelo rodapé para testes internos.
-
-Observação: envio automático real no WhatsApp exige backend + WhatsApp Cloud API.
-No momento, o app abre o WhatsApp com a mensagem pronta.
+Layout com foco em conversão (botão "Assine Já")
 
 🔒 Área do Desenvolvedor
-
-Área restrita acessível pelo rodapé (botão “Dev Access”). Protegida por senha para ferramentas internas.
+Área protegida por senha com botão de acesso no rodapé. Visível apenas para quem sabe o caminho.
 
 📂 Estrutura de Pastas
-src/
-  App.jsx
-  main.jsx
-  components/
-    Header.jsx
-    PersonalAppointmentModal.jsx
-    AgendaProximos.jsx
-    AgendaLembretes.jsx
-    DevLogin.jsx
-  pages/
-    Home.jsx
-    Login.jsx
-    Agenda.jsx
-    Clientes.jsx
-    Compromissos.jsx
-    AgendamentoPage.jsx
-    Marketing.jsx
-  authentication/
-    ProtectedRoute.jsx
-    session.jsx
-  __tests__/
-    Header.test.jsx
-    RoutesProtected.test.jsx
-  test/
-    setupTests.js
-public/
-vite.config.js
-package.json
-
+css
+Copier
+Modifier
+├── src
+│   ├── components
+│   │   ├── Header.jsx
+│   │   ├── DevLogin.jsx
+│   │   ├── AvaliacaoUsuario.jsx
+│   ├── pages
+│   │   ├── Home.jsx
+│   │   ├── Login.jsx
+│   │   ├── Agenda.jsx
+│   │   ├── Marketing.jsx
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
 🛠️ Como Rodar Localmente
+bash
+Copier
+Modifier
 git clone https://github.com/FernandoFogaca/proflex.git
 cd proflex
 npm install
 npm run dev
+👨‍💻 Designed by Fernando Fogaça
+Projeto ProFlex (React + Bootstrap + API + PWA Ready)
 
-🔨 Build
+
+
+
+# ProFlex System
+
+ProFlex é um sistema de agendamento e gestão de clientes para profissionais.
+
+## Tecnologias
+- React (Vite)
+- React Router
+- Bootstrap
+- jsPDF (relatórios)
+
+## Funcionalidades
+- Agenda com horários e status (confirmado, concluído, cancelado)
+- Cadastro de clientes e prontuário simples (consultas com notas)
+- Compromissos pessoais (separados da agenda de pacientes)
+- Lembretes no navegador e atalho para WhatsApp
+- Geração de PDF (relatórios, receita e atestado)
+- Login simples com sessão
+
+## Como executar
+```bash
+npm install
+npm run dev
+
 npm run build
-# saída: dist/
 
-✅ Testes
-npm run test:run
 
-🔑 Login de Demonstração
+Agora salve e saia do `nano`:
+- **Ctrl + O**, Enter (salvar)
+- **Ctrl + X** (sair)
 
-E-mail: 
+## 3) Commit e push na sua branch
+```bash
+git add README.md
+git commit -m "docs: README neutro (sem menções acadêmicas)"
+git push
 
-Senha:
 
-👨‍💻 Designed by Fernando Fogaça • ProFlex (React + Bootstrap + Tests + Mobile-first)
+git push 
+
+

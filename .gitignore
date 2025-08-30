@@ -1,24 +1,30 @@
+# Node / Vite
+node_modules/
+dist/
+build/
+.temp/
+.tmp/
+
 # Logs
-logs
-*.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+*.log
 
-node_modules
-dist
-dist-ssr
-*.local
+# Env
+.env
+.env*.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Editors
+.vscode/
+.idea/
+
+# Sistema
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Expo / React Native (se usar)
+.expo/
