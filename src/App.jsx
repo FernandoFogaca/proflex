@@ -9,7 +9,7 @@ import Marketing from "./components/Marketing";
 import DevLogin from "./components/DevLogin";
 import Compromissos from "./pages/Compromissos";
 import { AppProvider } from "./context/AppContext.jsx";
-import ProtectedRoute from "./authentication/ProtectedRoute"; // << guarda
+import ProtectedRoute from "./authentication/ProtectedRoute";
 
 export default function App() {
   return (

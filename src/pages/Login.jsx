@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../authentication/session"; // << sessão
+import { login } from "../authentication/session.jsx";
+
 
 export default function Login() {
   const navigate = useNavigate();
