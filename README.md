@@ -127,3 +127,43 @@ Projeto ProFlex (React + Bootstrap + API + PWA Ready)
 
 
 
+# ProFlex System
+
+ProFlex é um sistema de agendamento e gestão de clientes para profissionais.
+
+## Tecnologias
+- React (Vite)
+- React Router
+- Bootstrap
+- jsPDF (relatórios)
+
+## Funcionalidades
+- Agenda com horários e status (confirmado, concluído, cancelado)
+- Cadastro de clientes e prontuário simples (consultas com notas)
+- Compromissos pessoais (separados da agenda de pacientes)
+- Lembretes no navegador e atalho para WhatsApp
+- Geração de PDF (relatórios, receita e atestado)
+- Login simples com sessão
+
+## Como executar
+```bash
+npm install
+npm run dev
+
+npm run build
+
+
+Agora salve e saia do `nano`:
+- **Ctrl + O**, Enter (salvar)
+- **Ctrl + X** (sair)
+
+## 3) Commit e push na sua branch
+```bash
+git add README.md
+git commit -m "docs: README neutro (sem menções acadêmicas)"
+git push
+
+
+git push 
+
+
