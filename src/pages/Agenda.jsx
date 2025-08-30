@@ -1,12 +1,13 @@
-// Agenda da clínica.
-
+// AGENDA DA CLINICA.
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 import PersonalAppointmentModal from "../components/PersonalAppointmentModal.jsx";
+import AgendaLembretes from "../components/AgendaLembretes.jsx";
+import AgendaProximos from "../components/AgendaProximos.jsx";
 
-// ----- helpers simples (hora em minutos, hoje em ISO, id curto)
+//*************************** */ HELPERS SIMPLES (HORA EM MINUTOS, HOJE EM ISO, ID CURTO)
 const toMinutes = (hhmm) => {
   const [h, m] = String(hhmm).split(":").map(Number);
   return h * 60 + (m || 0);
@@ -19,7 +20,7 @@ const todayISO = () => new Date().toISOString().split("T")[0];
 const uid = (p = "id") =>
   `${p}_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`;
 
-// ----- lembretes salvos no navegador (localStorage)
+//*************************************** */ LEMBRETES SALVOS NO NAVEGADOR (LOCALSTORAGE)
 const LS_KEY_REM = "reminders";
 const loadRems = () => {
   try {
@@ -39,7 +40,7 @@ export default function Agenda() {
   const navigate = useNavigate();
   const { appointments, setAppointments, addAppointment } = useApp();
 
-  // ----- data escolhida e saudação do topo
+  // *******************************************DATA ESCOLHIDA E SAUDACAO DO TOPO
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -59,7 +60,7 @@ export default function Agenda() {
     day: "numeric",
   });
 
-  // ----- horários base visíveis; outros aparecem quando tiver agendamento
+  //******************** */ HORARIOS BASE VISIVEIS; OUTROS APARECEM QUANDO TIVER AGENDAMENTO
   const [horariosBase, setHorariosBase] = useState([
     "08:00",
     "08:30",
@@ -73,7 +74,7 @@ export default function Agenda() {
   ]);
   const [novoHorario, setNovoHorario] = useState("09:00");
 
-  // ----- agendamentos do dia atual + mapas por hora
+  //******************************* */ AGENDAMENTOS DO DIA ATUAL + MAPA POR HORA
   const agendamentosDoDia = useMemo(
     () => appointments.filter((a) => a.data === dataISO),
     [appointments, dataISO]
@@ -89,8 +90,7 @@ export default function Agenda() {
     return Array.from(set).sort();
   }, [horariosBase, agendamentosDoDia]);
 
-  // ----- painel "Próximas 4 horas" 
-  // pega só se a data é hoje e status não for cancelado
+  // **************************PAINEL PROXIMAS 4 HORAS (SO HOJE E SEM CANCELADOS)
   const proximos = useMemo(() => {
     const hoje = todayISO() === dataISO;
     if (!hoje) return [];
@@ -98,11 +98,11 @@ export default function Agenda() {
     return agendamentosDoDia
       .filter((a) => a.status !== "cancelado")
       .map((a) => ({ ...a, min: toMinutes(a.hora) }))
-      .filter((a) => a.min >= now && a.min <= now + 240) // 4 horas = 240 min
+      .filter((a) => a.min >= now && a.min <= now + 240) // 4 HORAS = 240 MIN
       .sort((a, b) => a.min - b.min);
   }, [agendamentosDoDia, dataISO]);
 
-  // ----- cor do slot conforme status e tempo
+  //********************************COR DO SLOT CONFORME STATUS E TEMPO
   const slotStyle = (hora) => {
     const a = mapPorHora.get(hora);
     if (!a) return {};
@@ -110,46 +110,46 @@ export default function Agenda() {
     const n = nowMinutes();
     const m = toMinutes(hora);
     if (a.status === "cancelado")
-      return { backgroundColor: "#e9ecef", color: "#6c757d", borderColor: "#ced4da" }; // cinza
+      return { backgroundColor: "#e9ecef", color: "#6c757d", borderColor: "#ced4da" }; // CINZA
     if (hoje && m === n)
-      return { backgroundColor: "#f8d7da", color: "#842029", borderColor: "#f5c2c7" }; // vermelho (na hora)
+      return { backgroundColor: "#f8d7da", color: "#842029", borderColor: "#f5c2c7" }; // VERMELHO (NA HORA)
     if (hoje && m > n && m <= n + 240)
-      return { backgroundColor: "#fff3cd", color: "#664d03", borderColor: "#ffecb5" }; // laranja (próximas 4h)
+      return { backgroundColor: "#fff3cd", color: "#664d03", borderColor: "#ffecb5" }; // LARANJA (PROXIMAS 4H)
     if (a.status === "concluido")
-      return { backgroundColor: "#cfe2ff", color: "#084298", borderColor: "#b6d4fe" }; // azul
-    return { backgroundColor: "#d1e7dd", color: "#0f5132", borderColor: "#badbcc" }; // verde (confirmado)
+      return { backgroundColor: "#cfe2ff", color: "#084298", borderColor: "#b6d4fe" }; // AZUL
+    return { backgroundColor: "#d1e7dd", color: "#0f5132", borderColor: "#badbcc" }; // VERDE (CONFIRMADO)
   };
 
-  // ----- clique em um quadradinho (slot)
-  const [chooser, setChooser] = useState(null); // {hora}
-  const [showPersonal, setShowPersonal] = useState(false); // modal compromisso simples
+  //************************ */ CLIQUE EM UM QUADRADINHO (SLOT)
+  const [chooser, setChooser] = useState(null); // {HORA}
+  const [showPersonal, setShowPersonal] = useState(false); // MODAL COMPROMISSO SIMPLES
   const [personalPreset, setPersonalPreset] = useState({ date: dataISO, time: "09:00" });
 
   function abrirSlot(hora) {
     const ag = mapPorHora.get(hora);
     if (!ag) {
-      // livre  escolher tipo (consulta x compromisso)
+      //********************* */ LIVRE  ESCOLHER TIPO (CONSULTA X COMPROMISSO)
       setChooser({ hora });
       setPersonalPreset({ date: dataISO, time: hora });
     } else {
-      // ocupado  abrir cadastro do paciente
+      // OCUPADO -> ABRIR CADASTRO DO PACIENTE
       navigate(`/agendar?clienteId=${ag.clienteId}&data=${dataISO}&hora=${hora}`);
     }
   }
 
-  // ----- adicionar/remover horários base ( remove se estiver livre)
+  //************* */ ADICIONAR/REMOVER HORARIOS BASE (REMOVE SE ESTIVER LIVRE)
   function adicionarHorarioManualComPicker() {
     if (!novoHorario) return;
     if (!horariosBase.includes(novoHorario))
       setHorariosBase((prev) => [...prev, novoHorario].sort());
   }
   function removerHorario(horario) {
-    if (mapPorHora.has(horario)) return; // não remove se tiver agendamento
+    if (mapPorHora.has(horario)) return; // NAO REMOVE SE TIVER AGENDAMENTO
     if (window.confirm(`Remover o horário ${horario}?`))
       setHorariosBase(horariosBase.filter((h) => h !== horario));
   }
 
-  // ----- menu de ações (confirmar, concluir, cancelar, lembrar, remover)
+  //***************** */ MENU DE ACOES (CONFIRMAR, CONCLUIR, CANCELAR, LEMBRAR, REMOVER)
   const [menuHora, setMenuHora] = useState(null);
   const toggleMenu = (hora, e) => {
     e.stopPropagation();
@@ -168,15 +168,15 @@ export default function Agenda() {
     setMenuHora(null);
   };
 
-  // ----- limpar todos do dia
+  //************************************ */ LIMPAR TODOS DO DIA
   const limparDia = () => {
     if (!window.confirm(`Remover TODOS os agendamentos de ${dataISO}?`)) return;
     setAppointments((prev) => prev.filter((a) => a.data !== dataISO));
   };
 
-  // ----- lembretes (dispara notificação/alerta; pode abrir WhatsApp)
+  // *********************LEMBRETES (DISPARA NOTIFICACAO/ALERTA; PODE ABRIR WHATSAPP)
   const [reminders, setReminders] = useState(loadRems);
-  const timersRef = useRef({}); // {id: timeoutId}
+  const timersRef = useRef({}); // {ID: TIMEOUTID}
 
   const scheduleRem = (rem) => {
     if (timersRef.current[rem.id]) clearTimeout(timersRef.current[rem.id]);
@@ -185,7 +185,7 @@ export default function Agenda() {
     if (diff <= 0) return;
 
     const t = setTimeout(async () => {
-      // notificação nativa
+      //****************************** */ NOTIFICACAO NATIVA
       if ("Notification" in window) {
         if (Notification.permission === "granted") {
           new Notification("Lembrete da agenda", {
@@ -199,10 +199,10 @@ export default function Agenda() {
           } catch {}
         }
       }
-      // alerta na tela (garante que apareça algo)
+      // ************************ALERTA NA TELA (GARANTE QUE APARECA ALGO)
       alert(`🔔 Lembrete (${rem.time})\n${rem.message || ""}`);
 
-      // abrir WhatsApp com a mensagem (precisa do app/site do Whats)
+      // ABRIR WHATSAPP COM A MENSAGEM (PRECISA DO APP/SITE DO WHATS)
       if (rem.whats) {
         const phone = String(rem.whats).replace(/\D/g, "");
         const txt = encodeURIComponent(rem.message || "Lembrete do compromisso");
@@ -214,7 +214,7 @@ export default function Agenda() {
     timersRef.current[rem.id] = t;
   };
 
-  // reprograma timers quando a lista muda
+  // REPROGRAMA TIMERS QUANDO A LISTA DE LEMBRETES MUDA
   useEffect(() => {
     Object.values(timersRef.current).forEach(clearTimeout);
     timersRef.current = {};
@@ -222,58 +222,38 @@ export default function Agenda() {
     saveRems(reminders);
   }, [reminders]);
 
-// FUNCOES DO PULL-TO-REFRESH **********************************************************FUNCOES DO PULL-TO-REFRESH***********************************************
-// para guardar a mensagem enquanto puxa
-const [pullMsg, setPullMsg] = useState('');
-const pullRef= useRef({y0: 0,ok: false}) // guarda dados do toque
+  // FUNCOES DO PULL-TO-REFRESH ****************************************************************************************
+  // PARA GUARDAR A MENSAGEM ENQUANTO PUXA
+  const [pullMsg, setPullMsg] = useState("");
+  const pullRef = useRef({ y0: 0, ok: false }); // GUARDA DADOS DO TOQUE
 
-function onPullStart(e){
-
-if(window.scrollY>0)return;  /// Comando se a pagina ja atualizou ignora..
-pullRef.current.y0 = e.touches?.[0]?.clientY || 0;  // pega a posicao do dedo 
-pullRef.current.ok = true;
-
-}
-// enquanto arrasta o dedo pra baixo, mede a distância puxada (dy)
-function onPullMove(e) {
-  if (!pullRef.current.ok) return;              // se não começou, ignora
-  const y = e.touches?.[0]?.clientY || 0;       // Y atual do dedo
-  const dy = y - pullRef.current.y0;            // quanto desceu
-  if (dy > 60) setPullMsg("Solte para atualizar"); // passou do limite: pode soltar
-  else if (dy > 10) setPullMsg("Puxando…");        // começou a puxar, mas ainda pouco
-}
-// quando solta o dedo, decide se atualiza ou não
-function onPullEnd() {
-  if (!pullRef.current.ok) return;
-  pullRef.current.ok = false;                   // encerra o gesto
-  if (pullMsg.startsWith("Solte")) {
-    // AQUI faria o refresh de verdade 
-    setPullMsg("Atualizado");
-    setTimeout(() => setPullMsg(""), 900);      // some depois de 0,9s
-  } else {
-    setPullMsg("");                              // não puxou o suficiente
+  function onPullStart(e) {
+    if (window.scrollY > 0) return; // SE JA RODOU PRA BAIXO, IGNORA
+    pullRef.current.y0 = e.touches?.[0]?.clientY || 0; // POSICAO DO DEDO
+    pullRef.current.ok = true;
   }
-}
+  // ENQUANTO ARRASTA O DEDO PRA BAIXO, MEDE A DISTANCIA PUXADA (DY)
+  function onPullMove(e) {
+    if (!pullRef.current.ok) return; // SE NAO COMECou, IGNORA
+    const y = e.touches?.[0]?.clientY || 0; // Y ATUAL DO DEDO
+    const dy = y - pullRef.current.y0; // QUANTO DESCEU
+    if (dy > 60) setPullMsg("Solte para atualizar"); // PASSOU DO LIMITE: PODE SOLTAR
+    else if (dy > 10) setPullMsg("Puxando…"); // COMECou A PUXAR, AINDA POUCO
+  }
+  // QUANDO SOLTA O DEDO, DECIDE SE ATUALIZA OU NAO
+  function onPullEnd() {
+    if (!pullRef.current.ok) return;
+    pullRef.current.ok = false; // TERMINA O GESTO
+    if (pullMsg.startsWith("Solte")) {
+      // AQUI FARIA O REFRESH DE VERDADE (EX: BUSCAR NO SERVIDOR)
+      setPullMsg("Atualizado");
+      setTimeout(() => setPullMsg(""), 900); // SOME DEPOIS DE 0,9S
+    } else {
+      setPullMsg(""); // NAO PUXOU O SUFICIENTE
+    }
+  }
 
-  // ----- criador rápido de lembrete (card da direita)
-  const [lemMsg, setLemMsg] = useState("");
-  const [lemTime, setLemTime] = useState("09:00");
-  const [lemWhats, setLemWhats] = useState("");
-  const addReminder = () => {
-    const r = {
-      id: uid("rem"),
-      date: dataISO,
-      time: lemTime,
-      message: lemMsg,
-      whats: lemWhats.trim() || "",
-    };
-    setReminders((prev) => [...prev, r]);
-    setLemMsg("");
-  };
-  const removeReminder = (id) =>
-    setReminders((prev) => prev.filter((r) => r.id !== id));
-
-  // ----- salvar compromisso simples (modal)
+  // SALVAR COMPROMISSO SIMPLES (MODAL)
   const onSavePersonal = ({
     title,
     note,
@@ -307,16 +287,16 @@ function onPullEnd() {
     setChooser(null);
   };
 
-  // ----- tela
+  // TELA
   return (
     <div
       className="min-vh-100 bg-light"
-      // eventos do pull-to-refresh (mobile)
+      // EVENTOS DO PULL-TO-REFRESH (MOBILE)
       onTouchStart={onPullStart}
       onTouchMove={onPullMove}
       onTouchEnd={onPullEnd}
     >
-      {/* topo com data e saudação */}
+      {/* TOPO COM DATA E SAUDACAO */}
       <div className="text-center p-3">
         <h5 className="mb-2">{saudacao}</h5>
         <p className="text-white bg-primary d-inline-block px-3 py-1 rounded">
@@ -332,148 +312,62 @@ function onPullEnd() {
         </div>
       </div>
 
-      {/* mensagem do pull-to-refresh (opcional) */}
+      {/* MENSAGEM DO PULL-TO-REFRESH (OPCIONAL) */}
       {pullMsg && (
         <div className="text-center small text-muted py-1">{pullMsg}</div>
       )}
-      
-   
-      {/* painéis de cima (esquerda: próximas 4h | direita: lembrete rápido) */}
+
+      {/* PANEIS DE CIMA (ESQUERDA: PROXIMAS 4H | DIREITA: LEMBRETE RAPIDO) */}
       <div className="container mb-3">
         <div className="row g-3">
           <div className="col-md-7">
-            <div className="p-3 border rounded bg-white">
-              <div className="d-flex justify-content-between align-items-center">
-                <h6 className="m-0">⏱️ Próximas 4 horas</h6>
-                <small className="text-muted">
-                  {proximos.length} agendamento(s)
-                </small>
-              </div>
-              {proximos.length === 0 ? (
-                <div className="text-muted mt-2">Sem próximos agendamentos.</div>
-              ) : (
-                <ul className="list-group list-group-flush mt-2">
-                  {proximos.map((p) => (
-                    <li
-                      key={p.id}
-                      className="list-group-item d-flex justify-content-between"
-                    >
-                      <span>
-                        <strong>{p.hora}</strong> — {p.clienteNome || "Cliente"}
-                      </span>
-                      <span
-                        className={`badge ${
-                          p.status === "cancelado"
-                            ? "text-bg-secondary"
-                            : p.status === "concluido"
-                            ? "text-bg-primary"
-                            : "text-bg-warning"
-                        }`}
-                      >
-                        {p.status === "cancelado"
-                          ? "cancelado"
-                          : p.status === "concluido"
-                          ? "concluído"
-                          : "em breve"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            {/* USANDO COMPONENTE PROXIMOS */}
+            <AgendaProximos itens={proximos} onSetStatus={setStatus} />
           </div>
 
           <div className="col-md-5">
-            <div className="p-3 border rounded bg-white">
-              <h6 className="m-0">🔔 Lembrete rápido</h6>
-              <div className="row g-2 mt-2">
-                <div className="col-4">
-                  <input
-                    type="time"
-                    className="form-control"
-                    value={lemTime}
-                    onChange={(e) => setLemTime(e.target.value)}
-                  />
-                </div>
-                <div className="col-8">
-                  <input
-                    className="form-control"
-                    placeholder="Mensagem"
-                    value={lemMsg}
-                    onChange={(e) => setLemMsg(e.target.value)}
-                  />
-                </div>
-                <div className="col-8">
-                  <input
-                    className="form-control"
-                    placeholder="WhatsApp (opcional, ex: 5599999999999)"
-                    value={lemWhats}
-                    onChange={(e) => setLemWhats(e.target.value)}
-                  />
-                </div>
-                <div className="col-4 text-end">
-                  <button className="btn btn-primary w-100" onClick={addReminder}>
-                    Criar
-                  </button>
-                </div>
-              </div>
-              <ul className="list-group list-group-flush mt-2">
-                {reminders
-                  .filter((r) => r.date === dataISO)
-                  .sort((a, b) => a.time.localeCompare(b.time))
-                  .map((r) => (
-                    <li
-                      key={r.id}
-                      className="list-group-item d-flex justify-content-between align-items-center"
-                    >
-                      <div>
-                        <strong>{r.time}</strong> — {r.message || "(sem mensagem)"}
-                        {r.whats && (
-                          <span className="badge text-bg-success ms-2">WhatsApp</span>
-                        )}
-                      </div>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => removeReminder(r.id)}
-                      >
-                        remover
-                      </button>
-                    </li>
-                  ))}
-                {reminders.filter((r) => r.date === dataISO).length === 0 && (
-                  <li className="list-group-item text-muted">
-                    Sem lembretes para este dia.
-                  </li>
-                )}
-              </ul>
-              <small className="text-muted d-block mt-2">
-                Obs.: envio automático real no WhatsApp precisa de servidor + API.
-              </small>
-            </div>
+            {/* USANDO COMPONENTE LEMBRETES */}
+            <AgendaLembretes
+              dataISO={dataISO}
+              itens={reminders}
+              onAdd={(hora, msg, whats) => {
+                const r = {
+                  id: uid("rem"),
+                  date: dataISO,
+                  time: hora,
+                  message: msg,
+                  whats: (whats || "").trim(),
+                };
+                setReminders((prev) => [...prev, r]);
+              }}
+              onRemove={(id) =>
+                setReminders((prev) => prev.filter((r) => r.id !== id))
+              }
+            />
           </div>
         </div>
       </div>
 
-      {/* grade de horários (os quadradinhos) */}
+      {/* GRADE DE HORARIOS (OS QUADRADINHOS) */}
       <div className="container pb-4">
         <div className="d-flex align-items-center justify-content-between mb-2">
-          <h6 className="m-0">Horários</h6>
+          <h6 className="m-0">Horarios</h6>
           <div className="d-flex gap-2 align-items-center small">
             <span className="badge text-bg-success">confirmado</span>
-            <span className="badge text-bg-warning">próximo</span>
+            <span className="badge text-bg-warning">proximo</span>
             <span className="badge text-bg-danger">na hora</span>
             <span className="badge text-bg-secondary">cancelado</span>
           </div>
         </div>
 
-        {/* caixinhas */}
+        {/* CAIXINHAS */}
         <div className="row row-cols-auto g-2">
           {horariosExibidos.map((hora) => {
             const ag = mapPorHora.get(hora);
             const ocupado = Boolean(ag);
             const style = {
-              minHeight: 40, // altura
-              width: 110, // largura 
+              minHeight: 40, // ALTURA
+              width: 110, // LARGURA
               fontSize: 13,
               ...(ocupado ? slotStyle(hora) : {}),
             };
@@ -483,7 +377,7 @@ function onPullEnd() {
                   className="p-2 text-center shadow-sm border rounded bg-white position-relative"
                   style={style}
                   onClick={() => abrirSlot(hora)}
-                  title={ocupado ? ag.clienteNome || "Agendado" : "Disponível"}
+                  title={ocupado ? ag.clienteNome || "Agendado" : "Disponivel"}
                 >
                   <div className="fw-semibold text-truncate">{hora}</div>
                   {ocupado ? (
@@ -494,7 +388,7 @@ function onPullEnd() {
                     <div className="text-muted small mt-1">livre</div>
                   )}
 
-                  {/* remover horário base (só se estiver livre) */}
+                  {/* REMOVER HORARIO BASE (SO SE ESTIVER LIVRE) */}
                   {!ocupado && horariosBase.includes(hora) && (
                     <button
                       type="button"
@@ -510,7 +404,7 @@ function onPullEnd() {
                     </button>
                   )}
 
-                  {/* menu de ações (quando ocupado) */}
+                  {/* MENU DE ACOES (QUANDO OCUPADO) */}
                   {ocupado && (
                     <>
                       <button
@@ -518,7 +412,7 @@ function onPullEnd() {
                         className="btn btn-sm btn-light position-absolute top-0 end-0"
                         style={{ lineHeight: "12px", padding: "0 6px" }}
                         onClick={(e) => toggleMenu(hora, e)}
-                        aria-label="Ações"
+                        aria-label="Acoes"
                       >
                         ⋮
                       </button>
@@ -539,7 +433,7 @@ function onPullEnd() {
                             className="dropdown-item"
                             onClick={() => setStatus(hora, "concluido")}
                           >
-                            📘 Concluído
+                            📘 Concluido
                           </button>
                           <button
                             className="dropdown-item"
@@ -550,17 +444,17 @@ function onPullEnd() {
                           <button
                             className="dropdown-item"
                             onClick={() => {
-                              // cria lembrete curto pra esse horário
+                              // CRIA LEMBRETE CURTO PRA ESSE HORARIO
                               const r = {
                                 id: uid("rem"),
                                 date: dataISO,
                                 time: hora,
-                                message: `Lembrete: ${ag.clienteNome || "Cliente"} às ${hora}`,
+                                message: `Lembrete: ${ag.clienteNome || "Cliente"} as ${hora}`,
                                 whats: "",
                               };
                               setReminders((prev) => [...prev, r]);
                               setMenuHora(null);
-                              alert("Lembrete criado para este horário.");
+                              alert("Lembrete criado para este horario.");
                             }}
                           >
                             🔔 Lembrar
@@ -581,7 +475,7 @@ function onPullEnd() {
           })}
         </div>
 
-        {/* adicionar horário + limpar dia */}
+        {/* ADICIONAR HORARIO + LIMPAR DIA */}
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
           <div className="d-flex gap-2">
             <input
@@ -596,7 +490,7 @@ function onPullEnd() {
               className="proflex-button"
               onClick={adicionarHorarioManualComPicker}
             >
-              ➕ Adicionar horário
+              ➕ Adicionar horario
             </button>
           </div>
           <button className="btn btn-outline-danger" onClick={limparDia}>
@@ -605,7 +499,7 @@ function onPullEnd() {
         </div>
       </div>
 
-      {/* modal: escolher entre consulta x compromisso */}
+      {/* MODAL: ESCOLHER ENTRE CONSULTA X COMPROMISSO */}
       {chooser && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100"
@@ -646,7 +540,7 @@ function onPullEnd() {
         </div>
       )}
 
-      {/* modal de compromisso simples */}
+      {/* MODAL DE COMPROMISSO SIMPLES */}
       <PersonalAppointmentModal
         open={showPersonal}
         onClose={() => {
@@ -658,7 +552,7 @@ function onPullEnd() {
         onSave={onSavePersonal}
       />
 
-      {/* rodapé simples com hora atual */}
+      {/* RODAPE SIMPLES COM HORA ATUAL */}
       <footer className="text-center text-muted py-3 border-top">
         <p className="m-0">🕒 Agora: {new Date().toLocaleTimeString("pt-BR")}</p>
       </footer>

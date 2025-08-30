@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../authentication/session"; // << sessão
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,9 +13,10 @@ export default function Login() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // credenciais de teste (pro professor rodar sem dor de cabeça)
+    // credenciais de teste
     if (email === "admin@proflex.com" && senha === "123456") {
-      setMensagem("Login ok. Redirecionando para Agenda…");
+      login({ role: "owner" }); // grava sessão
+      setMensagem("Login ok. Redirecionando…");
       navigate("/agenda");
     } else {
       setMensagem("Use admin@proflex.com / 123456 para testar.");
@@ -57,12 +59,6 @@ export default function Login() {
       <div className="mt-3 small text-center text-muted">
         Credenciais de teste: <code>admin@proflex.com</code> / <code>123456</code>
       </div>
-
-      {mensagem && (
-        <div className="mt-3 alert alert-info w-100 text-center" style={{ maxWidth: 400 }}>
-          {mensagem}
-        </div>
-      )}
 
       <button onClick={() => navigate("/")} className="btn btn-link mt-3">Voltar à página inicial</button>
     </div>
