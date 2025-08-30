@@ -1,8 +1,5 @@
-// src/pages/Agenda.jsx
-// -------------------------------------------------------------------
 // Agenda da clínica.
-// Comentários curtos pra facilitar manutenção.
-// -------------------------------------------------------------------
+
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -92,7 +89,7 @@ export default function Agenda() {
     return Array.from(set).sort();
   }, [horariosBase, agendamentosDoDia]);
 
-  // ----- painel "Próximas 4 horas" (antes era 60 min)
+  // ----- painel "Próximas 4 horas" 
   // pega só se a data é hoje e status não for cancelado
   const proximos = useMemo(() => {
     const hoje = todayISO() === dataISO;
@@ -131,16 +128,16 @@ export default function Agenda() {
   function abrirSlot(hora) {
     const ag = mapPorHora.get(hora);
     if (!ag) {
-      // livre → escolher tipo (consulta x compromisso)
+      // livre  escolher tipo (consulta x compromisso)
       setChooser({ hora });
       setPersonalPreset({ date: dataISO, time: hora });
     } else {
-      // ocupado → abrir cadastro do paciente
+      // ocupado  abrir cadastro do paciente
       navigate(`/agendar?clienteId=${ag.clienteId}&data=${dataISO}&hora=${hora}`);
     }
   }
 
-  // ----- adicionar/remover horários base (só remove se estiver livre)
+  // ----- adicionar/remover horários base ( remove se estiver livre)
   function adicionarHorarioManualComPicker() {
     if (!novoHorario) return;
     if (!horariosBase.includes(novoHorario))
@@ -225,6 +222,39 @@ export default function Agenda() {
     saveRems(reminders);
   }, [reminders]);
 
+// FUNCOES DO PULL-TO-REFRESH **********************************************************FUNCOES DO PULL-TO-REFRESH***********************************************
+// para guardar a mensagem enquanto puxa
+const [pullMsg, setPullMsg] = useState('');
+const pullRef= useRef({y0: 0,ok: false}) // guarda dados do toque
+
+function onPullStart(e){
+
+if(window.scrollY>0)return;  /// Comando se a pagina ja atualizou ignora..
+pullRef.current.y0 = e.touches?.[0]?.clientY || 0;  // pega a posicao do dedo 
+pullRef.current.ok = true;
+
+}
+// enquanto arrasta o dedo pra baixo, mede a distância puxada (dy)
+function onPullMove(e) {
+  if (!pullRef.current.ok) return;              // se não começou, ignora
+  const y = e.touches?.[0]?.clientY || 0;       // Y atual do dedo
+  const dy = y - pullRef.current.y0;            // quanto desceu
+  if (dy > 60) setPullMsg("Solte para atualizar"); // passou do limite: pode soltar
+  else if (dy > 10) setPullMsg("Puxando…");        // começou a puxar, mas ainda pouco
+}
+// quando solta o dedo, decide se atualiza ou não
+function onPullEnd() {
+  if (!pullRef.current.ok) return;
+  pullRef.current.ok = false;                   // encerra o gesto
+  if (pullMsg.startsWith("Solte")) {
+    // AQUI faria o refresh de verdade 
+    setPullMsg("Atualizado");
+    setTimeout(() => setPullMsg(""), 900);      // some depois de 0,9s
+  } else {
+    setPullMsg("");                              // não puxou o suficiente
+  }
+}
+
   // ----- criador rápido de lembrete (card da direita)
   const [lemMsg, setLemMsg] = useState("");
   const [lemTime, setLemTime] = useState("09:00");
@@ -279,7 +309,13 @@ export default function Agenda() {
 
   // ----- tela
   return (
-    <div className="min-vh-100 bg-light">
+    <div
+      className="min-vh-100 bg-light"
+      // eventos do pull-to-refresh (mobile)
+      onTouchStart={onPullStart}
+      onTouchMove={onPullMove}
+      onTouchEnd={onPullEnd}
+    >
       {/* topo com data e saudação */}
       <div className="text-center p-3">
         <h5 className="mb-2">{saudacao}</h5>
@@ -296,6 +332,12 @@ export default function Agenda() {
         </div>
       </div>
 
+      {/* mensagem do pull-to-refresh (opcional) */}
+      {pullMsg && (
+        <div className="text-center small text-muted py-1">{pullMsg}</div>
+      )}
+      
+   
       {/* painéis de cima (esquerda: próximas 4h | direita: lembrete rápido) */}
       <div className="container mb-3">
         <div className="row g-3">
@@ -430,8 +472,8 @@ export default function Agenda() {
             const ag = mapPorHora.get(hora);
             const ocupado = Boolean(ag);
             const style = {
-              minHeight: 40, // altura menor
-              width: 110, // largura menor
+              minHeight: 40, // altura
+              width: 110, // largura 
               fontSize: 13,
               ...(ocupado ? slotStyle(hora) : {}),
             };
