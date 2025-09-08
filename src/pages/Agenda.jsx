@@ -1,561 +1,638 @@
-// AGENDA DA CLINICA.
-
-import React, { useEffect, useMemo, useRef, useState } from "react";
+// src/pages/Agenda.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
-import PersonalAppointmentModal from "../components/PersonalAppointmentModal.jsx";
-import AgendaLembretes from "../components/AgendaLembretes.jsx";
-import AgendaProximos from "../components/AgendaProximos.jsx";
 
-//*************************** */ HELPERS SIMPLES (HORA EM MINUTOS, HOJE EM ISO, ID CURTO)
-const toMinutes = (hhmm) => {
-  const [h, m] = String(hhmm).split(":").map(Number);
-  return h * 60 + (m || 0);
+// helpers
+const hojeISO = () => new Date().toISOString().split("T")[0];
+const toMin = (hhmm) => {
+  const [h, m] = String(hhmm || "0:0").split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
 };
-const nowMinutes = () => {
-  const d = new Date();
-  return d.getHours() * 60 + d.getMinutes();
-};
-const todayISO = () => new Date().toISOString().split("T")[0];
-const uid = (p = "id") =>
-  `${p}_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`;
+function isPast(dateISO, hhmm) {
+  if (!dateISO || !hhmm) return false;
+  const [y, m, d] = dateISO.split("-").map(Number);
+  const [H, M] = hhmm.split(":").map(Number);
+  const dt = new Date(y, (m || 1) - 1, d || 1, H || 0, M || 0, 0);
+  return dt.getTime() < Date.now();
+}
+const loadJSON = (k, fb) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : fb; } catch { return fb; } };
+const saveJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-//*************************************** */ LEMBRETES SALVOS NO NAVEGADOR (LOCALSTORAGE)
-const LS_KEY_REM = "reminders";
-const loadRems = () => {
-  try {
-    const s = localStorage.getItem(LS_KEY_REM);
-    return s ? JSON.parse(s) : [];
-  } catch {
-    return [];
-  }
-};
-const saveRems = (arr) => {
-  try {
-    localStorage.setItem(LS_KEY_REM, JSON.stringify(arr));
-  } catch {}
-};
+// relógio
+function useClock() {
+  const [txt, setTxt] = useState(() =>
+    new Date().toLocaleTimeString("pt-BR", { hour12: false })
+  );
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTxt(new Date().toLocaleTimeString("pt-BR", { hour12: false }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return txt;
+}
+
+// saudação com clima
+function saudacaoClima(weatherCode, isDay) {
+  const h = new Date().getHours();
+  const base = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  let icone = "🌤️";
+  if (weatherCode === 0) icone = isDay ? "☀️" : "🌙";
+  else if (weatherCode >= 1 && weatherCode <= 3) icone = isDay ? "🌤️" : "☁️";
+  else if (weatherCode === 45 || weatherCode === 48) icone = "🌫️";
+  else if ((weatherCode >= 51 && weatherCode <= 57) || (weatherCode >= 61 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)) icone = "🌧️";
+  else if (weatherCode >= 71 && weatherCode <= 77) icone = "❄️";
+  else if (weatherCode >= 95) icone = "⛈️";
+  return `${base} ${icone}`;
+}
+
+// localização + °C (sem chave)
+function useLocalInfo() {
+  const [info, setInfo] = useState({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+  useEffect(() => {
+    let vivo = true;
+    const pegar = async (lat, lon) => {
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
+        );
+        const j = await r.json();
+        const a = j.address || {};
+        const city = a.city || a.town || a.village || a.municipality || "";
+        const region = a.state_code || a.state || (a.country_code || "").toUpperCase();
+
+        const w = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`
+        );
+        const jw = await w.json();
+        const temp = jw?.current?.temperature_2m ?? null;
+        const code = jw?.current?.weather_code ?? null;
+        const isDay = jw?.current?.is_day ?? 1;
+
+        if (vivo) setInfo({ city, region, temp, weatherCode: code, isDay });
+      } catch {
+        if (vivo) setInfo({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+      }
+    };
+    const fallback = () => setInfo({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => pegar(pos.coords.latitude, pos.coords.longitude),
+        fallback,
+        { timeout: 4000 }
+      );
+    } else fallback();
+
+    return () => { vivo = false; };
+  }, []);
+  return info;
+}
+
+// painel próximos 4h
+function PainelProximos({ agendamentos, dataISO }) {
+  const agora = Date.now();
+  const fimJanela = agora + 4 * 60 * 60 * 1000;
+  const items = (agendamentos || [])
+    .filter((x) => x.data === dataISO)
+    .map((x) => {
+      const [y, m, d] = x.data.split("-").map(Number);
+      const [H, M] = (x.hora || "00:00").split(":").map(Number);
+      return { ...x, ts: new Date(y, m - 1, d, H || 0, M || 0).getTime() };
+    })
+    .filter((x) => x.ts >= agora && x.ts <= fimJanela)
+    .sort((a, b) => a.ts - b.ts);
+
+  if (items.length === 0) return <small className="text-muted">Sem próximos agendamentos.</small>;
+  return (
+    <ul className="list-group">
+      {items.map((x) => (
+        <li key={x.id} className="list-group-item d-flex justify-content-between">
+          <span>{x.hora} — {x.clienteNome || x.tipo || "agendamento"}</span>
+          <span className="badge bg-light text-dark">{(x.status || "").toLowerCase()}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// aniversários
+function AniversariosDoDia({ clientes, dataISO }) {
+  const d = new Date(dataISO);
+  const mm = d.getMonth() + 1;
+  const dd = d.getDate();
+  const lista = (clientes || []).filter((p) => {
+    if (!p?.nascimento) return false;
+    const [, m, d2] = String(p.nascimento).split("-").map(Number);
+    return (m === mm && d2 === dd);
+  });
+
+  if (lista.length === 0) return <small className="text-muted">Sem aniversariantes.</small>;
+  return (
+    <ul className="list-group">
+      {lista.map((p) => (
+        <li key={p.id} className="list-group-item d-flex justify-content-between align-items-center">
+          <span>{p.nome}</span>
+          <a
+            className="btn btn-sm btn-success"
+            href={`https://wa.me/${(p.telefone||"").replace(/\D/g,"")}?text=${encodeURIComponent(`Parabéns, ${p.nome}! 🎉`)}`
+            }
+            target="_blank" rel="noreferrer"
+          >
+            WhatsApp
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function Agenda() {
-  const navigate = useNavigate();
-  const { appointments, setAppointments, addAppointment } = useApp();
+  const navegar = useNavigate();
+  const { clients, appointments } = useApp();
 
-  // *******************************************DATA ESCOLHIDA E SAUDACAO DO TOPO
-  const [dataSelecionada, setDataSelecionada] = useState(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
-  const [saudacao, setSaudacao] = useState("");
-  useEffect(() => {
-    const h = new Date().getHours();
-    setSaudacao(h < 12 ? "Bom dia ☀️" : h < 18 ? "Boa tarde 🌤️" : "Boa noite 🌙");
-  }, []);
+  const hora = useClock();
+  const { city, region, temp, weatherCode, isDay } = useLocalInfo();
+  const saudacaoTexto = saudacaoClima(weatherCode, isDay);
 
-  const dataISO = dataSelecionada.toISOString().split("T")[0];
-  const dataFormatada = dataSelecionada.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const [dataISO, setDataISO] = useState(hojeISO());
+  const dataBRcurta = useMemo(() => {
+    const d = new Date(dataISO);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  }, [dataISO]);
+  const diaSemana = useMemo(() => {
+    const d = new Date(dataISO);
+    const t = d.toLocaleDateString("pt-BR", { weekday: "long" });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }, [dataISO]);
 
-  //******************** */ HORARIOS BASE VISIVEIS; OUTROS APARECEM QUANDO TIVER AGENDAMENTO
-  const [horariosBase, setHorariosBase] = useState([
-    "08:00",
-    "08:30",
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "12:00",
-  ]);
-  const [novoHorario, setNovoHorario] = useState("09:00");
+  // slots
+  const baseSlots = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00"];
+  const [extraPorData, setExtraPorData] = useState(() => loadJSON("extraSlots", {}));
+  const [removidosPorData, setRemovidosPorData] = useState(() => loadJSON("removedSlots", {}));
+  useEffect(() => saveJSON("extraSlots", extraPorData), [extraPorData]);
+  useEffect(() => saveJSON("removedSlots", removidosPorData), [removidosPorData]);
 
-  //******************************* */ AGENDAMENTOS DO DIA ATUAL + MAPA POR HORA
-  const agendamentosDoDia = useMemo(
-    () => appointments.filter((a) => a.data === dataISO),
-    [appointments, dataISO]
-  );
-  const mapPorHora = useMemo(() => {
-    const m = new Map();
-    for (const a of agendamentosDoDia) if (!m.has(a.hora)) m.set(a.hora, a);
-    return m;
-  }, [agendamentosDoDia]);
-  const horariosExibidos = useMemo(() => {
-    const set = new Set(horariosBase);
-    agendamentosDoDia.forEach((a) => set.add(a.hora));
-    return Array.from(set).sort();
-  }, [horariosBase, agendamentosDoDia]);
-
-  // **************************PAINEL PROXIMAS 4 HORAS (SO HOJE E SEM CANCELADOS)
-  const proximos = useMemo(() => {
-    const hoje = todayISO() === dataISO;
-    if (!hoje) return [];
-    const now = nowMinutes();
-    return agendamentosDoDia
-      .filter((a) => a.status !== "cancelado")
-      .map((a) => ({ ...a, min: toMinutes(a.hora) }))
-      .filter((a) => a.min >= now && a.min <= now + 240) // 4 HORAS = 240 MIN
-      .sort((a, b) => a.min - b.min);
-  }, [agendamentosDoDia, dataISO]);
-
-  //********************************COR DO SLOT CONFORME STATUS E TEMPO
-  const slotStyle = (hora) => {
-    const a = mapPorHora.get(hora);
-    if (!a) return {};
-    const hoje = todayISO() === dataISO;
-    const n = nowMinutes();
-    const m = toMinutes(hora);
-    if (a.status === "cancelado")
-      return { backgroundColor: "#e9ecef", color: "#6c757d", borderColor: "#ced4da" }; // CINZA
-    if (hoje && m === n)
-      return { backgroundColor: "#f8d7da", color: "#842029", borderColor: "#f5c2c7" }; // VERMELHO (NA HORA)
-    if (hoje && m > n && m <= n + 240)
-      return { backgroundColor: "#fff3cd", color: "#664d03", borderColor: "#ffecb5" }; // LARANJA (PROXIMAS 4H)
-    if (a.status === "concluido")
-      return { backgroundColor: "#cfe2ff", color: "#084298", borderColor: "#b6d4fe" }; // AZUL
-    return { backgroundColor: "#d1e7dd", color: "#0f5132", borderColor: "#badbcc" }; // VERDE (CONFIRMADO)
-  };
-
-  //************************ */ CLIQUE EM UM QUADRADINHO (SLOT)
-  const [chooser, setChooser] = useState(null); // {HORA}
-  const [showPersonal, setShowPersonal] = useState(false); // MODAL COMPROMISSO SIMPLES
-  const [personalPreset, setPersonalPreset] = useState({ date: dataISO, time: "09:00" });
-
-  function abrirSlot(hora) {
-    const ag = mapPorHora.get(hora);
-    if (!ag) {
-      //********************* */ LIVRE  ESCOLHER TIPO (CONSULTA X COMPROMISSO)
-      setChooser({ hora });
-      setPersonalPreset({ date: dataISO, time: hora });
-    } else {
-      // OCUPADO -> ABRIR CADASTRO DO PACIENTE
-      navigate(`/agendar?clienteId=${ag.clienteId}&data=${dataISO}&hora=${hora}`);
-    }
-  }
-
-  //************* */ ADICIONAR/REMOVER HORARIOS BASE (REMOVE SE ESTIVER LIVRE)
-  function adicionarHorarioManualComPicker() {
-    if (!novoHorario) return;
-    if (!horariosBase.includes(novoHorario))
-      setHorariosBase((prev) => [...prev, novoHorario].sort());
-  }
-  function removerHorario(horario) {
-    if (mapPorHora.has(horario)) return; // NAO REMOVE SE TIVER AGENDAMENTO
-    if (window.confirm(`Remover o horário ${horario}?`))
-      setHorariosBase(horariosBase.filter((h) => h !== horario));
-  }
-
-  //***************** */ MENU DE ACOES (CONFIRMAR, CONCLUIR, CANCELAR, LEMBRAR, REMOVER)
-  const [menuHora, setMenuHora] = useState(null);
-  const toggleMenu = (hora, e) => {
-    e.stopPropagation();
-    setMenuHora((prev) => (prev === hora ? null : hora));
-  };
-
-  const setStatus = (hora, status) => {
-    setAppointments((prev) =>
-      prev.map((a) => (a.data === dataISO && a.hora === hora ? { ...a, status } : a))
-    );
-    setMenuHora(null);
-  };
-  const removerAgendamento = (hora) => {
-    if (!window.confirm(`Remover agendamento de ${hora}?`)) return;
-    setAppointments((prev) => prev.filter((a) => !(a.data === dataISO && a.hora === hora)));
-    setMenuHora(null);
-  };
-
-  //************************************ */ LIMPAR TODOS DO DIA
-  const limparDia = () => {
-    if (!window.confirm(`Remover TODOS os agendamentos de ${dataISO}?`)) return;
-    setAppointments((prev) => prev.filter((a) => a.data !== dataISO));
-  };
-
-  // *********************LEMBRETES (DISPARA NOTIFICACAO/ALERTA; PODE ABRIR WHATSAPP)
-  const [reminders, setReminders] = useState(loadRems);
-  const timersRef = useRef({}); // {ID: TIMEOUTID}
-
-  const scheduleRem = (rem) => {
-    if (timersRef.current[rem.id]) clearTimeout(timersRef.current[rem.id]);
-    const when = new Date(`${rem.date}T${rem.time}:00`);
-    const diff = when.getTime() - Date.now();
-    if (diff <= 0) return;
-
-    const t = setTimeout(async () => {
-      //****************************** */ NOTIFICACAO NATIVA
-      if ("Notification" in window) {
-        if (Notification.permission === "granted") {
-          new Notification("Lembrete da agenda", {
-            body: rem.message || "Você tem um lembrete agora.",
-          });
-        } else if (Notification.permission !== "denied") {
-          try {
-            const p = await Notification.requestPermission();
-            if (p === "granted")
-              new Notification("Lembrete da agenda", { body: rem.message || "" });
-          } catch {}
-        }
-      }
-      // ************************ALERTA NA TELA (GARANTE QUE APARECA ALGO)
-      alert(`🔔 Lembrete (${rem.time})\n${rem.message || ""}`);
-
-      // ABRIR WHATSAPP COM A MENSAGEM (PRECISA DO APP/SITE DO WHATS)
-      if (rem.whats) {
-        const phone = String(rem.whats).replace(/\D/g, "");
-        const txt = encodeURIComponent(rem.message || "Lembrete do compromisso");
-        const url = `https://wa.me/${phone}?text=${txt}`;
-        window.open(url, "_blank");
-      }
-    }, diff);
-
-    timersRef.current[rem.id] = t;
-  };
-
-  // REPROGRAMA TIMERS QUANDO A LISTA DE LEMBRETES MUDA
-  useEffect(() => {
-    Object.values(timersRef.current).forEach(clearTimeout);
-    timersRef.current = {};
-    reminders.forEach(scheduleRem);
-    saveRems(reminders);
-  }, [reminders]);
-
-  // FUNCOES DO PULL-TO-REFRESH ****************************************************************************************
-  // PARA GUARDAR A MENSAGEM ENQUANTO PUXA
-  const [pullMsg, setPullMsg] = useState("");
-  const pullRef = useRef({ y0: 0, ok: false }); // GUARDA DADOS DO TOQUE
-
-  function onPullStart(e) {
-    if (window.scrollY > 0) return; // SE JA RODOU PRA BAIXO, IGNORA
-    pullRef.current.y0 = e.touches?.[0]?.clientY || 0; // POSICAO DO DEDO
-    pullRef.current.ok = true;
-  }
-  // ENQUANTO ARRASTA O DEDO PRA BAIXO, MEDE A DISTANCIA PUXADA (DY)
-  function onPullMove(e) {
-    if (!pullRef.current.ok) return; // SE NAO COMECou, IGNORA
-    const y = e.touches?.[0]?.clientY || 0; // Y ATUAL DO DEDO
-    const dy = y - pullRef.current.y0; // QUANTO DESCEU
-    if (dy > 60) setPullMsg("Solte para atualizar"); // PASSOU DO LIMITE: PODE SOLTAR
-    else if (dy > 10) setPullMsg("Puxando…"); // COMECou A PUXAR, AINDA POUCO
-  }
-  // QUANDO SOLTA O DEDO, DECIDE SE ATUALIZA OU NAO
-  function onPullEnd() {
-    if (!pullRef.current.ok) return;
-    pullRef.current.ok = false; // TERMINA O GESTO
-    if (pullMsg.startsWith("Solte")) {
-      // AQUI FARIA O REFRESH DE VERDADE (EX: BUSCAR NO SERVIDOR)
-      setPullMsg("Atualizado");
-      setTimeout(() => setPullMsg(""), 900); // SOME DEPOIS DE 0,9S
-    } else {
-      setPullMsg(""); // NAO PUXOU O SUFICIENTE
-    }
-  }
-
-  // SALVAR COMPROMISSO SIMPLES (MODAL)
-  const onSavePersonal = ({
-    title,
-    note,
-    status,
-    createReminder,
-    reminderPhone,
-    reminderMessage,
-  }) => {
-    addAppointment({
-      data: dataISO,
-      hora: personalPreset.time,
-      clienteId: null,
-      clienteNome: `Compromisso: ${title}`,
-      observacoes: note || "",
-      tipo: "pessoal",
-      status: status || "confirmado",
+  const mapaHoje = useMemo(() => {
+    const map = {};
+    (appointments || []).forEach((x) => {
+      if (x.data === dataISO && x.hora) map[x.hora] = x;
     });
-    if (createReminder) {
-      setReminders((prev) => [
-        ...prev,
-        {
-          id: uid("rem"),
-          date: dataISO,
-          time: personalPreset.time,
-          message: reminderMessage || `Lembrete: ${title}`,
-          whats: (reminderPhone || "").trim(),
-        },
-      ]);
+    return map;
+  }, [appointments, dataISO]);
+
+  const listaSlots = useMemo(() => {
+    const removidos = new Set(removidosPorData[dataISO] || []);
+    const baseVisiveis = baseSlots.filter((h) => !removidos.has(h));
+    const set = new Set(baseVisiveis);
+    (extraPorData[dataISO] || []).forEach((t) => { if (!removidos.has(t)) set.add(t); });
+    Object.keys(mapaHoje).forEach((t) => set.add(t));
+    return Array.from(set).sort((a,b)=>toMin(a)-toMin(b));
+  }, [baseSlots, extraPorData, removidosPorData, mapaHoje, dataISO]);
+
+  function addSlotManual(hhmm) {
+    if (!hhmm) return;
+    setExtraPorData((prev) => {
+      const obj = { ...prev };
+      const cur = new Set(obj[dataISO] || []);
+      cur.add(hhmm);
+      obj[dataISO] = Array.from(cur).sort((a,b)=>toMin(a)-toMin(b));
+      return obj;
+    });
+    setRemovidosPorData((prev) => {
+      const list = new Set(prev[dataISO] || []);
+      if (list.has(hhmm)) {
+        const arr = Array.from(list).filter((t) => t !== hhmm);
+        return { ...prev, [dataISO]: arr };
+      }
+      return prev;
+    });
+  }
+
+  // ir para a página certa
+  function irParaAgendamento(data, horaSlot, ag) {
+    if (ag) {
+      // se já existe: decide pelo tipo
+      const tipo = (ag.tipo || "").toLowerCase();
+      if (tipo === "pessoal" || tipo === "compromisso") {
+        navegar(`/compromissos?data=${data}&hora=${horaSlot}`);
+      } else {
+        const extra = ag.clienteId ? `&clienteId=${ag.clienteId}` : "";
+        navegar(`/agendar?data=${data}&hora=${horaSlot}${extra}`);
+      }
+      return;
     }
-    setShowPersonal(false);
-    setChooser(null);
+    // novo: consulta -> /agendar | compromisso -> /compromissos
+    // (a escolha “consulta/compromisso” é feita no modal; aqui só default)
+    navegar(`/agendar?data=${data}&hora=${horaSlot}`);
+  }
+
+  // clique no slot
+  const [chooserHora, setChooserHora] = useState(null);
+  function abrirSlot(hhmm) {
+    const ag = mapaHoje[hhmm];
+    const passado = isPast(dataISO, hhmm);
+    if (ag) {
+      irParaAgendamento(dataISO, hhmm, ag);
+      return;
+    }
+    if (passado) return;
+    setChooserHora(hhmm);
+  }
+
+  // remover slot
+  function removerSlot(hhmm) {
+    if (mapaHoje[hhmm]) { alert("Existe agendamento neste horário."); return; }
+    if ((extraPorData[dataISO] || []).includes(hhmm)) {
+      setExtraPorData((prev) => {
+        const obj = { ...prev };
+        obj[dataISO] = (obj[dataISO] || []).filter((t) => t !== hhmm);
+        return obj;
+      });
+      return;
+    }
+    setRemovidosPorData((prev) => {
+      const cur = new Set(prev[dataISO] || []);
+      cur.add(hhmm);
+      return { ...prev, [dataISO]: Array.from(cur) };
+    });
+  }
+
+  // lembretes
+  const [lemHora, setLemHora] = useState("14:00");
+  const [lemMsg, setLemMsg] = useState("");
+  const [lemZap, setLemZap] = useState("");
+  const [lembretes, setLembretes] = useState(() => loadJSON("agendaLembretes", []));
+  useEffect(() => saveJSON("agendaLembretes", lembretes), [lembretes]);
+
+  function statusLembrete(item) {
+    if (item.cancelado) return "cancelado";
+    if (item.concluido) return "concluido";
+    if (item.date !== dataISO) return "confirmado";
+    const agora = new Date();
+    const agoraMin = agora.getHours()*60 + agora.getMinutes();
+    const alvoMin = toMin(item.time);
+    const dif = alvoMin - agoraMin;
+    if (dif <= 0 && dif >= -1) return "na hora";
+    if (dif > 0 && dif <= 15) return "proximo";
+    return "confirmado";
+  }
+  const estiloLembrete = (st) => {
+    switch (st) {
+      case "confirmado": return { borderLeft: "6px solid #28a745" };
+      case "proximo":    return { borderLeft: "6px solid #ffc107", background: "#fff8e1" };
+      case "na hora":    return { borderLeft: "6px solid #dc3545", background: "#fdecea", animation: "blink 1s step-start infinite" };
+      case "cancelado":  return { borderLeft: "6px solid #6c757d", color: "#6c757d", textDecoration: "line-through", background: "#f1f3f5" };
+      case "concluido":  return { borderLeft: "6px solid #0dcaf0", color: "#055160", textDecoration: "line-through", background: "#e7fafe" };
+      default: return {};
+    }
+  };
+  function criarLembrete() {
+    if (!lemHora || !lemMsg) return;
+    const novo = {
+      id: `rem_${Date.now()}`,
+      date: dataISO,
+      time: lemHora,
+      msg: lemMsg.trim(),
+      zap: (lemZap || "").trim(),
+      cancelado: false,
+      concluido: false
+    };
+    setLembretes((prev) => [novo, ...prev].slice(0, 50));
+    setLemMsg(""); setLemZap("");
+  }
+  function marcarConcluido(id) {
+    setLembretes((prev) => prev.map((x) => x.id === id ? { ...x, concluido: !x.concluido, cancelado: false } : x));
+  }
+  function marcarCancelado(id) {
+    setLembretes((prev) => prev.map((x) => x.id === id ? { ...x, cancelado: !x.cancelado, concluido: false } : x));
+  }
+  function removerLembrete(id) {
+    setLembretes((prev) => prev.filter((x) => x.id !== id));
+  }
+  const zapLink = (num) => {
+    const only = (num || "").replace(/\D/g, "");
+    return only ? `https://wa.me/${only}` : "#";
   };
 
-  // TELA
+  // estados do menu ⋮
+  const [slotMenu, setSlotMenu] = useState(null);
+
+  // estilos
+  const topBox = { background:"var(--proflex-primary,#4390a1)", color:"#fff", borderRadius:14, boxShadow:"0 4px 14px rgba(0,0,0,.10)" };
+  const slotBox = {
+    width: 80, height: 80, borderRadius: "50%",
+    background:"#fff", border:"2px solid #e5e7eb",
+    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+    gap:2, boxShadow:"0 1px 4px rgba(0,0,0,.08)", cursor:"pointer", userSelect:"none", position:"relative"
+  };
+  const slotOff = { opacity:.5, cursor:"not-allowed" };
+  const chip = { position:"absolute", bottom:-10, fontSize:10, padding:"2px 6px", borderRadius:8, color:"#fff" };
+
   return (
-    <div
-      className="min-vh-100 bg-light"
-      // EVENTOS DO PULL-TO-REFRESH (MOBILE)
-      onTouchStart={onPullStart}
-      onTouchMove={onPullMove}
-      onTouchEnd={onPullEnd}
-    >
-      {/* TOPO COM DATA E SAUDACAO */}
-      <div className="text-center p-3">
-        <h5 className="mb-2">{saudacao}</h5>
-        <p className="text-white bg-primary d-inline-block px-3 py-1 rounded">
-          {dataFormatada}
-        </p>
-        <div className="d-flex justify-content-center">
+    <div className="container py-3">
+      <style>{`@keyframes blink{50%{opacity:.35}}`}</style>
+
+      {/* topo */}
+      <div className="p-3 mb-3" style={topBox}>
+        <div className="d-flex justify-content-between align-items-center">
+          <div className="fw-semibold">{saudacaoTexto}</div>
+          <div className="fw-semibold">{diaSemana}</div>
+        </div>
+
+        <div className="text-center fs-3 fw-bold mt-1">{hora}</div>
+
+        <div className="d-flex justify-content-center align-items-center gap-2 mt-2 flex-wrap">
+          {temp !== null && <span className="badge bg-light text-dark">{Math.round(temp)}°C</span>}
+          <span className="badge bg-light text-dark">
+            {city ? `${city}${region ? " - " + region : ""}` : "Localização indisponível"}
+          </span>
+        </div>
+
+        <div className="mt-3 d-flex justify-content-center">
           <input
             type="date"
-            className="form-control w-auto my-2"
+            className="form-control d-inline-block"
+            style={{ width: 220, textAlign: "center", fontWeight: 600 }}
             value={dataISO}
-            onChange={(e) => setDataSelecionada(new Date(e.target.value))}
+            onChange={(e) => setDataISO(e.target.value)}
           />
         </div>
       </div>
 
-      {/* MENSAGEM DO PULL-TO-REFRESH (OPCIONAL) */}
-      {pullMsg && (
-        <div className="text-center small text-muted py-1">{pullMsg}</div>
-      )}
+      <div className="row g-3">
+        {/* esquerda */}
+        <div className="col-md-7">
+          <div className="card mb-3">
+            <div className="card-body">
+              <h6 className="m-0 mb-2">⏱️ Próximas 4 horas</h6>
+              <PainelProximos agendamentos={appointments} dataISO={dataISO} />
+            </div>
+          </div>
+        </div>
 
-      {/* PANEIS DE CIMA (ESQUERDA: PROXIMAS 4H | DIREITA: LEMBRETE RAPIDO) */}
-      <div className="container mb-3">
-        <div className="row g-3">
-          <div className="col-md-7">
-            {/* USANDO COMPONENTE PROXIMOS */}
-            <AgendaProximos itens={proximos} onSetStatus={setStatus} />
+        {/* direita */}
+        <div className="col-md-5">
+          <div className="card mb-3">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <h6 className="m-0">🎂 Aniversários de hoje</h6>
+                <small className="text-muted">{dataBRcurta}</small>
+              </div>
+              <div className="mt-2">
+                <AniversariosDoDia clientes={clients} dataISO={dataISO} />
+              </div>
+            </div>
           </div>
 
-          <div className="col-md-5">
-            {/* USANDO COMPONENTE LEMBRETES */}
-            <AgendaLembretes
-              dataISO={dataISO}
-              itens={reminders}
-              onAdd={(hora, msg, whats) => {
-                const r = {
-                  id: uid("rem"),
-                  date: dataISO,
-                  time: hora,
-                  message: msg,
-                  whats: (whats || "").trim(),
-                };
-                setReminders((prev) => [...prev, r]);
-              }}
-              onRemove={(id) =>
-                setReminders((prev) => prev.filter((r) => r.id !== id))
-              }
-            />
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h6 className="m-0">🔔 Lembrete rápido</h6>
+                <small className="text-muted">alerta na hora</small>
+              </div>
+
+              <div className="row g-2 align-items-center">
+                <div className="col-3">
+                  <input type="time" className="form-control" value={lemHora} onChange={(e)=>setLemHora(e.target.value)} />
+                </div>
+                <div className="col">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: 22:00 ligar para Maria"
+                    value={lemMsg}
+                    onChange={(e)=>setLemMsg(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="row g-2 align-items-center mt-2">
+                <div className="col">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="WhatsApp (opcional)"
+                    value={lemZap}
+                    onChange={(e)=>setLemZap(e.target.value)}
+                  />
+                </div>
+                <div className="col-auto">
+                  <button className="btn btn-primary" onClick={criarLembrete}>Criar</button>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                {lembretes.filter(l=>l.date===dataISO).length===0 ? (
+                  <small className="text-muted">Sem lembretes.</small>
+                ) : (
+                  <ul className="list-group">
+                    {lembretes
+                      .filter(l=>l.date===dataISO)
+                      .sort((a,b)=>toMin(a.time)-toMin(b.time))
+                      .map((l)=>{
+                        const st = statusLembrete(l);
+                        const stStyle = estiloLembrete(st);
+                        return (
+                          <li key={l.id}
+                              className="list-group-item d-flex justify-content-between align-items-start"
+                              style={stStyle}>
+                            <div className="me-2">
+                              <div className="fw-semibold">{l.time} — {l.msg}</div>
+                              {l.zap && (
+                                <a href={zapLink(l.zap)} target="_blank" rel="noreferrer" className="small text-decoration-none">
+                                  WhatsApp: {l.zap}
+                                </a>
+                              )}
+                            </div>
+                            <div className="d-flex gap-1">
+                              {l.zap && (
+                                <a className="btn btn-sm btn-success" href={zapLink(l.zap)} target="_blank" rel="noreferrer" title="Abrir WhatsApp">
+                                  WA
+                                </a>
+                              )}
+                              <button className="btn btn-sm btn-outline-primary" onClick={()=>marcarConcluido(l.id)}>Resolver</button>
+                              <button className="btn btn-sm btn-outline-secondary" onClick={()=>marcarCancelado(l.id)}>Cancelar</button>
+                              <button className="btn btn-sm btn-outline-danger" onClick={()=>removerLembrete(l.id)}>Remover</button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* GRADE DE HORARIOS (OS QUADRADINHOS) */}
-      <div className="container pb-4">
-        <div className="d-flex align-items-center justify-content-between mb-2">
-          <h6 className="m-0">Horarios</h6>
-          <div className="d-flex gap-2 align-items-center small">
-            <span className="badge text-bg-success">confirmado</span>
-            <span className="badge text-bg-warning">proximo</span>
-            <span className="badge text-bg-danger">na hora</span>
-            <span className="badge text-bg-secondary">cancelado</span>
-          </div>
-        </div>
+      {/* legenda */}
+      <div className="mt-3 d-flex flex-wrap gap-2">
+        <span className="badge" style={{ background:"#28a745" }}>confirmado</span>
+        <span className="badge text-dark" style={{ background:"#ffc107" }}>proximo</span>
+        <span className="badge" style={{ background:"#dc3545" }}>na hora</span>
+        <span className="badge" style={{ background:"#6c757d" }}>cancelado</span>
+        <span className="badge text-dark" style={{ background:"#0dcaf0" }}>concluido</span>
+      </div>
 
-        {/* CAIXINHAS */}
-        <div className="row row-cols-auto g-2">
-          {horariosExibidos.map((hora) => {
-            const ag = mapPorHora.get(hora);
-            const ocupado = Boolean(ag);
-            const style = {
-              minHeight: 40, // ALTURA
-              width: 110, // LARGURA
-              fontSize: 13,
-              ...(ocupado ? slotStyle(hora) : {}),
-            };
-            return (
-              <div key={hora} className="col">
+      {/* slots */}
+      <div className="card mt-3">
+        <div className="card-body">
+          <h6>Horários</h6>
+          <div className="d-flex flex-wrap gap-3 mt-2">
+            {listaSlots.map((hhmm) => {
+              const ag = mapaHoje[hhmm];
+              const tem = !!ag;
+              const passado = isPast(dataISO, hhmm);
+              const desliga = !tem && passado;
+              const status = (ag?.status || "").toLowerCase();
+
+              const slotBox = {
+                width: 80, height: 80, borderRadius: "50%",
+                background:"#fff", border:"2px solid #e5e7eb",
+                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                gap:2, boxShadow:"0 1px 4px rgba(0,0,0,.08)", cursor:"pointer", userSelect:"none", position:"relative"
+              };
+              const slotOff = { opacity:.5, cursor:"not-allowed" };
+              const aro = (() => {
+                switch (status) {
+                  case "confirmado": return { borderColor:"#28a745", boxShadow:"0 0 0 3px rgba(40,167,69,.15)" };
+                  case "proximo":   return { borderColor:"#ffc107", boxShadow:"0 0 0 3px rgba(255,193,7,.2)" };
+                  case "na hora":   return { borderColor:"#dc3545", boxShadow:"0 0 0 3px rgba(220,53,69,.2)" };
+                  case "cancelado": return { borderColor:"#6c757d", boxShadow:"0 0 0 3px rgba(108,117,125,.15)" };
+                  case "concluido": return { borderColor:"#0dcaf0", boxShadow:"0 0 0 3px rgba(13,202,240,.2)" };
+                  default: return {};
+                }
+              })();
+              const chip = { position:"absolute", bottom:-10, fontSize:10, padding:"2px 6px", borderRadius:8, color:"#fff" };
+              const chipStyle = (() => {
+                switch (status) {
+                  case "confirmado": return { ...chip, background:"#28a745" };
+                  case "proximo":    return { ...chip, background:"#ffc107", color:"#222" };
+                  case "na hora":    return { ...chip, background:"#dc3545" };
+                  case "cancelado":  return { ...chip, background:"#6c757d" };
+                  case "concluido":  return { ...chip, background:"#0dcaf0", color:"#063" };
+                  default: return null;
+                }
+              })();
+
+              return (
                 <div
-                  className="p-2 text-center shadow-sm border rounded bg-white position-relative"
-                  style={style}
-                  onClick={() => abrirSlot(hora)}
-                  title={ocupado ? ag.clienteNome || "Agendado" : "Disponivel"}
+                  key={hhmm}
+                  style={{ ...slotBox, ...(desliga?slotOff:{}), ...aro }}
+                  title={desliga ? "passado" : (tem ? "abrir" : "novo")}
+                  onClick={() => abrirSlot(hhmm)}
                 >
-                  <div className="fw-semibold text-truncate">{hora}</div>
-                  {ocupado ? (
-                    <div className="small mt-1 text-truncate" style={{ maxWidth: "100%" }}>
-                      {ag.clienteNome || "Cliente"}
-                    </div>
-                  ) : (
-                    <div className="text-muted small mt-1">livre</div>
-                  )}
+                  {/* menu ⋮ */}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light"
+                    onClick={(e) => { e.stopPropagation(); setSlotMenu((s)=> s===hhmm?null:hhmm); }}
+                    style={{ position:"absolute", top:-8, right:-8, width:24, height:24, borderRadius:"50%", padding:0 }}
+                    title="Menu"
+                  >
+                    ⋮
+                  </button>
 
-                  {/* REMOVER HORARIO BASE (SO SE ESTIVER LIVRE) */}
-                  {!ocupado && horariosBase.includes(hora) && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-danger position-absolute top-0 end-0"
-                      style={{ lineHeight: "12px", padding: "0 6px" }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removerHorario(hora);
-                      }}
-                      aria-label={`Remover ${hora}`}
+                  {/* menu do slot */}
+                  {slotMenu === hhmm && (
+                    <div
+                      className="bg-white border rounded shadow-sm"
+                      style={{ position:"absolute", top:26, right:0, zIndex:5, width:180 }}
+                      onClick={(e)=>e.stopPropagation()}
                     >
-                      ×
-                    </button>
-                  )}
-
-                  {/* MENU DE ACOES (QUANDO OCUPADO) */}
-                  {ocupado && (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-light position-absolute top-0 end-0"
-                        style={{ lineHeight: "12px", padding: "0 6px" }}
-                        onClick={(e) => toggleMenu(hora, e)}
-                        aria-label="Acoes"
-                      >
-                        ⋮
+                      <button className="dropdown-item" onClick={()=>{ setSlotMenu(null); abrirSlot(hhmm); }}>
+                        Abrir
                       </button>
 
-                      {menuHora === hora && (
-                        <div
-                          className="position-absolute bg-white border rounded shadow p-2"
-                          style={{ top: "22px", right: "4px", zIndex: 5, width: 180 }}
-                          onClick={(e) => e.stopPropagation()}
+                      {tem ? (
+                        <button
+                          className="dropdown-item"
+                          onClick={()=>{ setSlotMenu(null); irParaAgendamento(dataISO, hhmm, ag); }}
                         >
+                          Editar agendamento
+                        </button>
+                      ) : (
+                        <>
                           <button
                             className="dropdown-item"
-                            onClick={() => setStatus(hora, "confirmado")}
+                            onClick={()=>{ setSlotMenu(null); /* abre modal */ setChooserHora(hhmm); }}
                           >
-                            ✅ Confirmar
-                          </button>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => setStatus(hora, "concluido")}
-                          >
-                            📘 Concluido
-                          </button>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => setStatus(hora, "cancelado")}
-                          >
-                            🚫 Cancelar
-                          </button>
-                          <button
-                            className="dropdown-item"
-                            onClick={() => {
-                              // CRIA LEMBRETE CURTO PRA ESSE HORARIO
-                              const r = {
-                                id: uid("rem"),
-                                date: dataISO,
-                                time: hora,
-                                message: `Lembrete: ${ag.clienteNome || "Cliente"} as ${hora}`,
-                                whats: "",
-                              };
-                              setReminders((prev) => [...prev, r]);
-                              setMenuHora(null);
-                              alert("Lembrete criado para este horario.");
-                            }}
-                          >
-                            🔔 Lembrar
+                            Criar agendamento
                           </button>
                           <button
                             className="dropdown-item text-danger"
-                            onClick={() => removerAgendamento(hora)}
+                            onClick={()=>{ setSlotMenu(null); removerSlot(hhmm); }}
+                            disabled={!!mapaHoje[hhmm]}
+                            title={mapaHoje[hhmm] ? "há agendamento" : "remover horário"}
                           >
-                            🗑️ Remover
+                            Remover horário
                           </button>
-                        </div>
+                        </>
                       )}
-                    </>
+                    </div>
                   )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* ADICIONAR HORARIO + LIMPAR DIA */}
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
-          <div className="d-flex gap-2">
-            <input
-              type="time"
-              step="300"
-              className="form-control w-auto"
-              value={novoHorario}
-              onChange={(e) => setNovoHorario(e.target.value)}
-            />
+                  <div className="fw-semibold">{hhmm}</div>
+                  {!desliga && tem && chipStyle && <span style={chipStyle}>{status}</span>}
+                  {desliga && <small className="text-muted">passado</small>}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="d-flex align-items-center gap-2 mt-3">
+            <input type="time" id="novoSlot" defaultValue="09:00" className="form-control" style={{ width: 120 }} />
             <button
-              type="button"
-              className="proflex-button"
-              onClick={adicionarHorarioManualComPicker}
+              className="btn btn-primary"
+              onClick={() => {
+                const v = document.getElementById("novoSlot").value;
+                addSlotManual(v);
+              }}
             >
-              ➕ Adicionar horario
+              + Adicionar horário
             </button>
           </div>
-          <button className="btn btn-outline-danger" onClick={limparDia}>
-            🧹 Limpar dia
-          </button>
         </div>
       </div>
 
-      {/* MODAL: ESCOLHER ENTRE CONSULTA X COMPROMISSO */}
-      {chooser && (
+      {/* modal: escolher tipo (novo, futuro) */}
+      {chooserHora && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100"
-          style={{ background: "rgba(0,0,0,0.35)", zIndex: 50 }}
+          style={{ background:"rgba(0,0,0,.35)", zIndex:50 }}
+          onClick={()=>setChooserHora(null)}
         >
           <div
             className="position-absolute top-50 start-50 translate-middle bg-white border rounded shadow p-3"
             style={{ width: 360 }}
+            onClick={(e)=>e.stopPropagation()}
           >
-            <h6 className="mb-2">
-              Agendar {dataISO} — {chooser.hora}
-            </h6>
-            <p className="mb-3 text-muted small">Escolha o tipo de agendamento:</p>
+            <h6 className="mb-2">Agendar {dataISO} — {chooserHora}</h6>
+            <p className="mb-3 text-muted small">Escolha o tipo:</p>
             <div className="d-flex justify-content-between">
               <button
                 className="btn btn-primary"
-                onClick={() =>
-                  navigate(`/agendar?data=${dataISO}&hora=${chooser.hora}`)
-                }
+                onClick={()=>{ setChooserHora(null); navegar(`/agendar?data=${dataISO}&hora=${chooserHora}`); }}
               >
-                🧑‍⚕️ Consulta (paciente)
+                🧑‍⚕️ Consulta
               </button>
               <button
                 className="btn btn-secondary"
-                onClick={() => {
-                  setShowPersonal(true);
-                }}
+                onClick={()=>{ setChooserHora(null); navegar(`/compromissos?data=${dataISO}&hora=${chooserHora}&novo=1`); }}
               >
                 🗓️ Compromisso
               </button>
             </div>
             <div className="text-end mt-3">
-              <button className="btn btn-link" onClick={() => setChooser(null)}>
-                Cancelar
-              </button>
+              <button className="btn btn-link" onClick={()=>setChooserHora(null)}>Cancelar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL DE COMPROMISSO SIMPLES */}
-      <PersonalAppointmentModal
-        open={showPersonal}
-        onClose={() => {
-          setShowPersonal(false);
-          if (!menuHora) setChooser(null);
-        }}
-        dateISO={personalPreset.date}
-        time={personalPreset.time}
-        onSave={onSavePersonal}
-      />
-
-      {/* RODAPE SIMPLES COM HORA ATUAL */}
-      <footer className="text-center text-muted py-3 border-top">
-        <p className="m-0">🕒 Agora: {new Date().toLocaleTimeString("pt-BR")}</p>
-      </footer>
+      <div className="text-center text-muted mt-4">ProFlex</div>
     </div>
   );
 }

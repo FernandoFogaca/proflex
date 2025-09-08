@@ -27,7 +27,7 @@ export default function Clientes() {
 
   return (
     <div className="container py-4">
-      <h3 className="mb-3">Clientes</h3>
+      <h3 className="mb-3">Paciente</h3>
 
       <form className="row g-2 mb-3" onSubmit={onSubmit}>
         <div className="col-md-3">
