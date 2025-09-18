@@ -4,55 +4,63 @@
 
 ## 🇬🇧 English (UK)
 
-**ProFlex** is a modern, responsive scheduling system built to assist professionals in managing appointments, client data, reminders and evaluations.
+**ProFlex** is a modern, mobile-first scheduling system for professionals to manage appointments, clients, reminders, and medical notes — with PDF output and WhatsApp shortcuts.
 
-Built with **ReactJS** and styled using **Bootstrap**, it includes animations and persuasive UI components for an intuitive and engaging experience.
+Built with **React (Vite)** + **Bootstrap**, it features a fast SPA, protected routes, and a clean UI designed for day-to-day use.
 
 ---
 
 ### 🔧 Tech Stack
-- ReactJS (with Vite)
+- React (Vite)
 - React Router DOM
-- Bootstrap (custom theme)
-- Custom CSS (animations, gradients)
-- Public API usage (Reqres.in for mock users)
+- Bootstrap + custom CSS
+- jsPDF (PDF generation)
+- Firebase (Auth/Storage) – optional
+- LocalStorage (persistence)
 
 ---
 
 ### 🚀 Features
-- Welcome screen with multilingual animated greetings
-- Modern, mobile-first responsive UI
-- Persistent navigation header across all pages
-- Styled login screen
-- Real-time geolocation-based greetings and weather
-- Protected Developer Access
-- Persuasive "Sign Up" marketing page with testimonials and visual cards
+- Multilingual welcome screen and responsive layout
+- Persistent navigation header
+- Login & protected pages (patients, agenda)
+- Patients registry with **profile photo capture** (webcam/upload)
+- Appointments agenda with statuses (confirmed / next / due / cancelled / done)
+- Quick Reminder block + **WhatsApp** shortcut
+- Medical notes per visit; **Report / Prescription / Medical excuse** to **PDF**
+- Birthday panel (WhatsApp greeting shortcut)
+- Local timezone/date handling (DD/MM/YYYY)
 
 ---
 
 ### 🔒 Developer Access
-A developer-only section accessible via footer ("Dev Access" button). Password-protected access to internal tools.
+A developer-only section is available via footer (“Dev Access”), protected by password.
 
 ---
 
 ### 📂 Folder Structure
-├── src
-│ ├── components
-│ │ ├── Header.jsx
-│ │ ├── DevLogin.jsx
-│ │ ├── AvaliacaoUsuario.jsx
-│ ├── pages
-│ │ ├── Home.jsx
-│ │ ├── Login.jsx
-│ │ ├── Agenda.jsx
-│ │ ├── Marketing.jsx
-│ ├── App.jsx
-│ ├── main.jsx
-│ └── index.css
+src
+├─ components
+│ ├─ Header.jsx
+│ ├─ FotoCapture.jsx
+│ ├─ AniversariosHoje.jsx
+│ ├─ NovoAgendamento.jsx
+├─ pages
+│ ├─ Home.jsx
+│ ├─ Login.jsx
+│ ├─ Agenda.jsx
+│ ├─ Clientes.jsx
+│ ├─ Compromissos.jsx
+├─ context
+│ └─ AppContext.jsx
+├─ services
+│ └─ firebase.js
+├─ App.jsx
+├─ main.jsx
+└─ index.css
 
 yaml
-Copier
-Modifier
+Copier le code
 
 ---
 
@@ -62,108 +70,112 @@ git clone https://github.com/FernandoFogaca/proflex.git
 cd proflex
 npm install
 npm run dev
-🇧🇷 Português (BR)
-ProFlex é um sistema moderno e responsivo de agendamentos, voltado a profissionais como fisioterapeutas, médicos, veterinários, petshops e autônomos. Ele ajuda a organizar compromissos, clientes, lembretes e avaliações em um só lugar.
+Build:
 
-🔧 Tecnologias usadas
-ReactJS (com Vite)
+bash
+Copier le code
+npm run build
+⚙️ Environment (optional Firebase)
+Create a .env file in the project root:
+
+ini
+Copier le code
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+
+# delete password used when removing patients/records (default 1234)
+VITE_DELETE_PASS=1234
+If you skip Firebase, local features still work (LocalStorage). Photo capture falls back to data URLs.
+
+🇧🇷 Português (BR)
+ProFlex é um sistema moderno e responsivo para profissionais organizarem agenda, clientes, lembretes e prontuário, com geração de PDF e atalho para WhatsApp.
+
+Desenvolvido com React (Vite) e Bootstrap, possui rotas protegidas, layout mobile-first e operação rápida como SPA.
+
+🔧 Tecnologias
+React (Vite)
 
 React Router DOM
 
-Bootstrap (tema personalizado)
+Bootstrap + CSS próprio
 
-CSS com gradientes e animações
+jsPDF (PDFs)
 
-Consumo de API pública (Reqres para usuários simulados)
+Firebase (Auth/Storage) – opcional
+
+LocalStorage (persistência)
 
 🚀 Funcionalidades
-Tela de boas-vindas com frases animadas
+Tela inicial multilíngue e layout responsivo
 
-Interface responsiva e moderna (foco em mobile)
+Cabeçalho fixo de navegação
 
-Cabeçalho de navegação fixo em todas as páginas
+Login e rotas protegidas (Agenda, Pacientes, etc.)
 
-Tela de login estilizada
+Cadastro de Pacientes com foto de perfil (câmera/upload)
 
-Saudação personalizada com clima local
+Agenda com status coloridos (confirmado / próximo / na hora / cancelado / concluído)
 
-Página de marketing com depoimentos e cards persuasivos
+Lembrete rápido com atalho de WhatsApp
 
-Acesso restrito ao desenvolvedor (senha)
+Notas por consulta; Relatório / Receita / Atestado em PDF
 
-Layout com foco em conversão (botão "Assine Já")
+Aniversários do dia (atalho de parabéns no WhatsApp)
+
+Datas no padrão DD/MM/AAAA e fuso local
 
 🔒 Área do Desenvolvedor
-Área protegida por senha com botão de acesso no rodapé. Visível apenas para quem sabe o caminho.
+Acesso pelo rodapé (“Dev Access”), com senha.
 
 📂 Estrutura de Pastas
 css
-Copier
-Modifier
-├── src
-│   ├── components
-│   │   ├── Header.jsx
-│   │   ├── DevLogin.jsx
-│   │   ├── AvaliacaoUsuario.jsx
-│   ├── pages
-│   │   ├── Home.jsx
-│   │   ├── Login.jsx
-│   │   ├── Agenda.jsx
-│   │   ├── Marketing.jsx
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-🛠️ Como Rodar Localmente
+Copier le code
+src
+├─ components
+│  ├─ Header.jsx
+│  ├─ FotoCapture.jsx
+│  ├─ AniversariosHoje.jsx
+│  ├─ NovoAgendamento.jsx
+├─ pages
+│  ├─ Home.jsx
+│  ├─ Login.jsx
+│  ├─ Agenda.jsx
+│  ├─ Clientes.jsx
+│  ├─ Compromissos.jsx
+├─ context
+│  └─ AppContext.jsx
+├─ services
+│  └─ firebase.js
+├─ App.jsx
+├─ main.jsx
+└─ index.css
+🛠️ Como Rodar
 bash
-Copier
-Modifier
+Copier le code
 git clone https://github.com/FernandoFogaca/proflex.git
 cd proflex
 npm install
 npm run dev
-👨‍💻 Designed by Fernando Fogaça
-Projeto ProFlex (React + Bootstrap + API + PWA Ready)
+Build:
 
-
-
-
-# ProFlex System
-
-ProFlex é um sistema de agendamento e gestão de clientes para profissionais.
-
-## Tecnologias
-- React (Vite)
-- React Router
-- Bootstrap
-- jsPDF (relatórios)
-
-## Funcionalidades
-- Agenda com horários e status (confirmado, concluído, cancelado)
-- Cadastro de clientes e prontuário simples (consultas com notas)
-- Compromissos pessoais (separados da agenda de pacientes)
-- Lembretes no navegador e atalho para WhatsApp
-- Geração de PDF (relatórios, receita e atestado)
-- Login simples com sessão
-
-## Como executar
-```bash
-npm install
-npm run dev
 
 npm run build
+⚙️ Ambiente (.env – opcional Firebase)
 
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
 
-Agora salve e saia do `nano`:
-- **Ctrl + O**, Enter (salvar)
-- **Ctrl + X** (sair)
+# senha de exclusão (padrão 1234)
+VITE_DELETE_PASS=1234
+Sem Firebase, funciona com LocalStorage. A foto usa data URL/local.
 
-## 3) Commit e push na sua branch
-```bash
-git add README.md
-git commit -m "docs: README neutro (sem menções acadêmicas)"
-git push
-
-
-git push 
-
+👨‍💻 Designed & built by Fernando Fogaça
 
