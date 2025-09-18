@@ -1,293 +1,227 @@
-// contexto do app (mantém sua lógica em localStorage, só adiciona upload de fotos no Firebase Storage)
+// bloco: contexto
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { jsPDF } from "jspdf";
 import { storage } from "../services/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// bloco: util data BR (embed)
+function toBRDate(iso) {
+  if (!iso) return "-";
+  const [y, m, d] = String(iso).split("-");
+  if (!y || !m || !d) return iso;
+  return `${d.padStart(2,"0")}/${m.padStart(2,"0")}/${y}`;
+}
+
+// bloco: helpers
 const AppContext = createContext(null);
-
-// helpers simples
-function loadDoNavegador(chave, padrao) {
-  try {
-    const s = localStorage.getItem(chave);
-    return s ? JSON.parse(s) : padrao;
-  } catch {
-    return padrao;
-  }
-}
-function salvarNoNavegador(chave, valor) {
-  try {
-    localStorage.setItem(chave, JSON.stringify(valor));
-  } catch {}
-}
-function novoId(prefixo = "id") {
-  return `${prefixo}_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`;
-}
-
+function loadLS(k, fb) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : fb; } catch { return fb; } }
+function saveLS(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+function novoId(p="id") { return `${p}_${Math.random().toString(36).slice(2,8)}_${Date.now().toString(36)}`; }
 const SENHA_EXCLUIR = import.meta.env.VITE_DELETE_PASS || "1234";
 
-// lista base (igual você já tinha)
-export const COMORBIDADES = [
-  "Hipertensão",
-  "Diabetes",
-  "Asma",
-  "Cardiopatia",
-  "Doença Renal",
-  "Obesidade",
-  "Tabagismo",
-  "Gestação",
-];
+// bloco: listas
+export const COMORBIDADES = ["Hipertensão","Diabetes","Asma","Cardiopatia","Doença Renal","Obesidade","Tabagismo","Gestação"];
 
 export function AppProvider({ children }) {
-  // pacientes (com foto de perfil opcional)
-  const [clients, setClients] = useState(() => loadDoNavegador("clients", []));
-  // agendamentos da Agenda
-  const [appointments, setAppointments] = useState(() => loadDoNavegador("appointments", []));
+  // bloco: estados principais
+  const [clients, setClients] = useState(() => loadLS("clients", []));
+  const [appointments, setAppointments] = useState(() => loadLS("appointments", []));
+  const [whatsappPhone, setWhatsappPhone] = useState(() => loadLS("whatsappPhone", ""));
 
-  useEffect(() => salvarNoNavegador("clients", clients), [clients]);
-  useEffect(() => salvarNoNavegador("appointments", appointments), [appointments]);
+  // bloco: email (estado)
+  const [emailAccount, setEmailAccount] = useState(() => loadLS("emailAccount", { connected:false, address:"" }));
 
-  // ------------------------ CLIENTES
-  function addClient(dados) {
+  useEffect(() => saveLS("clients", clients), [clients]);
+  useEffect(() => saveLS("appointments", appointments), [appointments]);
+  useEffect(() => saveLS("whatsappPhone", whatsappPhone), [whatsappPhone]);
+  useEffect(() => saveLS("emailAccount", emailAccount), [emailAccount]);
+
+  // bloco: clientes
+  function addClient(d) {
     const novo = {
       id: novoId("cli"),
-      nome: dados.nome || "Sem nome",
-      email: dados.email || "",
-      telefone: dados.telefone || "",
-      endereco: dados.endereco || "",
-      nascimento: dados.nascimento || "", // yyyy-mm-dd
-      peso: dados.peso || "",
-      altura: dados.altura || "",
-      genero: dados.genero || "",
-      comorbidades: Array.isArray(dados.comorbidades) ? dados.comorbidades : [],
-      outrosDiagnosticos: dados.outrosDiagnosticos || "",
-      remedios: dados.remedios || "",
-      fotoPerfilUrl: dados.fotoPerfilUrl || "", // NOVO
-      consultas: Array.isArray(dados.consultas) ? dados.consultas : [], // [{id, numero, dataISO, hora, texto, fotos:[]}]
+      nome: d.nome || "Sem nome",
+      email: d.email || "",
+      telefone: d.telefone || "",
+      endereco: d.endereco || "",
+      nascimento: d.nascimento || "",
+      peso: d.peso || "",
+      altura: d.altura || "",
+      genero: d.genero || "",
+      comorbidades: Array.isArray(d.comorbidades) ? d.comorbidades : [],
+      outrosDiagnosticos: d.outrosDiagnosticos || "",
+      remedios: d.remedios || "",
+      fotoPerfilUrl: d.fotoPerfilUrl || "",
+      consultas: Array.isArray(d.consultas) ? d.consultas : [],
+      receitas: Array.isArray(d.receitas) ? d.receitas : [],
+      atestados: Array.isArray(d.atestados) ? d.atestados : [],
+      areas: d.areas || undefined,
     };
-    setClients((atual) => [novo, ...atual]);
+    setClients((cur) => [novo, ...cur]);
     return novo;
   }
-
-  function updateClient(idCliente, alteracoes) {
-    setClients((lista) =>
-      lista.map((c) => (c.id === idCliente ? { ...c, ...alteracoes } : c))
-    );
+  function updateClient(idCliente, patch) {
+    setClients((list) => list.map((c) => (c.id === idCliente ? { ...c, ...patch } : c)));
   }
+  function getClient(idCliente) { return clients.find((c) => c.id === idCliente); }
 
-  function getClient(idCliente) {
-    return clients.find((c) => c.id === idCliente);
-  }
-
-  // ------------------------ AGENDAMENTOS (Agenda)
+  // bloco: agenda
   function addAppointment(appt) {
     const registro = { id: novoId("apt"), createdAt: new Date().toISOString(), ...appt };
-    setAppointments((lista) => [registro, ...lista]);
+    setAppointments((list) => [registro, ...list]);
     return registro;
   }
 
-  // ------------------------ CONSULTAS (prontuário)
-  function proximoNumeroConsulta(cliente) {
-    const n = (cliente.consultas?.length || 0) + 1;
-    return n < 10 ? `0${n}` : String(n);
-  }
-
+  // bloco: consultas
+  function proxNumeroConsulta(cli) { const n = (cli.consultas?.length || 0) + 1; return n < 10 ? `0${n}` : String(n); }
   function addConsulta(idCliente, { dataISO, hora, texto = "" }) {
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-        const numero = proximoNumeroConsulta(c);
-        const nova = { id: novoId("con"), numero, dataISO, hora, texto, fotos: [] }; // NOVO: fotos
-        return { ...c, consultas: [nova, ...(c.consultas || [])] };
-      })
-    );
+    setClients((list) => list.map((c) => {
+      if (c.id !== idCliente) return c;
+      const numero = proxNumeroConsulta(c);
+      const nova = { id: novoId("con"), numero, dataISO, hora, texto, fotos: [] };
+      return { ...c, consultas: [nova, ...(c.consultas || [])] };
+    }));
   }
-
-  function updateConsulta(idCliente, idConsulta, alteracoes) {
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-        return {
-          ...c,
-          consultas: (c.consultas || []).map((con) =>
-            con.id === idConsulta ? { ...con, ...alteracoes } : con
-          ),
-        };
-      })
-    );
+  function updateConsulta(idCliente, idConsulta, patch) {
+    setClients((list) => list.map((c) => {
+      if (c.id !== idCliente) return c;
+      return { ...c, consultas: (c.consultas || []).map((con) => con.id === idConsulta ? { ...con, ...patch } : con) };
+    }));
   }
-
-  async function deleteConsultas(idCliente, idsConsultas) {
-    if (!idsConsultas?.length) return;
-    if (!window.confirm("Tem certeza que deseja excluir as consultas selecionadas?")) return;
+  async function deleteConsultas(idCliente, ids) {
+    if (!ids?.length) return;
+    if (!confirm("Tem certeza que deseja excluir as consultas selecionadas?")) return;
     const senha = prompt("Digite a senha de exclusão:");
-    if (senha !== SENHA_EXCLUIR) {
-      alert("Senha incorreta.");
-      return;
-    }
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-        return {
-          ...c,
-          consultas: (c.consultas || []).filter((con) => !idsConsultas.includes(con.id)),
-        };
-      })
-    );
+    if (senha !== SENHA_EXCLUIR) { alert("Senha incorreta."); return; }
+    setClients((list) => list.map((c) => c.id !== idCliente ? c : { ...c, consultas: (c.consultas || []).filter((x) => !ids.includes(x.id)) }));
   }
-
   async function deleteClient(idCliente) {
-    if (!window.confirm("Tem certeza que deseja excluir este paciente?")) return;
-    if (!window.confirm("Essa ação é irreversível. Confirmar exclusão?")) return;
+    if (!confirm("Tem certeza que deseja excluir este paciente?")) return;
+    if (!confirm("Essa ação é irreversível. Confirmar exclusão?")) return;
     const senha = prompt("Digite a senha de exclusão:");
-    if (senha !== SENHA_EXCLUIR) {
-      alert("Senha incorreta.");
-      return;
-    }
-
-    const cliente = clients.find((c) => c.id === idCliente);
-    setClients((lista) => lista.filter((c) => c.id !== idCliente));
-
-    if (cliente?.email) {
+    if (senha !== SENHA_EXCLUIR) { alert("Senha incorreta."); return; }
+    const cli = clients.find((c) => c.id === idCliente);
+    setClients((list) => list.filter((c) => c.id !== idCliente));
+    if (cli?.email) {
       const subject = encodeURIComponent("Confirmação de exclusão de cadastro");
-      const body = encodeURIComponent(
-        `Olá ${cliente.nome},\n\nSeu cadastro/consultas foram excluídos conforme solicitação.\n\nAtt,\nEquipe`
-      );
-      window.open(`mailto:${cliente.email}?subject=${subject}&body=${body}`, "_blank");
+      const body = encodeURIComponent(`Olá ${cli.nome},\n\nSeu cadastro/consultas foram excluídos conforme solicitação.\n\nAtt,\nEquipe`);
+      window.open(`mailto:${cli.email}?subject=${subject}&body=${body}`, "_blank");
     }
   }
 
-  // ------------------------ RELATÓRIO (PDF simples)
+  // bloco: relatório PDF (data BR)
   function gerarRelatorioPDF(cliente, consultasSelecionadas) {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const linha = (t, x = 40, y) => {
-      doc.text(String(t), x, y);
-      return y + 18;
-    };
+    const L = (t, x=40, y) => { doc.text(String(t), x, y); return y + 18; };
     let y = 50;
 
     doc.setFontSize(16);
-    y = linha(`Relatório de Consultas - ${cliente.nome}`, 40, y);
+    y = L(`Relatório de Consultas - ${cliente.nome}`, 40, y);
     doc.setFontSize(11);
-    y = linha(
-      `Nascimento: ${cliente.nascimento || "-"}  |  Peso: ${cliente.peso || "-"}  |  Altura: ${
-        cliente.altura || "-"
-      }`,
-      40,
-      y
-    );
-    y = linha(`Comorbidades: ${(cliente.comorbidades || []).join(", ") || "-"}`, 40, y);
-    y = linha(`Outros diagnósticos: ${cliente.outrosDiagnosticos || "-"}`, 40, y);
-    y = linha(`Remédios: ${cliente.remedios || "-"}`, 40, y);
+    y = L(`Nascimento: ${toBRDate(cliente.nascimento)}  |  Peso: ${cliente.peso || "-"}  |  Altura: ${cliente.altura || "-"}`, 40, y);
+    y = L(`Comorbidades: ${(cliente.comorbidades || []).join(", ") || "-"}`, 40, y);
+    y = L(`Outros diagnósticos: ${cliente.outrosDiagnosticos || "-"}`, 40, y);
+    y = L(`Remédios: ${cliente.remedios || "-"}`, 40, y);
     y += 10;
 
     consultasSelecionadas.forEach((cons, idx) => {
       doc.setFontSize(13);
-      y = linha(`Consulta ${cons.numero} — ${cons.dataISO} ${cons.hora || ""}`, 40, y);
+      y = L(`Consulta ${cons.numero} — ${toBRDate(cons.dataISO)} ${cons.hora || ""}`, 40, y);
       doc.setFontSize(11);
 
-      // quebra de texto simples
-      const wrap = (txt, max = 90) => {
-        const arr = [];
-        let s = String(txt || "");
-        while (s.length) {
-          arr.push(s.slice(0, max));
-          s = s.slice(max);
-        }
-        return arr;
-      };
-      wrap(cons.texto, 90).forEach((row) => {
-        y = linha(row, 50, y);
-        if (y > 780) {
-          doc.addPage();
-          y = 50;
-        }
-      });
+      const wrap = (txt, max=90) => { const arr=[]; let s=String(txt||""); while(s.length){arr.push(s.slice(0,max)); s=s.slice(max);} return arr; };
+      wrap(cons.texto, 90).forEach((row) => { y = L(row, 50, y); if (y > 780) { doc.addPage(); y = 50; } });
 
-      // só menciona quantas fotos tem (implementação enxuta de aluno)
-      if (cons.fotos?.length) {
-        y = linha(`Fotos anexadas: ${cons.fotos.length} (visualize no sistema)`, 50, y);
-      }
-
+      if (cons.fotos?.length) y = L(`Fotos anexadas: ${cons.fotos.length} (visualize no sistema)`, 50, y);
       y += 10;
-      if (y > 780 && idx < consultasSelecionadas.length - 1) {
-        doc.addPage();
-        y = 50;
-      }
+      if (y > 780 && idx < consultasSelecionadas.length - 1) { doc.addPage(); y = 50; }
     });
 
-    doc.save(`relatorio_${cliente.nome.replace(/\s+/g, "_")}.pdf`);
+    doc.save(`relatorio_${cliente.nome.replace(/\s+/g,"_")}.pdf`);
   }
 
-  // ------------------------ UPLOAD DE FOTOS (Firebase Storage)
-
-  // foto de perfil (1 por cliente)
+  // bloco: upload fotos
   async function salvarFotoPerfil(idCliente, arquivo) {
     if (!idCliente || !arquivo) return null;
     const caminho = `clients/${idCliente}/perfil_${Date.now()}.jpg`;
-    const referencia = ref(storage, caminho);
-    await uploadBytes(referencia, arquivo);
-    const url = await getDownloadURL(referencia);
+    const r = ref(storage, caminho);
+    await uploadBytes(r, arquivo);
+    const url = await getDownloadURL(r);
     updateClient(idCliente, { fotoPerfilUrl: url });
     return url;
   }
-
-  // até 3 fotos por consulta (sobrescreve a lista inteira com as novas URLs)
   async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
     if (!idCliente || !idConsulta || !arquivos?.length) return [];
     const limitar = Array.from(arquivos).slice(0, 3);
     const urls = [];
-    for (let i = 0; i < limitar.length; i++) {
-      const arquivo = limitar[i];
-      const caminho = `clients/${idCliente}/consultas/${idConsulta}/foto_${i + 1}_${Date.now()}.jpg`;
-      const referencia = ref(storage, caminho);
-      await uploadBytes(referencia, arquivo);
-      const url = await getDownloadURL(referencia);
+    for (let i=0;i<limitar.length;i++) {
+      const arq = limitar[i];
+      const caminho = `clients/${idCliente}/consultas/${idConsulta}/foto_${i+1}_${Date.now()}.jpg`;
+      const r = ref(storage, caminho);
+      await uploadBytes(r, arq);
+      const url = await getDownloadURL(r);
       urls.push(url);
     }
-    // grava as URLs no registro da consulta
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-        return {
-          ...c,
-          consultas: (c.consultas || []).map((con) =>
-            con.id === idConsulta ? { ...con, fotos: urls } : con
-          ),
-        };
-      })
-    );
+    setClients((list) => list.map((c) => c.id !== idCliente ? c : {
+      ...c,
+      consultas: (c.consultas || []).map((con) => con.id === idConsulta ? { ...con, fotos: urls } : con),
+    }));
     return urls;
   }
 
-  const valor = useMemo(
-    () => ({
-      // pacientes
-      clients,
-      setClients,
-      getClient,
-      addClient,
-      updateClient,
-      deleteClient,
-      // agenda
-      appointments,
-      setAppointments,
-      addAppointment,
-      // consultas
-      addConsulta,
-      updateConsulta,
-      deleteConsultas,
-      // arquivos
-      salvarFotoPerfil,
-      salvarFotosDaConsulta,
-      // util
-      gerarRelatorioPDF,
-      COMORBIDADES,
-    }),
-    [clients, appointments]
-  );
+  // bloco: whatsapp (login simples)
+  function connectWhatsapp(number) { setWhatsappPhone(String(number || "").replace(/\D/g,"")); }
+  function disconnectWhatsapp() { setWhatsappPhone(""); }
+  function openWA(texto, numero = whatsappPhone) {
+    if (!numero) { alert("Informe o número do WhatsApp primeiro."); return; }
+    const msg = encodeURIComponent(texto || "");
+    const who = encodeURIComponent(String(numero).replace(/\D/g,""));
+    window.open(`https://wa.me/${who}?text=${msg}`, "_blank");
+  }
 
-  return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
+  // bloco: email (login simples)
+  function connectEmail(address) {
+    const addr = String(address || "").trim();
+    if (!addr || !addr.includes("@")) { alert("Informe um e-mail válido."); return; }
+    setEmailAccount({ connected:true, address: addr });
+  }
+  function disconnectEmail() {
+    setEmailAccount({ connected:false, address:"" });
+  }
+  function sendEmail({ to, subject, body }) {
+    const from = emailAccount?.address || "";
+    const dest = String(to || from || "").trim();
+    if (!dest) { alert("Informe o destinatário."); return; }
+    const s = encodeURIComponent(subject || "");
+    const b = encodeURIComponent(body || "");
+    window.open(`mailto:${dest}?subject=${s}&body=${b}`, "_blank");
+  }
+  function emailCliente(cli, subject, body) {
+    const dest = cli?.email || emailAccount?.address || "";
+    if (!dest) { alert("Sem e-mail do cliente ou conta conectada."); return; }
+    sendEmail({ to: dest, subject, body });
+  }
+
+  const value = useMemo(() => ({
+    // pacientes
+    clients, setClients, getClient, addClient, updateClient, deleteClient,
+    // agenda
+    appointments, setAppointments, addAppointment,
+    // consultas
+    addConsulta, updateConsulta, deleteConsultas,
+    // arquivos
+    salvarFotoPerfil, salvarFotosDaConsulta,
+    // PDF
+    gerarRelatorioPDF,
+    // whatsapp
+    whatsappPhone, connectWhatsapp, disconnectWhatsapp, openWA,
+    // email
+    emailAccount, connectEmail, disconnectEmail, sendEmail, emailCliente,
+    // listas
+    COMORBIDADES,
+  }), [clients, appointments, whatsappPhone, emailAccount]);
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

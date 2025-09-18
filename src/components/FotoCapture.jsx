@@ -30,19 +30,19 @@ export default function FotoCapture({ onData, width = 320, height = 240 }) {
   return (
     <div className="border rounded p-2 d-inline-block">
       {!on ? (
-        <button className="btn btn-sm btn-secondary" onClick={() => setOn(true)}>Abrir camera</button>
+        <button className="btn btn-sm btn-secondary" onClick={() => setOn(true)}>Camera</button>
       ) : (
         <>
           <video ref={videoRef} autoPlay playsInline width={width} height={height} style={{ background:"#000" }} />
           <div className="mt-2 d-flex gap-2">
-            <button className="btn btn-sm btn-primary" onClick={shoot}>Tirar foto</button>
+            <button className="btn btn-sm btn-primary" onClick={shoot}>Foto</button>
             <button className="btn btn-sm btn-outline-secondary" onClick={() => setOn(false)}>Fechar</button>
           </div>
         </>
       )}
 
       <div className="mt-2">
-        <label className="form-label small">Ou escolher arquivo</label>
+        <label className="form-label small"> Selecionar</label>
         <input
           type="file"
           accept="image/*"

@@ -6,6 +6,16 @@ body {
   background-color: #f8f9fa;
 }
 
+
+/* bloco: slots + cores status */
+.hora-bolinha { min-width: 84px; }
+.hora-bolinha[data-status="confirmado"] { border-color:#198754; color:#198754; }
+.hora-bolinha[data-status="proximo"]    { border-color:#ffc107; color:#ffc107; }
+.hora-bolinha[data-status="na hora"]    { border-color:#0dcaf0; color:#0dcaf0; }
+.hora-bolinha[data-status="cancelado"]  { border-color:#6c757d; color:#6c757d; }
+.hora-bolinha[data-status="concluido"]  { border-color:#0d6efd; color:#0d6efd; }
+
+
 /* 🔷 Bootstrap Custom Theme: substitui azul padrão por #4390a1 */
 .btn-primary,
 .bg-primary,

@@ -3,8 +3,26 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 
-// helpers
-const hojeISO = () => new Date().toISOString().split("T")[0];
+/* ===== datas locais ===== */
+const hojeISO = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+const parseISOlocal = (iso) => {
+  if (!iso) return new Date();
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
+const fmtBR = (iso) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${String(y)}`;
+};
+
+/* ===== utils ===== */
 const toMin = (hhmm) => {
   const [h, m] = String(hhmm || "0:0").split(":").map(Number);
   return (h || 0) * 60 + (m || 0);
@@ -19,7 +37,7 @@ function isPast(dateISO, hhmm) {
 const loadJSON = (k, fb) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : fb; } catch { return fb; } };
 const saveJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-// relógio
+/* ===== relógio ===== */
 function useClock() {
   const [txt, setTxt] = useState(() =>
     new Date().toLocaleTimeString("pt-BR", { hour12: false })
@@ -33,64 +51,63 @@ function useClock() {
   return txt;
 }
 
-// saudação com clima
-function saudacaoClima(weatherCode, isDay) {
-  const h = new Date().getHours();
-  const base = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
-  let icone = "🌤️";
-  if (weatherCode === 0) icone = isDay ? "☀️" : "🌙";
-  else if (weatherCode >= 1 && weatherCode <= 3) icone = isDay ? "🌤️" : "☁️";
-  else if (weatherCode === 45 || weatherCode === 48) icone = "🌫️";
-  else if ((weatherCode >= 51 && weatherCode <= 57) || (weatherCode >= 61 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)) icone = "🌧️";
-  else if (weatherCode >= 71 && weatherCode <= 77) icone = "❄️";
-  else if (weatherCode >= 95) icone = "⛈️";
-  return `${base} ${icone}`;
+/* ===== clima + saudação ===== */
+function weatherIcon(code, isDay) {
+  // mapa simples (Open-Meteo weather_code)
+  if (code === 0) return isDay ? "☀️" : "🌙";
+  if (code >= 1 && code <= 3) return isDay ? "🌤️" : "☁️";
+  if (code === 45 || code === 48) return "🌫️";
+  if ((code >= 51 && code <= 57) || (code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "🌧️";
+  if (code >= 71 && code <= 77) return "❄️";
+  if (code >= 95) return "⛈️";
+  return "💨";
 }
-
-// localização + °C (sem chave)
+function saudacaoTexto() {
+  const h = new Date().getHours();
+  return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+}
 function useLocalInfo() {
-  const [info, setInfo] = useState({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+  const [st, setSt] = useState({ city:"", region:"", temp:null, code:null, isDay:1 });
   useEffect(() => {
     let vivo = true;
-    const pegar = async (lat, lon) => {
+    async function run() {
       try {
-        const r = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
-        );
-        const j = await r.json();
-        const a = j.address || {};
-        const city = a.city || a.town || a.village || a.municipality || "";
-        const region = a.state_code || a.state || (a.country_code || "").toUpperCase();
+        if (!("geolocation" in navigator)) return;
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve(pos),
+            () => resolve(null),
+            { timeout: 4000 }
+          );
+        }).then(async (pos) => {
+          if (!pos) return;
+          const { latitude:lat, longitude:lon } = pos.coords;
 
-        const w = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`
-        );
-        const jw = await w.json();
-        const temp = jw?.current?.temperature_2m ?? null;
-        const code = jw?.current?.weather_code ?? null;
-        const isDay = jw?.current?.is_day ?? 1;
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+          const j = await r.json();
+          const a = j.address || {};
+          const city = a.city || a.town || a.village || a.municipality || "";
+          const region = a.state_code || a.state || (a.country_code || "").toUpperCase();
 
-        if (vivo) setInfo({ city, region, temp, weatherCode: code, isDay });
+          const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`);
+          const jw = await w.json();
+          const temp = jw?.current?.temperature_2m ?? null;
+          const code = jw?.current?.weather_code ?? null;
+          const isDay = jw?.current?.is_day ?? 1;
+
+          if (vivo) setSt({ city, region, temp, code, isDay });
+        });
       } catch {
-        if (vivo) setInfo({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+        // silencioso
       }
-    };
-    const fallback = () => setInfo({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
-
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => pegar(pos.coords.latitude, pos.coords.longitude),
-        fallback,
-        { timeout: 4000 }
-      );
-    } else fallback();
-
+    }
+    run();
     return () => { vivo = false; };
   }, []);
-  return info;
+  return st;
 }
 
-// painel próximos 4h
+/* ===== próximos 4h ===== */
 function PainelProximos({ agendamentos, dataISO }) {
   const agora = Date.now();
   const fimJanela = agora + 4 * 60 * 60 * 1000;
@@ -117,17 +134,14 @@ function PainelProximos({ agendamentos, dataISO }) {
   );
 }
 
-// aniversários
+/* ===== aniversários ===== */
 function AniversariosDoDia({ clientes, dataISO }) {
-  const d = new Date(dataISO);
-  const mm = d.getMonth() + 1;
-  const dd = d.getDate();
+  const [, mm, dd] = dataISO.split("-").map(Number);
   const lista = (clientes || []).filter((p) => {
     if (!p?.nascimento) return false;
     const [, m, d2] = String(p.nascimento).split("-").map(Number);
     return (m === mm && d2 === dd);
   });
-
   if (lista.length === 0) return <small className="text-muted">Sem aniversariantes.</small>;
   return (
     <ul className="list-group">
@@ -136,8 +150,7 @@ function AniversariosDoDia({ clientes, dataISO }) {
           <span>{p.nome}</span>
           <a
             className="btn btn-sm btn-success"
-            href={`https://wa.me/${(p.telefone||"").replace(/\D/g,"")}?text=${encodeURIComponent(`Parabéns, ${p.nome}! 🎉`)}`
-            }
+            href={`https://wa.me/${(p.telefone||"").replace(/\D/g,"")}?text=${encodeURIComponent(`Parabéns, ${p.nome}! 🎉`)}`}
             target="_blank" rel="noreferrer"
           >
             WhatsApp
@@ -148,26 +161,25 @@ function AniversariosDoDia({ clientes, dataISO }) {
   );
 }
 
+/* ===== componente principal ===== */
 export default function Agenda() {
   const navegar = useNavigate();
   const { clients, appointments } = useApp();
 
   const hora = useClock();
-  const { city, region, temp, weatherCode, isDay } = useLocalInfo();
-  const saudacaoTexto = saudacaoClima(weatherCode, isDay);
+  const { city, region, temp, code, isDay } = useLocalInfo();
+  const greet = saudacaoTexto();
+  const icon = weatherIcon(code, isDay);
 
   const [dataISO, setDataISO] = useState(hojeISO());
-  const dataBRcurta = useMemo(() => {
-    const d = new Date(dataISO);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
-  }, [dataISO]);
+  const dataBRcurta = useMemo(() => fmtBR(dataISO), [dataISO]);
   const diaSemana = useMemo(() => {
-    const d = new Date(dataISO);
+    const d = parseISOlocal(dataISO);
     const t = d.toLocaleDateString("pt-BR", { weekday: "long" });
     return t.charAt(0).toUpperCase() + t.slice(1);
   }, [dataISO]);
 
-  // slots
+  /* slots */
   const baseSlots = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00"];
   const [extraPorData, setExtraPorData] = useState(() => loadJSON("extraSlots", {}));
   const [removidosPorData, setRemovidosPorData] = useState(() => loadJSON("removedSlots", {}));
@@ -210,10 +222,9 @@ export default function Agenda() {
     });
   }
 
-  // ir para a página certa
+  /* navegação slot */
   function irParaAgendamento(data, horaSlot, ag) {
     if (ag) {
-      // se já existe: decide pelo tipo
       const tipo = (ag.tipo || "").toLowerCase();
       if (tipo === "pessoal" || tipo === "compromisso") {
         navegar(`/compromissos?data=${data}&hora=${horaSlot}`);
@@ -223,25 +234,16 @@ export default function Agenda() {
       }
       return;
     }
-    // novo: consulta -> /agendar | compromisso -> /compromissos
-    // (a escolha “consulta/compromisso” é feita no modal; aqui só default)
     navegar(`/agendar?data=${data}&hora=${horaSlot}`);
   }
-
-  // clique no slot
   const [chooserHora, setChooserHora] = useState(null);
   function abrirSlot(hhmm) {
     const ag = mapaHoje[hhmm];
     const passado = isPast(dataISO, hhmm);
-    if (ag) {
-      irParaAgendamento(dataISO, hhmm, ag);
-      return;
-    }
+    if (ag) { irParaAgendamento(dataISO, hhmm, ag); return; }
     if (passado) return;
     setChooserHora(hhmm);
   }
-
-  // remover slot
   function removerSlot(hhmm) {
     if (mapaHoje[hhmm]) { alert("Existe agendamento neste horário."); return; }
     if ((extraPorData[dataISO] || []).includes(hhmm)) {
@@ -259,7 +261,7 @@ export default function Agenda() {
     });
   }
 
-  // lembretes
+  /* lembrete + whatsapp (um card só) */
   const [lemHora, setLemHora] = useState("14:00");
   const [lemMsg, setLemMsg] = useState("");
   const [lemZap, setLemZap] = useState("");
@@ -295,12 +297,13 @@ export default function Agenda() {
       date: dataISO,
       time: lemHora,
       msg: lemMsg.trim(),
-      zap: (lemZap || "").trim(),
+      zap: (wa.connected ? wa.number : (lemZap || "").trim()),
       cancelado: false,
       concluido: false
     };
     setLembretes((prev) => [novo, ...prev].slice(0, 50));
-    setLemMsg(""); setLemZap("");
+    setLemMsg("");
+    if (!wa.connected) setLemZap("");
   }
   function marcarConcluido(id) {
     setLembretes((prev) => prev.map((x) => x.id === id ? { ...x, concluido: !x.concluido, cancelado: false } : x));
@@ -316,19 +319,49 @@ export default function Agenda() {
     return only ? `https://wa.me/${only}` : "#";
   };
 
-  // estados do menu ⋮
-  const [slotMenu, setSlotMenu] = useState(null);
+  /* sessão whatsapp */
+  const [wa, setWa] = useState(() => loadJSON("waSession", { connected:false, number:"" }));
+  useEffect(() => saveJSON("waSession", wa), [wa]);
+  function conectarWA(n) {
+    const only = (n || "").replace(/\D/g, "");
+    if (only.length < 10) { alert("Informe um número válido com DDD."); return; }
+    setWa({ connected:true, number: only });
+  }
+  function sairWA() {
+    setWa({ connected:false, number:"" });
+  }
 
-  // estilos
+  /* estilos */
   const topBox = { background:"var(--proflex-primary,#4390a1)", color:"#fff", borderRadius:14, boxShadow:"0 4px 14px rgba(0,0,0,.10)" };
+  const SLOT_SIZE = wa.connected ? 74 : 80;
   const slotBox = {
-    width: 80, height: 80, borderRadius: "50%",
+    width: SLOT_SIZE, height: SLOT_SIZE, borderRadius: "50%",
     background:"#fff", border:"2px solid #e5e7eb",
     display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
     gap:2, boxShadow:"0 1px 4px rgba(0,0,0,.08)", cursor:"pointer", userSelect:"none", position:"relative"
   };
   const slotOff = { opacity:.5, cursor:"not-allowed" };
-  const chip = { position:"absolute", bottom:-10, fontSize:10, padding:"2px 6px", borderRadius:8, color:"#fff" };
+  const chipBase = { position:"absolute", bottom:-10, fontSize:10, padding:"2px 6px", borderRadius:8, color:"#fff" };
+
+  /* status visual do slot */
+  function statusDoSlot(hhmm) {
+    const ag = mapaHoje[hhmm];
+    let st = (ag?.status || "").toLowerCase();
+    if (!st) {
+      // derivado simples
+      const hoje = dataISO === hojeISO();
+      if (hoje) {
+        const now = new Date();
+        const agoraMin = now.getHours()*60 + now.getMinutes();
+        const alvoMin = toMin(hhmm);
+        const dif = alvoMin - agoraMin;
+        if (dif <= 0 && dif >= -1) st = "na hora";
+        else if (dif > 0 && dif <= 15) st = "proximo";
+        else if (dif > 15) st = "confirmado";
+      }
+    }
+    return st;
+  }
 
   return (
     <div className="container py-3">
@@ -337,7 +370,7 @@ export default function Agenda() {
       {/* topo */}
       <div className="p-3 mb-3" style={topBox}>
         <div className="d-flex justify-content-between align-items-center">
-          <div className="fw-semibold">{saudacaoTexto}</div>
+          <div className="fw-semibold">{greet} {icon}</div>
           <div className="fw-semibold">{diaSemana}</div>
         </div>
 
@@ -346,7 +379,7 @@ export default function Agenda() {
         <div className="d-flex justify-content-center align-items-center gap-2 mt-2 flex-wrap">
           {temp !== null && <span className="badge bg-light text-dark">{Math.round(temp)}°C</span>}
           <span className="badge bg-light text-dark">
-            {city ? `${city}${region ? " - " + region : ""}` : "Localização indisponível"}
+            {city ? `${city}${region ? " - " + region : ""}` : "Localização"}
           </span>
         </div>
 
@@ -362,9 +395,73 @@ export default function Agenda() {
       </div>
 
       <div className="row g-3">
-        {/* esquerda */}
+        {/* coluna esquerda */}
         <div className="col-md-7">
-          <div className="card mb-3">
+          {/* slots (agora NO TOPO da coluna esquerda) */}
+          <div className="card">
+            <div className="card-body">
+              <h6>Horários</h6>
+              <div className="d-flex flex-wrap gap-3 mt-2">
+                {listaSlots.map((hhmm) => {
+                  const ag = mapaHoje[hhmm];
+                  const tem = !!ag;
+                  const passado = isPast(dataISO, hhmm);
+                  const desliga = !tem && passado;
+                  const status = statusDoSlot(hhmm);
+
+                  const aro = (() => {
+                    switch (status) {
+                      case "confirmado": return { borderColor:"#28a745", boxShadow:"0 0 0 3px rgba(40,167,69,.15)" };
+                      case "proximo":   return { borderColor:"#ffc107", boxShadow:"0 0 0 3px rgba(255,193,7,.2)" };
+                      case "na hora":   return { borderColor:"#dc3545", boxShadow:"0 0 0 3px rgba(220,53,69,.2)" };
+                      case "cancelado": return { borderColor:"#6c757d", boxShadow:"0 0 0 3px rgba(108,117,125,.15)" };
+                      case "concluido": return { borderColor:"#0dcaf0", boxShadow:"0 0 0 3px rgba(13,202,240,.2)" };
+                      default: return {};
+                    }
+                  })();
+                  const chipStyle = (() => {
+                    switch (status) {
+                      case "confirmado": return { ...chipBase, background:"#28a745" };
+                      case "proximo":    return { ...chipBase, background:"#ffc107", color:"#222" };
+                      case "na hora":    return { ...chipBase, background:"#dc3545" };
+                      case "cancelado":  return { ...chipBase, background:"#6c757d" };
+                      case "concluido":  return { ...chipBase, background:"#0dcaf0", color:"#063" };
+                      default: return null;
+                    }
+                  })();
+
+                  return (
+                    <div
+                      key={hhmm}
+                      style={{ ...slotBox, ...(desliga?slotOff:{}), ...aro }}
+                      title={desliga ? "passado" : (tem ? "abrir" : "novo")}
+                      onClick={() => abrirSlot(hhmm)}
+                    >
+                      <div className="fw-semibold">{hhmm}</div>
+                      {!desliga && tem && chipStyle && <span style={chipStyle}>{status}</span>}
+                      {desliga && <small className="text-muted">passado</small>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="d-flex align-items-center gap-2 mt-3">
+                <input type="time" id="novoSlot" defaultValue="09:00" className="form-control" style={{ width: 120 }} />
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const v = document.getElementById("novoSlot").value;
+                    addSlotManual(v);
+                  }}
+                >
+                  + Adicionar horário
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* próximos 4h (AGORA ABAIXO dos slots) */}
+          <div className="card mt-3">
             <div className="card-body">
               <h6 className="m-0 mb-2">⏱️ Próximas 4 horas</h6>
               <PainelProximos agendamentos={appointments} dataISO={dataISO} />
@@ -372,8 +469,9 @@ export default function Agenda() {
           </div>
         </div>
 
-        {/* direita */}
+        {/* coluna direita */}
         <div className="col-md-5">
+          {/* aniversários */}
           <div className="card mb-3">
             <div className="card-body">
               <div className="d-flex justify-content-between">
@@ -386,13 +484,19 @@ export default function Agenda() {
             </div>
           </div>
 
+          {/* lembrete + whatsapp (um card) */}
           <div className="card">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <h6 className="m-0">🔔 Lembrete rápido</h6>
-                <small className="text-muted">alerta na hora</small>
+                <h6 className="m-0">🔔 Lembrete + 💬 WhatsApp</h6>
+                {wa.connected ? (
+                  <span className="badge bg-success">conectado</span>
+                ) : (
+                  <span className="badge bg-secondary">desconectado</span>
+                )}
               </div>
 
+              {/* lembrete */}
               <div className="row g-2 align-items-center">
                 <div className="col-3">
                   <input type="time" className="form-control" value={lemHora} onChange={(e)=>setLemHora(e.target.value)} />
@@ -408,14 +512,16 @@ export default function Agenda() {
                 </div>
               </div>
 
+              {/* whatsapp + criar */}
               <div className="row g-2 align-items-center mt-2">
                 <div className="col">
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="WhatsApp (opcional)"
-                    value={lemZap}
-                    onChange={(e)=>setLemZap(e.target.value)}
+                    placeholder="WhatsApp (com DDD)"
+                    value={wa.connected ? wa.number : lemZap}
+                    onChange={(e)=> wa.connected ? null : setLemZap(e.target.value)}
+                    disabled={wa.connected}
                   />
                 </div>
                 <div className="col-auto">
@@ -423,6 +529,28 @@ export default function Agenda() {
                 </div>
               </div>
 
+              {/* sessão wa */}
+              <div className="d-flex align-items-center justify-content-between mt-2">
+                {!wa.connected ? (
+                  <>
+                    <small className="text-muted">Conecte para preencher o número automaticamente.</small>
+                    <button className="btn btn-success" onClick={()=>conectarWA(lemZap)}>Conectar</button>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <div className="fw-semibold">Número: {wa.number}</div>
+                      <small className="text-muted">Usado nos lembretes e atalhos WA</small>
+                    </div>
+                    <div className="d-flex gap-2">
+                      <a className="btn btn-success" href={zapLink(wa.number)} target="_blank" rel="noreferrer">Abrir WA</a>
+                      <button className="btn btn-outline-danger" onClick={sairWA}>Sair</button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* lista de lembretes do dia */}
               <div className="mt-3">
                 {lembretes.filter(l=>l.date===dataISO).length===0 ? (
                   <small className="text-muted">Sem lembretes.</small>
@@ -434,21 +562,22 @@ export default function Agenda() {
                       .map((l)=>{
                         const st = statusLembrete(l);
                         const stStyle = estiloLembrete(st);
+                        const zap = l.zap || (wa.connected ? wa.number : "");
                         return (
                           <li key={l.id}
                               className="list-group-item d-flex justify-content-between align-items-start"
                               style={stStyle}>
                             <div className="me-2">
                               <div className="fw-semibold">{l.time} — {l.msg}</div>
-                              {l.zap && (
-                                <a href={zapLink(l.zap)} target="_blank" rel="noreferrer" className="small text-decoration-none">
-                                  WhatsApp: {l.zap}
+                              {zap && (
+                                <a href={zapLink(zap)} target="_blank" rel="noreferrer" className="small text-decoration-none">
+                                  WhatsApp: {zap}
                                 </a>
                               )}
                             </div>
                             <div className="d-flex gap-1">
-                              {l.zap && (
-                                <a className="btn btn-sm btn-success" href={zapLink(l.zap)} target="_blank" rel="noreferrer" title="Abrir WhatsApp">
+                              {zap && (
+                                <a className="btn btn-sm btn-success" href={zapLink(zap)} target="_blank" rel="noreferrer" title="Abrir WhatsApp">
                                   WA
                                 </a>
                               )}
@@ -476,128 +605,7 @@ export default function Agenda() {
         <span className="badge text-dark" style={{ background:"#0dcaf0" }}>concluido</span>
       </div>
 
-      {/* slots */}
-      <div className="card mt-3">
-        <div className="card-body">
-          <h6>Horários</h6>
-          <div className="d-flex flex-wrap gap-3 mt-2">
-            {listaSlots.map((hhmm) => {
-              const ag = mapaHoje[hhmm];
-              const tem = !!ag;
-              const passado = isPast(dataISO, hhmm);
-              const desliga = !tem && passado;
-              const status = (ag?.status || "").toLowerCase();
-
-              const slotBox = {
-                width: 80, height: 80, borderRadius: "50%",
-                background:"#fff", border:"2px solid #e5e7eb",
-                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                gap:2, boxShadow:"0 1px 4px rgba(0,0,0,.08)", cursor:"pointer", userSelect:"none", position:"relative"
-              };
-              const slotOff = { opacity:.5, cursor:"not-allowed" };
-              const aro = (() => {
-                switch (status) {
-                  case "confirmado": return { borderColor:"#28a745", boxShadow:"0 0 0 3px rgba(40,167,69,.15)" };
-                  case "proximo":   return { borderColor:"#ffc107", boxShadow:"0 0 0 3px rgba(255,193,7,.2)" };
-                  case "na hora":   return { borderColor:"#dc3545", boxShadow:"0 0 0 3px rgba(220,53,69,.2)" };
-                  case "cancelado": return { borderColor:"#6c757d", boxShadow:"0 0 0 3px rgba(108,117,125,.15)" };
-                  case "concluido": return { borderColor:"#0dcaf0", boxShadow:"0 0 0 3px rgba(13,202,240,.2)" };
-                  default: return {};
-                }
-              })();
-              const chip = { position:"absolute", bottom:-10, fontSize:10, padding:"2px 6px", borderRadius:8, color:"#fff" };
-              const chipStyle = (() => {
-                switch (status) {
-                  case "confirmado": return { ...chip, background:"#28a745" };
-                  case "proximo":    return { ...chip, background:"#ffc107", color:"#222" };
-                  case "na hora":    return { ...chip, background:"#dc3545" };
-                  case "cancelado":  return { ...chip, background:"#6c757d" };
-                  case "concluido":  return { ...chip, background:"#0dcaf0", color:"#063" };
-                  default: return null;
-                }
-              })();
-
-              return (
-                <div
-                  key={hhmm}
-                  style={{ ...slotBox, ...(desliga?slotOff:{}), ...aro }}
-                  title={desliga ? "passado" : (tem ? "abrir" : "novo")}
-                  onClick={() => abrirSlot(hhmm)}
-                >
-                  {/* menu ⋮ */}
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-light"
-                    onClick={(e) => { e.stopPropagation(); setSlotMenu((s)=> s===hhmm?null:hhmm); }}
-                    style={{ position:"absolute", top:-8, right:-8, width:24, height:24, borderRadius:"50%", padding:0 }}
-                    title="Menu"
-                  >
-                    ⋮
-                  </button>
-
-                  {/* menu do slot */}
-                  {slotMenu === hhmm && (
-                    <div
-                      className="bg-white border rounded shadow-sm"
-                      style={{ position:"absolute", top:26, right:0, zIndex:5, width:180 }}
-                      onClick={(e)=>e.stopPropagation()}
-                    >
-                      <button className="dropdown-item" onClick={()=>{ setSlotMenu(null); abrirSlot(hhmm); }}>
-                        Abrir
-                      </button>
-
-                      {tem ? (
-                        <button
-                          className="dropdown-item"
-                          onClick={()=>{ setSlotMenu(null); irParaAgendamento(dataISO, hhmm, ag); }}
-                        >
-                          Editar agendamento
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            className="dropdown-item"
-                            onClick={()=>{ setSlotMenu(null); /* abre modal */ setChooserHora(hhmm); }}
-                          >
-                            Criar agendamento
-                          </button>
-                          <button
-                            className="dropdown-item text-danger"
-                            onClick={()=>{ setSlotMenu(null); removerSlot(hhmm); }}
-                            disabled={!!mapaHoje[hhmm]}
-                            title={mapaHoje[hhmm] ? "há agendamento" : "remover horário"}
-                          >
-                            Remover horário
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="fw-semibold">{hhmm}</div>
-                  {!desliga && tem && chipStyle && <span style={chipStyle}>{status}</span>}
-                  {desliga && <small className="text-muted">passado</small>}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="d-flex align-items-center gap-2 mt-3">
-            <input type="time" id="novoSlot" defaultValue="09:00" className="form-control" style={{ width: 120 }} />
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                const v = document.getElementById("novoSlot").value;
-                addSlotManual(v);
-              }}
-            >
-              + Adicionar horário
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* modal: escolher tipo (novo, futuro) */}
+      {/* modal tipo novo agendamento */}
       {chooserHora && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100"
@@ -632,7 +640,12 @@ export default function Agenda() {
         </div>
       )}
 
-      <div className="text-center text-muted mt-4">ProFlex</div>
+     
+
+<footer className="text-center mt-5 font-extrabold tracking-widest" style={{ fontSize: "20px", letterSpacing: "0.2em" }}>
+  ProFlex
+</footer>
     </div>
+    
   );
 }

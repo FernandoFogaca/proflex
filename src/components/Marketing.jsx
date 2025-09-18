@@ -1,10 +1,11 @@
+
 import React from "react";
-import AvaliacaoUsuario from "./AvaliacaoUsuario";
+
+import AvaliacaoUsuario from "../components/AvaliacaoUsuario";
 
 export default function Marketing() {
   return (
     <div className="container py-5">
-
       {/* Título principal */}
       <div className="text-center mb-5">
         <h1 className="fw-bold">Conheça o ProFlex</h1>
@@ -85,7 +86,7 @@ export default function Marketing() {
             </div>
           </div>
 
-          {/* Card 5 - Persuasivo */}
+          {/* Card 5 */}
           <div className="col">
             <div className="card h-100 border-0 shadow-sm">
               <div className="card-body">
@@ -93,13 +94,13 @@ export default function Marketing() {
                   Seu negócio mais moderno e lucrativo
                 </h5>
                 <p className="card-text">
-                  Profissionais que usam o ProFlex ganham mais tempo, fidelizam clientes e passam uma imagem moderna,  seu serviço merece essa evolução.
+                  Profissionais que usam o ProFlex ganham mais tempo, fidelizam clientes e passam uma imagem moderna, seu serviço merece essa evolução.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Card 6 - Impactante */}
+          {/* Card 6 */}
           <div className="col">
             <div className="card h-100 border-0 shadow-sm">
               <div className="card-body">
@@ -115,9 +116,8 @@ export default function Marketing() {
         </div>
       </div>
 
-      {/* Avaliacao */}
+      {/* Avaliação */}
       <AvaliacaoUsuario />
-
     </div>
   );
 }
