@@ -28,3 +28,9 @@ coverage/
 
 # Expo / React Native (se usar)
 .expo/
+
+# build/cache
+node_modules/
+dist/
+android/app/build/
+ios/Pods/
