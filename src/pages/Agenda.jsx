@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
 
+import AgendaKpiStrip from "../components/AgendaKpiStrip";
+
 /* ===== datas locais ===== */
 const hojeISO = () => {
   const d = new Date();
@@ -638,7 +640,9 @@ export default function Agenda() {
             </div>
           </div>
         </div>
+        
       )}
+<AgendaKpiStrip />
 
      
 
