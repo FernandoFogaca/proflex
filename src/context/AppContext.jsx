@@ -50,26 +50,60 @@ export function AppProvider({ children }) {
   useEffect(() => salvarNoNavegador("appointments", appointments), [appointments]);
 
   // ------------------------ CLIENTES
-  function addClient(dados) {
-    const novo = {
-      id: novoId("cli"),
-      nome: dados.nome || "Sem nome",
-      email: dados.email || "",
-      telefone: dados.telefone || "",
-      endereco: dados.endereco || "",
-      nascimento: dados.nascimento || "", // yyyy-mm-dd
-      peso: dados.peso || "",
-      altura: dados.altura || "",
-      genero: dados.genero || "",
-      comorbidades: Array.isArray(dados.comorbidades) ? dados.comorbidades : [],
-      outrosDiagnosticos: dados.outrosDiagnosticos || "",
-      remedios: dados.remedios || "",
-      fotoPerfilUrl: dados.fotoPerfilUrl || "", // NOVO
-      consultas: Array.isArray(dados.consultas) ? dados.consultas : [], // [{id, numero, dataISO, hora, texto, fotos:[]}]
-    };
-    setClients((atual) => [novo, ...atual]);
-    return novo;
-  }
+ function addClient(dados) {
+  const novo = {
+    id: novoId("cli"),
+
+    // Dados pessoais
+    nome: dados.nome || "Sem nome",
+    email: dados.email || "",
+    telefone: dados.telefone || "",
+    endereco: dados.endereco || "",
+    nascimento: dados.nascimento || "",
+    peso: dados.peso || "",
+    altura: dados.altura || "",
+    genero: dados.genero || "",
+
+    // Dados clínicos
+    comorbidades: Array.isArray(dados.comorbidades)
+      ? dados.comorbidades
+      : [],
+
+    doencasExtras: Array.isArray(dados.doencasExtras)
+      ? dados.doencasExtras
+      : [],
+
+    doencasNeurologicas: Array.isArray(dados.doencasNeurologicas)
+      ? dados.doencasNeurologicas
+      : [],
+
+    sindromeDescricao: dados.sindromeDescricao || "",
+
+    outrosDiagnosticos: dados.outrosDiagnosticos || "",
+    remedios: dados.remedios || "",
+    anotacoesPaciente: dados.anotacoesPaciente || "",
+
+    areas: dados.areas || {},
+
+    // Arquivos e históricos
+    fotoPerfilUrl: dados.fotoPerfilUrl || "",
+
+    consultas: Array.isArray(dados.consultas)
+      ? dados.consultas
+      : [],
+
+    receitas: Array.isArray(dados.receitas)
+      ? dados.receitas
+      : [],
+
+    atestados: Array.isArray(dados.atestados)
+      ? dados.atestados
+      : [],
+  };
+
+  setClients((atual) => [novo, ...atual]);
+  return novo;
+}
 
   function updateClient(idCliente, alteracoes) {
     setClients((lista) =>
