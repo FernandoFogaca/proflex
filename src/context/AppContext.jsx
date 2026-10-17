@@ -36,6 +36,8 @@ export const COMORBIDADES = [
   "Obesidade",
   "Tabagismo",
   "Gestação",
+   "Câncer",
+  
 ];
 
 export function AppProvider({ children }) {

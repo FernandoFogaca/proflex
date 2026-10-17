@@ -15,12 +15,43 @@ function calcIdade(yyyy_mm_dd){
 }
 
 // lista extra de doenças (além das COMORBIDADES do contexto)
-const DOENCAS_COMUNS = [
-  "Artrite", "Artrose", "Tendinite", "Bursite", "Hérnia de disco",
-  "Lombalgia", "Cervicalgia", "Escoliose", "Osteoporose", "Fibromialgia",
-  "Enxaqueca", "Sinusite", "Refluxo", "Hipotireoidismo", "Hipertireoidismo",
-  "Ansiedade", "Depressão", "Insônia", "Dermatite", "Varizes"
+const DOENCAS_MUSCULOESQUELETICAS = [
+  "Artrite",
+  "Artrose",
+  "Tendinite",
+  "Bursite",
+  "Hérnia de disco",
+  "Lombalgia",
+  "Cervicalgia",
+  "Escoliose",
+  "Osteoporose",
+  "Fibromialgia",
 ];
+
+const OUTRAS_CONDICOES = [
+  "Enxaqueca",
+  "Sinusite",
+  "Refluxo",
+  "Hipotireoidismo",
+  "Hipertireoidismo",
+  "Ansiedade",
+  "Depressão",
+  "Insônia",
+  "Dermatite",
+  "Varizes",
+];
+
+
+const DOENCAS_NEUROLOGICAS = [
+  "AVC",
+  "Parkinson",
+  "Esclerose",
+  "Traumatismo medular",
+  "Traumatismo encefálico",
+  "Epilepsia",
+  "Síndrome",
+];
+
 
 // grupos de áreas do corpo e subpartes
 const AREAS = {
@@ -70,6 +101,9 @@ export default function NovoAgendamento() {
 
   const [comorb, setComorb] = useState([]);              // do contexto
   const [doencasExtras, setDoencasExtras] = useState([]); // lista extra
+  const [doencasNeurologicas, setDoencasNeurologicas] = useState([]);
+const [sindromeDescricao, setSindromeDescricao] = useState("");
+
   const [outrosDiagnosticos, setOutrosDiagnosticos] = useState("");
   const [remedios, setRemedios] = useState("");
 
@@ -391,9 +425,9 @@ export default function NovoAgendamento() {
 
             {/* Doenças adicionais */}
             <div className="col-12">
-              <label className="form-label">Outras doenças (selecione as que se aplicam)</label>
+              <label className="form-label">Condições musculoesqueléticas</label>
               <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
-                {DOENCAS_COMUNS.map((nome) => (
+                {DOENCAS_MUSCULOESQUELETICAS.map((nome) => (
                   <label key={nome} className="form-check" style={{ display:"flex", alignItems:"center", gap:6, border:"1px solid #eee", borderRadius:8, padding:"6px 10px" }}>
                     <input type="checkbox" className="form-check-input" checked={doencasExtras.includes(nome)} onChange={()=>toggleDoenca(nome)} />
                     <span>{nome}</span>
