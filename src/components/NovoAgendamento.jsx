@@ -114,6 +114,24 @@ const saveLS = (k, v) => {
   } catch {}
 };
 
+function SectionHeader({ number, title, subtitle }) {
+  return (
+    <div
+      className="col-12 mt-4 mb-2 p-3 rounded"
+      style={{
+        background: "linear-gradient(90deg, #12b8c8, #5f8797)",
+        color: "white",
+      }}
+    >
+      <h5 className="mb-1">
+        {number}. {title}
+      </h5>
+
+      {subtitle && <small style={{ opacity: 0.9 }}>{subtitle}</small>}
+    </div>
+  );
+}
+
 export default function NovoAgendamento() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -203,7 +221,7 @@ export default function NovoAgendamento() {
       setTelefone(clienteExistente.telefone || "");
       setEmail(clienteExistente.email || "");
       setEndereco(clienteExistente.endereco || "");
-      
+
       setNascimento(clienteExistente.nascimento || "");
       setPeso(clienteExistente.peso || "");
       setAltura(clienteExistente.altura || "");
@@ -608,6 +626,12 @@ export default function NovoAgendamento() {
           />
         </div>
 
+        <SectionHeader
+          number="1"
+          title="Dados do paciente"
+          subtitle="Informações pessoais e de contato"
+        />
+
         {/* dados básicos */}
         <div className="col-md-6">
           <label className="form-label">Nome do paciente</label>
@@ -646,6 +670,11 @@ export default function NovoAgendamento() {
         {/* COMPLETO */}
         {tipo === "completo" && (
           <>
+            <SectionHeader
+              number="2"
+              title="Informações clínicas"
+              subtitle="Condições, histórico e avaliação do paciente"
+            />
             <div className="col-md-3">
               <label className="form-label">Nascimento</label>
               <input
@@ -893,9 +922,11 @@ export default function NovoAgendamento() {
           />
         </div>
 
-        <div className="col-12">
-          <h5 className="mb-3">Prontuário da consulta</h5>
-        </div>
+        <SectionHeader
+          number="3"
+          title="Prontuário da consulta"
+          subtitle="Registro clínico e evolução desta sessão"
+        />
 
         <div className="col-md-6">
           <label className="form-label">Queixa principal</label>
@@ -967,7 +998,11 @@ export default function NovoAgendamento() {
       {/* Consultas anteriores (se já é paciente) */}
       {clienteExistente && (
         <>
-          <hr className="my-4" />
+          <SectionHeader
+            number="4"
+            title="Histórico de consultas"
+            subtitle="Consultas anteriores e evolução do paciente"
+          />
           <div className="d-flex justify-content-between align-items-center mb-2">
             <h5 className="m-0">Consultas ({consultas.length})</h5>
             <div className="d-flex gap-2">
@@ -1024,13 +1059,73 @@ export default function NovoAgendamento() {
                     }
                   />
                 </div>
-                <textarea
-                  className="form-control mt-2"
-                  rows={4}
-                  placeholder="Edite as anotações desta consulta…"
-                  value={c.texto || ""}
-                  onChange={(e) => setTextoConsulta(c.id, e.target.value)}
-                />
+                <div className="mt-3">
+  <label className="form-label fw-bold">Queixa principal</label>
+  <textarea
+    className="form-control"
+    rows={2}
+    value={c.queixa || ""}
+    onChange={(e) =>
+      updateConsulta(clienteExistente.id, c.id, {
+        queixa: e.target.value,
+      })
+    }
+  />
+
+  <label className="form-label fw-bold mt-3">Avaliação</label>
+  <textarea
+    className="form-control"
+    rows={2}
+    value={c.avaliacao || ""}
+    onChange={(e) =>
+      updateConsulta(clienteExistente.id, c.id, {
+        avaliacao: e.target.value,
+      })
+    }
+  />
+
+  <label className="form-label fw-bold mt-3">
+    Procedimentos realizados
+  </label>
+  <textarea
+    className="form-control"
+    rows={2}
+    value={c.procedimentos || ""}
+    onChange={(e) =>
+      updateConsulta(clienteExistente.id, c.id, {
+        procedimentos: e.target.value,
+      })
+    }
+  />
+
+  <label className="form-label fw-bold mt-3">
+    Evolução do paciente
+  </label>
+  <textarea
+    className="form-control"
+    rows={2}
+    value={c.evolucao || ""}
+    onChange={(e) =>
+      updateConsulta(clienteExistente.id, c.id, {
+        evolucao: e.target.value,
+      })
+    }
+  />
+
+  <label className="form-label fw-bold mt-3">
+    Conduta / Plano
+  </label>
+  <textarea
+    className="form-control"
+    rows={2}
+    value={c.conduta || ""}
+    onChange={(e) =>
+      updateConsulta(clienteExistente.id, c.id, {
+        conduta: e.target.value,
+      })
+    }
+  />
+</div>
               </div>
             ))}
             {consultas.length === 0 && (
@@ -1043,8 +1138,11 @@ export default function NovoAgendamento() {
       )}
 
       {/* RECEITA e ATESTADO */}
-      <hr className="my-4" />
-      <h5 className="mb-3">Receita e Atestado</h5>
+     <SectionHeader
+  number="5"
+  title="Documentos"
+  subtitle="Receitas, atestados e documentos do paciente"
+/>
 
       {/* Dados do profissional */}
       <div className="row g-2 mb-3">
