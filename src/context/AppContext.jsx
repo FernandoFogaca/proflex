@@ -128,16 +128,51 @@ export function AppProvider({ children }) {
     return n < 10 ? `0${n}` : String(n);
   }
 
-  function addConsulta(idCliente, { dataISO, hora, texto = "" }) {
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-        const numero = proximoNumeroConsulta(c);
-        const nova = { id: novoId("con"), numero, dataISO, hora, texto, fotos: [] }; // NOVO: fotos
-        return { ...c, consultas: [nova, ...(c.consultas || [])] };
-      })
-    );
+ function addConsulta(
+  idCliente,
+  {
+    dataISO,
+    hora,
+    texto = "",
+    queixa = "",
+    avaliacao = "",
+    procedimentos = "",
+    evolucao = "",
+    conduta = "",
   }
+) {
+  setClients((lista) =>
+    lista.map((c) => {
+      if (c.id !== idCliente) return c;
+
+      const numero = proximoNumeroConsulta(c);
+
+      const nova = {
+        id: novoId("con"),
+        numero,
+        dataISO,
+        hora,
+
+        // Mantemos para compatibilidade com consultas antigas
+        texto,
+
+        // Prontuário estruturado
+        queixa,
+        avaliacao,
+        procedimentos,
+        evolucao,
+        conduta,
+
+        fotos: [],
+      };
+
+      return {
+        ...c,
+        consultas: [nova, ...(c.consultas || [])],
+      };
+    })
+  );
+}
 
   function updateConsulta(idCliente, idConsulta, alteracoes) {
     setClients((lista) =>

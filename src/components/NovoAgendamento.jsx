@@ -176,7 +176,12 @@ export default function NovoAgendamento() {
 
   // Consulta atual
   const [observacoes, setObservacoes] = useState(""); // observações gerais p/ agendamento
-  const [textoConsultaAtual, setTextoConsultaAtual] = useState(""); // “Consulta 01”
+
+  const [queixaAtual, setQueixaAtual] = useState("");
+  const [avaliacaoAtual, setAvaliacaoAtual] = useState("");
+  const [procedimentosAtual, setProcedimentosAtual] = useState("");
+  const [evolucaoAtual, setEvolucaoAtual] = useState("");
+  const [condutaAtual, setCondutaAtual] = useState("");
 
   const [carimbo, setCarimbo] = useState("");
 
@@ -198,6 +203,7 @@ export default function NovoAgendamento() {
       setTelefone(clienteExistente.telefone || "");
       setEmail(clienteExistente.email || "");
       setEndereco(clienteExistente.endereco || "");
+      
       setNascimento(clienteExistente.nascimento || "");
       setPeso(clienteExistente.peso || "");
       setAltura(clienteExistente.altura || "");
@@ -212,6 +218,13 @@ export default function NovoAgendamento() {
           ? clienteExistente.doencasExtras
           : [],
       );
+      setDoencasNeurologicas(
+        Array.isArray(clienteExistente.doencasNeurologicas)
+          ? clienteExistente.doencasNeurologicas
+          : [],
+      );
+
+      setSindromeDescricao(clienteExistente.sindromeDescricao || "");
       setOutrosDiagnosticos(clienteExistente.outrosDiagnosticos || "");
       setRemedios(clienteExistente.remedios || "");
       setAnotacoesPaciente(clienteExistente.anotacoesPaciente || "");
@@ -359,17 +372,28 @@ export default function NovoAgendamento() {
       if (blocos.length) linhas.push(`Áreas afetadas: ${blocos.join(" | ")}`);
       return linhas.length ? linhas.join("\n") + "\n\n" : "";
     })();
+    const temDadosConsulta =
+      queixaAtual.trim() ||
+      avaliacaoAtual.trim() ||
+      procedimentosAtual.trim() ||
+      evolucaoAtual.trim() ||
+      condutaAtual.trim();
 
-    if (textoConsultaAtual.trim()) {
+    if (temDadosConsulta) {
       const dataISO = data || new Date().toISOString().slice(0, 10);
       const horaOK = hora || new Date().toTimeString().slice(0, 5);
+
       addConsulta(cliente.id, {
         dataISO,
         hora: horaOK,
-        texto: resumoExtras + textoConsultaAtual.trim(),
+        texto: resumoExtras,
+        queixa: queixaAtual.trim(),
+        avaliacao: avaliacaoAtual.trim(),
+        procedimentos: procedimentosAtual.trim(),
+        evolucao: evolucaoAtual.trim(),
+        conduta: condutaAtual.trim(),
       });
     }
-
     if (data && hora) {
       addAppointment({
         data,
@@ -870,15 +894,61 @@ export default function NovoAgendamento() {
         </div>
 
         <div className="col-12">
-          <label className="form-label">
-            Consulta (texto da consulta atual)
-          </label>
+          <h5 className="mb-3">Prontuário da consulta</h5>
+        </div>
+
+        <div className="col-md-6">
+          <label className="form-label">Queixa principal</label>
           <textarea
             className="form-control"
-            rows="4"
-            placeholder="Registre a avaliação, queixas, diagnóstico, procedimentos realizados, evolução e conduta..."
-            value={textoConsultaAtual}
-            onChange={(e) => setTextoConsultaAtual(e.target.value)}
+            rows="3"
+            placeholder="Ex.: dor no joelho ao caminhar..."
+            value={queixaAtual}
+            onChange={(e) => setQueixaAtual(e.target.value)}
+          />
+        </div>
+
+        <div className="col-md-6">
+          <label className="form-label">Avaliação</label>
+          <textarea
+            className="form-control"
+            rows="3"
+            placeholder="Registre os achados da avaliação..."
+            value={avaliacaoAtual}
+            onChange={(e) => setAvaliacaoAtual(e.target.value)}
+          />
+        </div>
+
+        <div className="col-md-6">
+          <label className="form-label">Procedimentos realizados</label>
+          <textarea
+            className="form-control"
+            rows="3"
+            placeholder="Ex.: exercícios, mobilização, técnicas aplicadas..."
+            value={procedimentosAtual}
+            onChange={(e) => setProcedimentosAtual(e.target.value)}
+          />
+        </div>
+
+        <div className="col-md-6">
+          <label className="form-label">Evolução do paciente</label>
+          <textarea
+            className="form-control"
+            rows="3"
+            placeholder="Descreva a resposta e evolução do paciente..."
+            value={evolucaoAtual}
+            onChange={(e) => setEvolucaoAtual(e.target.value)}
+          />
+        </div>
+
+        <div className="col-12">
+          <label className="form-label">Conduta / Plano</label>
+          <textarea
+            className="form-control"
+            rows="3"
+            placeholder="Informe a conduta e o plano para as próximas sessões..."
+            value={condutaAtual}
+            onChange={(e) => setCondutaAtual(e.target.value)}
           />
         </div>
 
