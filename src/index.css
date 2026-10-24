@@ -205,3 +205,56 @@ a.text-white.text-decoration-none:hover {
   color: white !important;
   border-color: transparent !important;
 }
+
+/* Marca ProFlex */
+.proflex-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.proflex-brand-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -1px;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.proflex-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.proflex-brand-name {
+  color: white;
+  font-size: 27px;
+  font-weight: 300;
+  letter-spacing: -1px;
+}
+
+.proflex-brand-name span {
+  font-weight: 700;
+}
+
+.proflex-brand-text small {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.7px;
+}

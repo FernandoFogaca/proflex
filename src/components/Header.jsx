@@ -10,7 +10,16 @@ export default function Header() {
   return (
     <header className="proflex-gradient text-white py-3 mb-0">
       <div className="container d-flex justify-content-between align-items-center">
-        <h1 className="h4 m-0">ProFlex</h1>
+        <div className="proflex-brand">
+  <div className="proflex-brand-icon">PF</div>
+
+  <div className="proflex-brand-text">
+    <span className="proflex-brand-name">
+      Pro<span>Flex</span>
+    </span>
+    <small>MANAGEMENT • SCHEDULING • CARE</small>
+  </div>
+</div>
         <nav role="navigation" aria-label="Principal" className="d-flex gap-3">
           <Link to="/marketing" className="text-white text-decoration-none">Assinar</Link>
           <Link to="/agenda" className="text-white text-decoration-none">Agenda</Link>
