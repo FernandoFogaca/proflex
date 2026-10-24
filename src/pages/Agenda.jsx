@@ -157,6 +157,22 @@ export default function Agenda() {
   const saudacaoTexto = saudacaoClima(weatherCode, isDay);
 
   const [dataISO, setDataISO] = useState(hojeISO());
+  function mudarDia(dias) {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  const novaData = new Date(ano, mes - 1, dia);
+
+  novaData.setDate(novaData.getDate() + dias);
+
+  const novoAno = novaData.getFullYear();
+  const novoMes = String(novaData.getMonth() + 1).padStart(2, "0");
+  const novoDia = String(novaData.getDate()).padStart(2, "0");
+
+  setDataISO(`${novoAno}-${novoMes}-${novoDia}`);
+}
+
+function irParaHoje() {
+  setDataISO(hojeISO());
+}
   const dataBRcurta = useMemo(() => {
     const d = new Date(dataISO);
     return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
@@ -355,15 +371,41 @@ export default function Agenda() {
           </span>
         </div>
 
-        <div className="mt-3 d-flex justify-content-center">
-          <input
-            type="date"
-            className="form-control d-inline-block"
-            style={{ width: 220, textAlign: "center", fontWeight: 600 }}
-            value={dataISO}
-            onChange={(e) => setDataISO(e.target.value)}
-          />
-        </div>
+        <div className="mt-3 d-flex justify-content-center align-items-center gap-2 flex-wrap">
+
+  <button
+    type="button"
+    className="btn btn-light btn-sm"
+    onClick={() => mudarDia(-1)}
+  >
+    ‹ Anterior
+  </button>
+
+  <input
+    type="date"
+    className="form-control d-inline-block"
+    style={{ width: 220, textAlign: "center", fontWeight: 600 }}
+    value={dataISO}
+    onChange={(e) => setDataISO(e.target.value)}
+  />
+
+  <button
+    type="button"
+    className="btn btn-light btn-sm"
+    onClick={irParaHoje}
+  >
+    Hoje
+  </button>
+
+  <button
+    type="button"
+    className="btn btn-light btn-sm"
+    onClick={() => mudarDia(1)}
+  >
+    Próximo ›
+  </button>
+
+</div>
       </div>
 
       <div className="row g-3">
@@ -551,14 +593,31 @@ export default function Agenda() {
                         Abrir
                       </button>
 
-                      {tem ? (
-                        <button
-                          className="dropdown-item"
-                          onClick={()=>{ setSlotMenu(null); irParaAgendamento(dataISO, hhmm, ag); }}
-                        >
-                          Editar agendamento
-                        </button>
-                      ) : (
+                     {tem ? (
+  <>
+    {ag.clienteId && (
+      <button
+        className="dropdown-item"
+        onClick={() => {
+          setSlotMenu(null);
+          navegar(`/agendar?clienteId=${ag.clienteId}`);
+        }}
+      >
+        👤 Abrir paciente
+      </button>
+    )}
+
+    <button
+      className="dropdown-item"
+      onClick={() => {
+        setSlotMenu(null);
+        irParaAgendamento(dataISO, hhmm, ag);
+      }}
+    >
+      ✏️ Editar agendamento
+    </button>
+  </>
+) : (
                         <>
                           <button
                             className="dropdown-item"
@@ -580,8 +639,38 @@ export default function Agenda() {
                   )}
 
                   <div className="fw-semibold">{hhmm}</div>
-                  {!desliga && tem && chipStyle && <span style={chipStyle}>{status}</span>}
-                  {desliga && <small className="text-muted">passado</small>}
+
+{tem && (
+  <small
+    className="text-center fw-semibold"
+    style={{
+      fontSize: "10px",
+      maxWidth: "65px",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    }}
+    title={ag.clienteNome || "Paciente"}
+  >
+    {ag.clienteNome || "Paciente"}
+  </small>
+)}
+
+{!tem && !desliga && (
+  <small className="text-muted" style={{ fontSize: "10px" }}>
+    livre
+  </small>
+)}
+
+{!desliga && tem && chipStyle && (
+  <span style={chipStyle}>{status}</span>
+)}
+
+{desliga && !tem && (
+  <small className="text-muted" style={{ fontSize: "10px" }}>
+    passado
+  </small>
+)}
                 </div>
               );
             })}

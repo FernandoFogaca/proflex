@@ -137,6 +137,7 @@ export default function NovoAgendamento() {
   const navigate = useNavigate();
 
   const {
+    clients,
     getClient,
     addClient,
     updateClient,
@@ -165,10 +166,34 @@ export default function NovoAgendamento() {
   const [data, setData] = useState(dataInicial);
   const [hora, setHora] = useState(horaInicial);
 
+
+  const [buscaPaciente, setBuscaPaciente] = useState("");
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [endereco, setEndereco] = useState("");
+
+  const pacientesEncontrados = useMemo(() => {
+  const termo = buscaPaciente.trim().toLowerCase();
+
+  if (termo.length < 2) return [];
+
+  return (clients || [])
+    .filter((cliente) => {
+      const dados = [
+        cliente.nome,
+        cliente.telefone,
+        cliente.email,
+        cliente.cpf,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return dados.includes(termo);
+    })
+    .slice(0, 5);
+}, [buscaPaciente, clients]);
 
   const [nascimento, setNascimento] = useState("");
   const [peso, setPeso] = useState("");
@@ -631,7 +656,52 @@ export default function NovoAgendamento() {
           title="Dados do paciente"
           subtitle="Informações pessoais e de contato"
         />
+        {tipo === "rapido" && !clienteExistente && (
+  <div className="col-12">
+    <label className="form-label fw-semibold">
+      Buscar paciente existente
+    </label>
 
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Digite nome, telefone, e-mail ou CPF..."
+      value={buscaPaciente}
+      onChange={(e) => setBuscaPaciente(e.target.value)}
+    />
+
+    {buscaPaciente.trim().length >= 2 && (
+      <div className="list-group mt-2">
+        {pacientesEncontrados.map((paciente) => (
+          <button
+            key={paciente.id}
+            type="button"
+            className="list-group-item list-group-item-action"
+            onClick={() =>
+              navigate(
+                `/agendar?data=${data}&hora=${hora}&clienteId=${paciente.id}&tipo=rapido`,
+              )
+            }
+          >
+            <div className="fw-semibold">{paciente.nome}</div>
+
+            <small className="text-muted">
+              {paciente.telefone || "Sem telefone"}
+              {paciente.email ? ` • ${paciente.email}` : ""}
+            </small>
+          </button>
+        ))}
+
+        {pacientesEncontrados.length === 0 && (
+          <div className="list-group-item text-muted">
+            Nenhum paciente encontrado. Preencha os dados abaixo para cadastrar
+            um novo paciente.
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+)}
         {/* dados básicos */}
         <div className="col-md-6">
           <label className="form-label">Nome do paciente</label>
@@ -921,7 +991,8 @@ export default function NovoAgendamento() {
             onChange={(e) => setObservacoes(e.target.value)}
           />
         </div>
-
+        {tipo === "completo" && (
+          <>
         <SectionHeader
           number="3"
           title="Prontuário da consulta"
@@ -983,6 +1054,8 @@ export default function NovoAgendamento() {
           />
         </div>
 
+          </>
+        )}
         <div className="col-12 d-flex justify-content-between mt-2">
           <button
             type="button"
@@ -1137,6 +1210,8 @@ export default function NovoAgendamento() {
         </>
       )}
 
+      {tipo === "completo" && (
+        <>
       {/* RECEITA e ATESTADO */}
      <SectionHeader
   number="5"
@@ -1248,6 +1323,8 @@ export default function NovoAgendamento() {
             Excluir paciente
           </button>
         </div>
+      )}
+        </>
       )}
     </div>
   );
