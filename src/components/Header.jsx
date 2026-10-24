@@ -8,7 +8,7 @@ export default function Header() {
   const isOn = logged();
 
   return (
-    <header className="bg-primary text-white py-3 mb-0">
+    <header className="proflex-gradient text-white py-3 mb-0">
       <div className="container d-flex justify-content-between align-items-center">
         <h1 className="h4 m-0">ProFlex</h1>
         <nav role="navigation" aria-label="Principal" className="d-flex gap-3">

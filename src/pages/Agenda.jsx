@@ -320,7 +320,12 @@ export default function Agenda() {
   const [slotMenu, setSlotMenu] = useState(null);
 
   // estilos
-  const topBox = { background:"var(--proflex-primary,#4390a1)", color:"#fff", borderRadius:14, boxShadow:"0 4px 14px rgba(0,0,0,.10)" };
+  const topBox = {
+  background: "linear-gradient(135deg, #00bcd4, #607d8b)",
+  color: "#fff",
+  borderRadius: 14,
+  boxShadow: "0 4px 14px rgba(0,0,0,.10)"
+};
   const slotBox = {
     width: 80, height: 80, borderRadius: "50%",
     background:"#fff", border:"2px solid #e5e7eb",

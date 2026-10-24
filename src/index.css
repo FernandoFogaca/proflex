@@ -7,11 +7,21 @@ body {
 }
 
 /* 🔷 Bootstrap Custom Theme: substitui azul padrão por #4390a1 */
-.btn-primary,
-.bg-primary,
+/* Cor de texto padrão ProFlex */
 .text-primary {
-  background-color: #4390a1 !important;
-  border-color: #4390a1 !important;
+  color: #4390a1 !important;
+}
+
+/* Fundo padrão ProFlex */
+.bg-primary {
+  background: linear-gradient(135deg, #00bcd4, #607d8b) !important;
+  color: white !important;
+}
+
+/* Botões principais ProFlex */
+.btn-primary {
+  background: linear-gradient(135deg, #00bcd4, #607d8b) !important;
+  border: none !important;
   color: white !important;
 }
 
@@ -187,4 +197,11 @@ a.text-white.text-decoration-none:hover {
   background: linear-gradient(135deg, #0097a7, #455a64);
   transform: translateY(-3px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Identidade visual principal do ProFlex */
+.proflex-gradient {
+  background: linear-gradient(135deg, #00bcd4, #607d8b) !important;
+  color: white !important;
+  border-color: transparent !important;
 }
