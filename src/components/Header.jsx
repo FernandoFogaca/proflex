@@ -24,6 +24,7 @@ export default function Header() {
           <Link to="/marketing" className="text-white text-decoration-none">Assinar</Link>
           <Link to="/agenda" className="text-white text-decoration-none">Agenda</Link>
           <Link to="/clientes" className="text-white text-decoration-none">Cadastro</Link>
+          <Link to="/prontuario" className="text-white text-decoration-none">Prontuários</Link>
           <Link to="/compromissos" className="text-white text-decoration-none">Compromissos</Link>
           <Link to="/" className="text-white text-decoration-none">Home</Link>
 

@@ -8,6 +8,9 @@ import Clientes from "./pages/Clientes";
 import Marketing from "./components/Marketing";
 import DevLogin from "./components/DevLogin";
 import Compromissos from "./pages/Compromissos";
+import Prontuario from "./pages/Prontuario";
+import Consulta from "./pages/Consulta";
+
 import { AppProvider } from "./context/AppContext.jsx";
 import ProtectedRoute from "./authentication/ProtectedRoute";
 
@@ -25,20 +28,52 @@ export default function App() {
         {/* protegidas */}
         <Route
           path="/agenda"
-          element={<ProtectedRoute><Agenda /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <Agenda />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/agendar"
-          element={<ProtectedRoute><AgendamentoPage /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <AgendamentoPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/clientes"
-          element={<ProtectedRoute><Clientes /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <Clientes />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/compromissos"
-          element={<ProtectedRoute><Compromissos /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <Compromissos />
+            </ProtectedRoute>
+          }
         />
+        <Route
+          path="/prontuario"
+          element={
+            <ProtectedRoute>
+              <Prontuario />
+            </ProtectedRoute>
+          }
+                  />
+                  <Route
+  path="/consulta"
+  element={
+    <ProtectedRoute>
+      <Consulta />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </AppProvider>
   );
