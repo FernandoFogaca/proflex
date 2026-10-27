@@ -63,7 +63,7 @@ export default function Clientes() {
           </thead>
           <tbody>
             {filtered.map((c) => (
-              <tr key={c.id} style={{ cursor:"pointer" }} onClick={() => nav(`/agendar?clienteId=${c.id}`)}>
+              <tr key={c.id} style={{ cursor:"pointer" }} onClick={() => nav(`/prontuario?clienteId=${c.id}`)}>
                 <td>{c.nome}</td><td>{c.email}</td><td>{c.telefone}</td><td>{c.endereco}</td>
               </tr>
             ))}
