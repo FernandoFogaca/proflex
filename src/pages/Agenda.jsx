@@ -611,7 +611,7 @@ function irParaHoje() {
         className="dropdown-item"
         onClick={() => {
           setSlotMenu(null);
-          navegar(`/agendar?clienteId=${ag.clienteId}`);
+         navegar(`/prontuario?clienteId=${ag.clienteId}`);
         }}
       >
         👤 Abrir paciente
