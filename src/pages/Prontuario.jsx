@@ -774,15 +774,74 @@ export default function Prontuario() {
   </div>
 )}
 
+     
       {/* DOCUMENTOS */}
       {aba === "documentos" && (
         <div>
-          <h4>Documentos</h4>
-          <p className="text-muted">
-            Relatórios, atestados, receitas e arquivos do paciente.
-          </p>
+          <div className="mb-4">
+            <h4>Documentos do paciente</h4>
+            <p className="text-muted">
+              Consulte e gere documentos relacionados ao atendimento.
+            </p>
+          </div>
+
+          <div className="row g-3">
+            <div className="col-md-4">
+              <div className="card h-100">
+                <div className="card-body">
+                  <h5>Relatório clínico</h5>
+                  <p className="text-muted">
+                    Resumo da avaliação e da evolução do paciente.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    disabled
+                  >
+                    Gerar relatório
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="card h-100">
+                <div className="card-body">
+                  <h5>Atestado</h5>
+                  <p className="text-muted">
+                    Documento referente ao atendimento realizado.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    disabled
+                  >
+                    Gerar atestado
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="card h-100">
+                <div className="card-body">
+                  <h5>Receita</h5>
+                  <p className="text-muted">
+                    Espaço para documentos de prescrição autorizados.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    disabled
+                  >
+                    Gerar receita
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+       )}
     </div>
   );
 }
