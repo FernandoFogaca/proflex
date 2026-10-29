@@ -723,58 +723,46 @@ export default function Prontuario() {
         </div>
       )}
       {/* EVOLUÇÃO */}
-{aba === "evolucao" && (
-  <div>
-    <div className="mb-4">
-      <h4 className="mb-1">Evolução clínica</h4>
-      <p className="text-muted mb-0">
-        Histórico da evolução registrada nas consultas do paciente.
-      </p>
-    </div>
+      {aba === "evolucao" && (
+        <div>
+          <div className="mb-4">
+            <h4 className="mb-1">Evolução clínica</h4>
+            <p className="text-muted mb-0">
+              Histórico da evolução registrada nas consultas do paciente.
+            </p>
+          </div>
 
-    {!paciente.consultas?.some(
-      (consulta) => consulta.evolucao?.trim()
-    ) ? (
-      <p className="text-muted">
-        Nenhuma evolução clínica registrada.
-      </p>
-    ) : (
-      <div className="d-flex flex-column gap-3">
-        {[...paciente.consultas]
-          .reverse()
-          .map((consulta, index) =>
-            consulta.evolucao?.trim() ? (
-              <div
-                key={consulta.id || index}
-                className="card"
-              >
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <strong>
-                      Consulta{" "}
-                      {consulta.numero ||
-                        paciente.consultas.length - index}
-                    </strong>
+          {!paciente.consultas?.some((consulta) =>
+            consulta.evolucao?.trim(),
+          ) ? (
+            <p className="text-muted">Nenhuma evolução clínica registrada.</p>
+          ) : (
+            <div className="d-flex flex-column gap-3">
+              {[...paciente.consultas].reverse().map((consulta, index) =>
+                consulta.evolucao?.trim() ? (
+                  <div key={consulta.id || index} className="card">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <strong>
+                          Consulta{" "}
+                          {consulta.numero || paciente.consultas.length - index}
+                        </strong>
 
-                    <small className="text-muted">
-                      {consulta.dataISO || "-"}{" "}
-                      {consulta.hora || ""}
-                    </small>
+                        <small className="text-muted">
+                          {consulta.dataISO || "-"} {consulta.hora || ""}
+                        </small>
+                      </div>
+
+                      <p className="mb-0">{consulta.evolucao}</p>
+                    </div>
                   </div>
-
-                  <p className="mb-0">
-                    {consulta.evolucao}
-                  </p>
-                </div>
-              </div>
-            ) : null
+                ) : null,
+              )}
+            </div>
           )}
-      </div>
-    )}
-  </div>
-)}
+        </div>
+      )}
 
-     
       {/* DOCUMENTOS */}
       {aba === "documentos" && (
         <div>
@@ -831,17 +819,17 @@ export default function Prontuario() {
                   </p>
                   <button
                     type="button"
-                    className="btn btn-outline-primary"
-                    disabled
+                   className="proflex-button"
+                    onClick={gerarProntuarioPDF}
                   >
-                    Gerar receita
+                    Gerar relatório
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-       )}
+      )}
     </div>
   );
 }
