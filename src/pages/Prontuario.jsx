@@ -268,6 +268,80 @@ export default function Prontuario() {
     window.open(pdfUrl, "_blank");
   };
 
+
+  const gerarRelatorioClinicoPDF = () => {
+    if (!paciente) return;
+
+    const doc = new jsPDF({
+      unit: "pt",
+      format: "a4",
+    });
+
+    const margem = 45;
+    const largura = doc.internal.pageSize.getWidth() - margem * 2;
+    const altura = doc.internal.pageSize.getHeight();
+    let y = 50;
+
+    const adicionarCampo = (titulo, conteudo) => {
+      const linhas = doc.splitTextToSize(
+        String(conteudo || "Não informado"),
+        largura
+      );
+
+      if (y + linhas.length * 14 + 45 > altura - 50) {
+        doc.addPage();
+        y = 50;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(titulo, margem, y);
+      y += 18;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(linhas, margem, y);
+      y += linhas.length * 14 + 22;
+    };
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("ProFlex", margem, y);
+    y += 30;
+
+    doc.setFontSize(14);
+    doc.text("RELATÓRIO CLÍNICO", margem, y);
+    y += 35;
+
+    adicionarCampo("Paciente", paciente.nome);
+    adicionarCampo("Data de emissão", new Date().toLocaleDateString("pt-BR"));
+
+    const consultas = paciente.consultas || [];
+
+    if (consultas.length === 0) {
+      adicionarCampo("Histórico clínico", "Nenhuma consulta registrada.");
+    } else {
+      consultas.forEach((consulta, index) => {
+        adicionarCampo(
+          `Consulta ${consulta.numero || index + 1} - ${consulta.dataISO || ""}`,
+          [
+            `Avaliação: ${consulta.avaliacao || "Não informada"}`,
+            `Evolução: ${consulta.evolucao || "Não informada"}`,
+            `Conduta: ${consulta.conduta || "Não informada"}`,
+          ].join("\n")
+        );
+      });
+    }
+
+    adicionarCampo(
+      "Observação",
+      "Documento gerado a partir dos registros clínicos disponíveis no ProFlex. Requer revisão e validação do profissional responsável."
+    );
+
+    window.open(doc.output("bloburl"), "_blank");
+  };
+
+
   if (!paciente) {
     return (
       <div className="container py-4">
