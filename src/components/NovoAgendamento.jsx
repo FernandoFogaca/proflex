@@ -156,6 +156,7 @@ export default function NovoAgendamento() {
     params.get("data") || new Date().toISOString().split("T")[0];
   const horaInicial = params.get("hora") || "09:00";
   const tipoQuery = params.get("tipo"); // opcional
+  const editandoPeloProntuario = params.get("origem") === "prontuario";
 
   const clienteExistente = clienteIdParam ? getClient(clienteIdParam) : null;
 
@@ -387,7 +388,7 @@ export default function NovoAgendamento() {
           }
         : {};
 
-    let cliente = clienteExistente;
+   let cliente = clienteExistente;
 
     if (cliente) {
       updateClient(cliente.id, { ...baseCliente, ...extras });
@@ -399,8 +400,11 @@ export default function NovoAgendamento() {
         receitas: [],
         atestados: [],
       });
-    }
 
+      if (!cliente) {
+        return;
+      }
+    }
     // injeta um sumário das áreas e doenças no texto da consulta atual, para constar no relatório
     const resumoExtras = (() => {
       const linhas = [];
@@ -437,8 +441,8 @@ export default function NovoAgendamento() {
         conduta: condutaAtual.trim(),
       });
     }
-    if (data && hora) {
-      addAppointment({
+  if (data && hora && !editandoPeloProntuario) {
+  addAppointment({
         data,
         hora,
         clienteId: cliente.id,
@@ -448,8 +452,13 @@ export default function NovoAgendamento() {
       });
     }
 
-    alert("✅ Cadastro salvo!");
-    navigate("/agenda");
+   alert("✅ Cadastro salvo!");
+
+if (editandoPeloProntuario) {
+  navigate(`/prontuario?clienteId=${cliente.id}`);
+} else {
+  navigate("/agenda");
+}
   };
 
   // ----- Profissional: salvar no localStorage -----
@@ -628,9 +637,17 @@ export default function NovoAgendamento() {
         </div>
       </div>
 
-      {/* FORM PRINCIPAL */}
-      <form className="row g-3" onSubmit={handleSubmit}>
-        {/* data/hora */}
+     {/* FORM PRINCIPAL */}
+<form className="row g-3" onSubmit={handleSubmit}>
+
+  {/* Botão de salvar no topo */}
+  <div className="col-12 d-flex justify-content-end">
+    <button type="submit" className="btn btn-primary">
+  💾 {clienteExistente ? "Salvar alterações" : "Salvar cadastro"}
+</button>
+  </div>
+
+  {/* data/hora */}
         <div className="col-md-3">
           <label className="form-label">Data</label>
           <input

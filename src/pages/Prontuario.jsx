@@ -487,7 +487,7 @@ export default function Prontuario() {
             type="button"
             className="btn btn-outline-primary"
             onClick={() =>
-              navigate(`/agendar?clienteId=${paciente.id}&tipo=completo`)
+              navigate(`/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`)
             }
           >
             ✏️ Completar / editar cadastro
