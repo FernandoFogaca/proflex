@@ -167,34 +167,35 @@ export default function NovoAgendamento() {
   const [data, setData] = useState(dataInicial);
   const [hora, setHora] = useState(horaInicial);
 
-
   const [buscaPaciente, setBuscaPaciente] = useState("");
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [temWhatsapp, setTemWhatsapp] = useState(false);
   const [email, setEmail] = useState("");
+  const [semEmail, setSemEmail] = useState(false);
   const [endereco, setEndereco] = useState("");
 
   const pacientesEncontrados = useMemo(() => {
-  const termo = buscaPaciente.trim().toLowerCase();
+    const termo = buscaPaciente.trim().toLowerCase();
 
-  if (termo.length < 2) return [];
+    if (termo.length < 2) return [];
 
-  return (clients || [])
-    .filter((cliente) => {
-      const dados = [
-        cliente.nome,
-        cliente.telefone,
-        cliente.email,
-        cliente.cpf,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+    return (clients || [])
+      .filter((cliente) => {
+        const dados = [
+          cliente.nome,
+          cliente.telefone,
+          cliente.email,
+          cliente.cpf,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
 
-      return dados.includes(termo);
-    })
-    .slice(0, 5);
-}, [buscaPaciente, clients]);
+        return dados.includes(termo);
+      })
+      .slice(0, 5);
+  }, [buscaPaciente, clients]);
 
   const [nascimento, setNascimento] = useState("");
   const [peso, setPeso] = useState("");
@@ -245,6 +246,7 @@ export default function NovoAgendamento() {
     if (clienteExistente) {
       setNome(clienteExistente.nome || "");
       setTelefone(clienteExistente.telefone || "");
+      setTemWhatsapp(clienteExistente.temWhatsapp || false);
       setEmail(clienteExistente.email || "");
       setEndereco(clienteExistente.endereco || "");
 
@@ -363,14 +365,35 @@ export default function NovoAgendamento() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const partesNome = nome.trim().split(/\s+/);
+
+    if (partesNome.length < 2 || partesNome.some((parte) => parte.length < 2)) {
+      alert("Informe o nome e sobrenome do paciente.");
+      return;
+    }
+
+    const numeroTelefone = telefone.replace(/\D/g, "");
+
+    if (numeroTelefone.length < 7 || numeroTelefone.length > 15) {
+      alert("Informe um telefone válido, com 7 a 15 dígitos.");
+      return;
+    }
+
+    if (!/^\+?[\d\s()-]+$/.test(telefone.trim())) {
+      alert(
+        "Telefone inválido. Use números e, se necessário, o código internacional com +.",
+      );
+      return;
+    }
+
     const baseCliente = {
-      nome: nome || "Sem nome",
+      nome: nome.trim(),
       telefone,
+      temWhatsapp,
       email,
       endereco,
       anotacoesPaciente,
     };
-
     const extras =
       tipo === "completo"
         ? {
@@ -388,7 +411,7 @@ export default function NovoAgendamento() {
           }
         : {};
 
-   let cliente = clienteExistente;
+    let cliente = clienteExistente;
 
     if (cliente) {
       updateClient(cliente.id, { ...baseCliente, ...extras });
@@ -441,8 +464,8 @@ export default function NovoAgendamento() {
         conduta: condutaAtual.trim(),
       });
     }
-  if (data && hora && !editandoPeloProntuario) {
-  addAppointment({
+    if (data && hora && !clienteExistente && !editandoPeloProntuario) {
+      addAppointment({
         data,
         hora,
         clienteId: cliente.id,
@@ -452,13 +475,13 @@ export default function NovoAgendamento() {
       });
     }
 
-   alert("✅ Cadastro salvo!");
+    alert("✅ Cadastro salvo!");
 
-if (editandoPeloProntuario) {
-  navigate(`/prontuario?clienteId=${cliente.id}`);
-} else {
-  navigate("/agenda");
-}
+    if (editandoPeloProntuario) {
+      navigate(`/prontuario?clienteId=${cliente.id}`);
+    } else {
+      navigate("/agenda");
+    }
   };
 
   // ----- Profissional: salvar no localStorage -----
@@ -637,17 +660,23 @@ if (editandoPeloProntuario) {
         </div>
       </div>
 
-     {/* FORM PRINCIPAL */}
-<form className="row g-3" onSubmit={handleSubmit}>
+      {/* FORM PRINCIPAL */}
+      <form className="row g-3" onSubmit={handleSubmit}>
+        {/* Botão de salvar sempre acessível */}
+        <div
+          className="col-12 d-flex justify-content-end sticky-top py-2"
+          style={{
+            top: "85px",
+            zIndex: 1020,
+            backgroundColor: "#ffffff",
+          }}
+        >
+          <button type="submit" className="btn btn-primary">
+            💾 {clienteExistente ? "Salvar alterações" : "Salvar cadastro"}
+          </button>
+        </div>
 
-  {/* Botão de salvar no topo */}
-  <div className="col-12 d-flex justify-content-end">
-    <button type="submit" className="btn btn-primary">
-  💾 {clienteExistente ? "Salvar alterações" : "Salvar cadastro"}
-</button>
-  </div>
-
-  {/* data/hora */}
+        {/* data/hora */}
         <div className="col-md-3">
           <label className="form-label">Data</label>
           <input
@@ -674,51 +703,51 @@ if (editandoPeloProntuario) {
           subtitle="Informações pessoais e de contato"
         />
         {tipo === "rapido" && !clienteExistente && (
-  <div className="col-12">
-    <label className="form-label fw-semibold">
-      Buscar paciente existente
-    </label>
+          <div className="col-12">
+            <label className="form-label fw-semibold">
+              Buscar paciente existente
+            </label>
 
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Digite nome, telefone, e-mail ou CPF..."
-      value={buscaPaciente}
-      onChange={(e) => setBuscaPaciente(e.target.value)}
-    />
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Digite nome, telefone, e-mail ou CPF..."
+              value={buscaPaciente}
+              onChange={(e) => setBuscaPaciente(e.target.value)}
+            />
 
-    {buscaPaciente.trim().length >= 2 && (
-      <div className="list-group mt-2">
-        {pacientesEncontrados.map((paciente) => (
-          <button
-            key={paciente.id}
-            type="button"
-            className="list-group-item list-group-item-action"
-            onClick={() =>
-              navigate(
-                `/agendar?data=${data}&hora=${hora}&clienteId=${paciente.id}&tipo=rapido`,
-              )
-            }
-          >
-            <div className="fw-semibold">{paciente.nome}</div>
+            {buscaPaciente.trim().length >= 2 && (
+              <div className="list-group mt-2">
+                {pacientesEncontrados.map((paciente) => (
+                  <button
+                    key={paciente.id}
+                    type="button"
+                    className="list-group-item list-group-item-action"
+                    onClick={() =>
+                      navigate(
+                        `/agendar?data=${data}&hora=${hora}&clienteId=${paciente.id}&tipo=rapido`,
+                      )
+                    }
+                  >
+                    <div className="fw-semibold">{paciente.nome}</div>
 
-            <small className="text-muted">
-              {paciente.telefone || "Sem telefone"}
-              {paciente.email ? ` • ${paciente.email}` : ""}
-            </small>
-          </button>
-        ))}
+                    <small className="text-muted">
+                      {paciente.telefone || "Sem telefone"}
+                      {paciente.email ? ` • ${paciente.email}` : ""}
+                    </small>
+                  </button>
+                ))}
 
-        {pacientesEncontrados.length === 0 && (
-          <div className="list-group-item text-muted">
-            Nenhum paciente encontrado. Preencha os dados abaixo para cadastrar
-            um novo paciente.
+                {pacientesEncontrados.length === 0 && (
+                  <div className="list-group-item text-muted">
+                    Nenhum paciente encontrado. Preencha os dados abaixo para
+                    cadastrar um novo paciente.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
-      </div>
-    )}
-  </div>
-)}
         {/* dados básicos */}
         <div className="col-md-6">
           <label className="form-label">Nome do paciente</label>
@@ -736,15 +765,42 @@ if (editandoPeloProntuario) {
             value={telefone}
             onChange={(e) => setTelefone(e.target.value)}
           />
+          <div className="col-12">
+            <label className="form-check-label">
+              <input
+                type="checkbox"
+                className="form-check-input me-2"
+                checked={temWhatsapp}
+                onChange={(e) => setTemWhatsapp(e.target.checked)}
+              />
+              Este número também é WhatsApp
+            </label>
+          </div>
         </div>
-        <div className="col-md-6">
-          <label className="form-label">Email</label>
-          <input
-            className="form-control"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+       <div className="col-md-6">
+  <label className="form-label">Email</label>
+  <input
+    type="email"
+    className="form-control"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    disabled={semEmail}
+    required={!semEmail}
+  />
+
+  <label className="form-check-label mt-2">
+    <input
+      type="checkbox"
+      className="form-check-input me-2"
+      checked={semEmail}
+      onChange={(e) => {
+        setSemEmail(e.target.checked);
+        if (e.target.checked) setEmail("");
+      }}
+    />
+    Não possui e-mail
+  </label>
+</div>
         <div className="col-md-6">
           <label className="form-label">Endereço</label>
           <input
@@ -1010,67 +1066,66 @@ if (editandoPeloProntuario) {
         </div>
         {tipo === "completo" && (
           <>
-        <SectionHeader
-          number="3"
-          title="Prontuário da consulta"
-          subtitle="Registro clínico e evolução desta sessão"
-        />
+            <SectionHeader
+              number="3"
+              title="Prontuário da consulta"
+              subtitle="Registro clínico e evolução desta sessão"
+            />
 
-        <div className="col-md-6">
-          <label className="form-label">Queixa principal</label>
-          <textarea
-            className="form-control"
-            rows="3"
-            placeholder="Ex.: dor no joelho ao caminhar..."
-            value={queixaAtual}
-            onChange={(e) => setQueixaAtual(e.target.value)}
-          />
-        </div>
+            <div className="col-md-6">
+              <label className="form-label">Queixa principal</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Ex.: dor no joelho ao caminhar..."
+                value={queixaAtual}
+                onChange={(e) => setQueixaAtual(e.target.value)}
+              />
+            </div>
 
-        <div className="col-md-6">
-          <label className="form-label">Avaliação</label>
-          <textarea
-            className="form-control"
-            rows="3"
-            placeholder="Registre os achados da avaliação..."
-            value={avaliacaoAtual}
-            onChange={(e) => setAvaliacaoAtual(e.target.value)}
-          />
-        </div>
+            <div className="col-md-6">
+              <label className="form-label">Avaliação</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Registre os achados da avaliação..."
+                value={avaliacaoAtual}
+                onChange={(e) => setAvaliacaoAtual(e.target.value)}
+              />
+            </div>
 
-        <div className="col-md-6">
-          <label className="form-label">Procedimentos realizados</label>
-          <textarea
-            className="form-control"
-            rows="3"
-            placeholder="Ex.: exercícios, mobilização, técnicas aplicadas..."
-            value={procedimentosAtual}
-            onChange={(e) => setProcedimentosAtual(e.target.value)}
-          />
-        </div>
+            <div className="col-md-6">
+              <label className="form-label">Procedimentos realizados</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Ex.: exercícios, mobilização, técnicas aplicadas..."
+                value={procedimentosAtual}
+                onChange={(e) => setProcedimentosAtual(e.target.value)}
+              />
+            </div>
 
-        <div className="col-md-6">
-          <label className="form-label">Evolução do paciente</label>
-          <textarea
-            className="form-control"
-            rows="3"
-            placeholder="Descreva a resposta e evolução do paciente..."
-            value={evolucaoAtual}
-            onChange={(e) => setEvolucaoAtual(e.target.value)}
-          />
-        </div>
+            <div className="col-md-6">
+              <label className="form-label">Evolução do paciente</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Descreva a resposta e evolução do paciente..."
+                value={evolucaoAtual}
+                onChange={(e) => setEvolucaoAtual(e.target.value)}
+              />
+            </div>
 
-        <div className="col-12">
-          <label className="form-label">Conduta / Plano</label>
-          <textarea
-            className="form-control"
-            rows="3"
-            placeholder="Informe a conduta e o plano para as próximas sessões..."
-            value={condutaAtual}
-            onChange={(e) => setCondutaAtual(e.target.value)}
-          />
-        </div>
-
+            <div className="col-12">
+              <label className="form-label">Conduta / Plano</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Informe a conduta e o plano para as próximas sessões..."
+                value={condutaAtual}
+                onChange={(e) => setCondutaAtual(e.target.value)}
+              />
+            </div>
           </>
         )}
         <div className="col-12 d-flex justify-content-between mt-2">
@@ -1150,72 +1205,72 @@ if (editandoPeloProntuario) {
                   />
                 </div>
                 <div className="mt-3">
-  <label className="form-label fw-bold">Queixa principal</label>
-  <textarea
-    className="form-control"
-    rows={2}
-    value={c.queixa || ""}
-    onChange={(e) =>
-      updateConsulta(clienteExistente.id, c.id, {
-        queixa: e.target.value,
-      })
-    }
-  />
+                  <label className="form-label fw-bold">Queixa principal</label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    value={c.queixa || ""}
+                    onChange={(e) =>
+                      updateConsulta(clienteExistente.id, c.id, {
+                        queixa: e.target.value,
+                      })
+                    }
+                  />
 
-  <label className="form-label fw-bold mt-3">Avaliação</label>
-  <textarea
-    className="form-control"
-    rows={2}
-    value={c.avaliacao || ""}
-    onChange={(e) =>
-      updateConsulta(clienteExistente.id, c.id, {
-        avaliacao: e.target.value,
-      })
-    }
-  />
+                  <label className="form-label fw-bold mt-3">Avaliação</label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    value={c.avaliacao || ""}
+                    onChange={(e) =>
+                      updateConsulta(clienteExistente.id, c.id, {
+                        avaliacao: e.target.value,
+                      })
+                    }
+                  />
 
-  <label className="form-label fw-bold mt-3">
-    Procedimentos realizados
-  </label>
-  <textarea
-    className="form-control"
-    rows={2}
-    value={c.procedimentos || ""}
-    onChange={(e) =>
-      updateConsulta(clienteExistente.id, c.id, {
-        procedimentos: e.target.value,
-      })
-    }
-  />
+                  <label className="form-label fw-bold mt-3">
+                    Procedimentos realizados
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    value={c.procedimentos || ""}
+                    onChange={(e) =>
+                      updateConsulta(clienteExistente.id, c.id, {
+                        procedimentos: e.target.value,
+                      })
+                    }
+                  />
 
-  <label className="form-label fw-bold mt-3">
-    Evolução do paciente
-  </label>
-  <textarea
-    className="form-control"
-    rows={2}
-    value={c.evolucao || ""}
-    onChange={(e) =>
-      updateConsulta(clienteExistente.id, c.id, {
-        evolucao: e.target.value,
-      })
-    }
-  />
+                  <label className="form-label fw-bold mt-3">
+                    Evolução do paciente
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    value={c.evolucao || ""}
+                    onChange={(e) =>
+                      updateConsulta(clienteExistente.id, c.id, {
+                        evolucao: e.target.value,
+                      })
+                    }
+                  />
 
-  <label className="form-label fw-bold mt-3">
-    Conduta / Plano
-  </label>
-  <textarea
-    className="form-control"
-    rows={2}
-    value={c.conduta || ""}
-    onChange={(e) =>
-      updateConsulta(clienteExistente.id, c.id, {
-        conduta: e.target.value,
-      })
-    }
-  />
-</div>
+                  <label className="form-label fw-bold mt-3">
+                    Conduta / Plano
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    value={c.conduta || ""}
+                    onChange={(e) =>
+                      updateConsulta(clienteExistente.id, c.id, {
+                        conduta: e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </div>
             ))}
             {consultas.length === 0 && (
@@ -1229,118 +1284,125 @@ if (editandoPeloProntuario) {
 
       {tipo === "completo" && (
         <>
-      {/* RECEITA e ATESTADO */}
-     <SectionHeader
-  number="5"
-  title="Documentos"
-  subtitle="Receitas, atestados e documentos do paciente"
-/>
+          {/* RECEITA e ATESTADO */}
+          <SectionHeader
+            number="5"
+            title="Documentos"
+            subtitle="Receitas, atestados e documentos do paciente"
+          />
 
-      {/* Dados do profissional */}
-      <div className="row g-2 mb-3">
-        <div className="col-md-3">
-          <input
-            className="form-control"
-            placeholder="Nome do profissional"
-            value={prof.nome}
-            onChange={(e) => setProf({ ...prof, nome: e.target.value })}
-          />
-        </div>
-        <div className="col-md-2">
-          <input
-            className="form-control"
-            placeholder="Registro (CRM/CRP/…)"
-            value={prof.registro}
-            onChange={(e) => setProf({ ...prof, registro: e.target.value })}
-          />
-        </div>
-        <div className="col-md-3">
-          <input
-            className="form-control"
-            placeholder="Email"
-            value={prof.email}
-            onChange={(e) => setProf({ ...prof, email: e.target.value })}
-          />
-        </div>
-        <div className="col-md-2">
-          <input
-            className="form-control"
-            placeholder="Telefone"
-            value={prof.telefone}
-            onChange={(e) => setProf({ ...prof, telefone: e.target.value })}
-          />
-        </div>
-        <div className="col-md-2">
-          <input
-            className="form-control"
-            placeholder="Endereço"
-            value={prof.endereco}
-            onChange={(e) => setProf({ ...prof, endereco: e.target.value })}
-          />
-        </div>
-        <div className="col-12 text-end">
-          <button className="btn btn-outline-secondary" onClick={salvarProf}>
-            Salvar dados do profissional
-          </button>
-        </div>
-      </div>
+          {/* Dados do profissional */}
+          <div className="row g-2 mb-3">
+            <div className="col-md-3">
+              <input
+                className="form-control"
+                placeholder="Nome do profissional"
+                value={prof.nome}
+                onChange={(e) => setProf({ ...prof, nome: e.target.value })}
+              />
+            </div>
+            <div className="col-md-2">
+              <input
+                className="form-control"
+                placeholder="Registro (CRM/CRP/…)"
+                value={prof.registro}
+                onChange={(e) => setProf({ ...prof, registro: e.target.value })}
+              />
+            </div>
+            <div className="col-md-3">
+              <input
+                className="form-control"
+                placeholder="Email"
+                value={prof.email}
+                onChange={(e) => setProf({ ...prof, email: e.target.value })}
+              />
+            </div>
+            <div className="col-md-2">
+              <input
+                className="form-control"
+                placeholder="Telefone"
+                value={prof.telefone}
+                onChange={(e) => setProf({ ...prof, telefone: e.target.value })}
+              />
+            </div>
+            <div className="col-md-2">
+              <input
+                className="form-control"
+                placeholder="Endereço"
+                value={prof.endereco}
+                onChange={(e) => setProf({ ...prof, endereco: e.target.value })}
+              />
+            </div>
+            <div className="col-12 text-end">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={salvarProf}
+              >
+                Salvar dados do profissional
+              </button>
+            </div>
+          </div>
 
-      {/* Receita */}
-      <div className="mb-3 p-3 border rounded">
-        <h6>Receita</h6>
-        <textarea
-          className="form-control"
-          rows={6}
-          placeholder={`Escreva a medicação, doses, frequência (diária/semanal/horas) e duração...\n(essas "linhas" não aparecem na impressão)`}
-          value={receitaTexto}
-          onChange={(e) => setReceitaTexto(e.target.value)}
-        />
-        <div className="text-end mt-2">
-          <button
-            className="btn btn-dark"
-            onClick={() => imprimirReceita(clienteExistente, receitaTexto)}
-          >
-            Imprimir Receita (PDF)
-          </button>
-        </div>
-      </div>
+          {/* Receita */}
+          <div className="mb-3 p-3 border rounded">
+            <h6>Receita</h6>
+            <textarea
+              className="form-control"
+              rows={6}
+              placeholder={`Escreva a medicação, doses, frequência (diária/semanal/horas) e duração...\n(essas "linhas" não aparecem na impressão)`}
+              value={receitaTexto}
+              onChange={(e) => setReceitaTexto(e.target.value)}
+            />
+            <div className="text-end mt-2">
+              <button
+                className="btn btn-dark"
+                onClick={() => imprimirReceita(clienteExistente, receitaTexto)}
+              >
+                Imprimir Receita (PDF)
+              </button>
+            </div>
+          </div>
 
-      {/* Atestado */}
-      <div className="mb-4 p-3 border rounded">
-        <h6>Atestado</h6>
-        <input
-          className="form-control mb-2"
-          placeholder="Destinatário (Pessoa/Empresa)"
-          value={atestadoPara}
-          onChange={(e) => setAtestadoPara(e.target.value)}
-        />
-        <textarea
-          className="form-control"
-          rows={6}
-          placeholder={`Escreva as informações do atestado, período, recomendações...\n(essas "linhas" não aparecem na impressão)`}
-          value={atestadoTexto}
-          onChange={(e) => setAtestadoTexto(e.target.value)}
-        />
-        <div className="text-end mt-2">
-          <button
-            className="btn btn-dark"
-            onClick={() =>
-              imprimirAtestado(clienteExistente, atestadoPara, atestadoTexto)
-            }
-          >
-            Imprimir Atestado (PDF)
-          </button>
-        </div>
-      </div>
+          {/* Atestado */}
+          <div className="mb-4 p-3 border rounded">
+            <h6>Atestado</h6>
+            <input
+              className="form-control mb-2"
+              placeholder="Destinatário (Pessoa/Empresa)"
+              value={atestadoPara}
+              onChange={(e) => setAtestadoPara(e.target.value)}
+            />
+            <textarea
+              className="form-control"
+              rows={6}
+              placeholder={`Escreva as informações do atestado, período, recomendações...\n(essas "linhas" não aparecem na impressão)`}
+              value={atestadoTexto}
+              onChange={(e) => setAtestadoTexto(e.target.value)}
+            />
+            <div className="text-end mt-2">
+              <button
+                className="btn btn-dark"
+                onClick={() =>
+                  imprimirAtestado(
+                    clienteExistente,
+                    atestadoPara,
+                    atestadoTexto,
+                  )
+                }
+              >
+                Imprimir Atestado (PDF)
+              </button>
+            </div>
+          </div>
 
-      {/* Danger zone */}
-      {clienteExistente && (
-        <div className="d-flex justify-content-end">
-          <button className="btn btn-danger" onClick={apagarPaciente}>
-            Excluir paciente
-          </button>
-        </div>
-      )}
+          {/* Danger zone */}
+          {clienteExistente && (
+            <div className="d-flex justify-content-end">
+              <button className="btn btn-danger" onClick={apagarPaciente}>
+                Excluir paciente
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

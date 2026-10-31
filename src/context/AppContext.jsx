@@ -68,20 +68,31 @@ export function AppProvider({ children }) {
   }
 
   function buscarPacienteDuplicado(dados) {
-    const nome = normalizarTexto(dados.nome);
-    const telefone = String(dados.telefone || "").replace(/\D/g, "");
-    const email = normalizarTexto(dados.email);
+  const nome = normalizarTexto(dados.nome);
+  const telefone = String(dados.telefone || "").replace(/\D/g, "");
+  const email = normalizarTexto(dados.email);
+  const documento = String(dados.documento || "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toLowerCase();
 
-    return clients.find((cliente) => {
-      const mesmoNome = nome && normalizarTexto(cliente.nome) === nome;
-      const mesmoTelefone =
-        telefone &&
-        String(cliente.telefone || "").replace(/\D/g, "") === telefone;
-      const mesmoEmail = email && normalizarTexto(cliente.email) === email;
+  return clients.find((cliente) => {
+    const mesmoNome = nome &&
+      normalizarTexto(cliente.nome) === nome;
 
-      return (mesmoNome && mesmoTelefone) || (mesmoNome && mesmoEmail);
-    });
-  }
+    const mesmoTelefone = telefone &&
+      String(cliente.telefone || "").replace(/\D/g, "") === telefone;
+
+    const mesmoEmail = email &&
+      normalizarTexto(cliente.email) === email;
+
+    const mesmoDocumento = documento &&
+      String(cliente.documento || "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toLowerCase() === documento;
+
+    return mesmoNome || mesmoTelefone || mesmoEmail || mesmoDocumento;
+  });
+}
   // ------------------------ CLIENTES
  function addClient(dados) {
   const duplicado = buscarPacienteDuplicado(dados);
@@ -98,15 +109,26 @@ export function AppProvider({ children }) {
       id: novoId("cli"),
 
       // Dados pessoais
-      nome: dados.nome || "Sem nome",
-      email: dados.email || "",
-      telefone: dados.telefone || "",
-      endereco: dados.endereco || "",
-      nascimento: dados.nascimento || "",
-      peso: dados.peso || "",
-      altura: dados.altura || "",
-      genero: dados.genero || "",
+      nome: dados.nome || "",
+email: dados.email || "",
+semEmail: dados.semEmail || false,
 
+telefone: dados.telefone || "",
+temWhatsapp: dados.temWhatsapp || false,
+
+tipoDocumento: dados.tipoDocumento || "",
+documento: dados.documento || "",
+semDocumento: dados.semDocumento || false,
+
+endereco: dados.endereco || "",
+pais: dados.pais || "",
+cep: dados.cep || "",
+rua: dados.rua || "",
+numero: dados.numero || "",
+complemento: dados.complemento || "",
+bairro: dados.bairro || "",
+cidade: dados.cidade || "",
+estado: dados.estado || "",
       // Dados clínicos
       comorbidades: Array.isArray(dados.comorbidades) ? dados.comorbidades : [],
 

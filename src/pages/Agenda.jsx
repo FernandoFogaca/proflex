@@ -6,7 +6,9 @@ import { useApp } from "../context/AppContext.jsx";
 // helpers
 const hojeISO = () => new Date().toISOString().split("T")[0];
 const toMin = (hhmm) => {
-  const [h, m] = String(hhmm || "0:0").split(":").map(Number);
+  const [h, m] = String(hhmm || "0:0")
+    .split(":")
+    .map(Number);
   return (h || 0) * 60 + (m || 0);
 };
 function isPast(dateISO, hhmm) {
@@ -16,13 +18,24 @@ function isPast(dateISO, hhmm) {
   const dt = new Date(y, (m || 1) - 1, d || 1, H || 0, M || 0, 0);
   return dt.getTime() < Date.now();
 }
-const loadJSON = (k, fb) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : fb; } catch { return fb; } };
-const saveJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const loadJSON = (k, fb) => {
+  try {
+    const s = localStorage.getItem(k);
+    return s ? JSON.parse(s) : fb;
+  } catch {
+    return fb;
+  }
+};
+const saveJSON = (k, v) => {
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+  } catch {}
+};
 
 // relógio
 function useClock() {
   const [txt, setTxt] = useState(() =>
-    new Date().toLocaleTimeString("pt-BR", { hour12: false })
+    new Date().toLocaleTimeString("pt-BR", { hour12: false }),
   );
   useEffect(() => {
     const id = setInterval(() => {
@@ -41,7 +54,12 @@ function saudacaoClima(weatherCode, isDay) {
   if (weatherCode === 0) icone = isDay ? "☀️" : "🌙";
   else if (weatherCode >= 1 && weatherCode <= 3) icone = isDay ? "🌤️" : "☁️";
   else if (weatherCode === 45 || weatherCode === 48) icone = "🌫️";
-  else if ((weatherCode >= 51 && weatherCode <= 57) || (weatherCode >= 61 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)) icone = "🌧️";
+  else if (
+    (weatherCode >= 51 && weatherCode <= 57) ||
+    (weatherCode >= 61 && weatherCode <= 67) ||
+    (weatherCode >= 80 && weatherCode <= 82)
+  )
+    icone = "🌧️";
   else if (weatherCode >= 71 && weatherCode <= 77) icone = "❄️";
   else if (weatherCode >= 95) icone = "⛈️";
   return `${base} ${icone}`;
@@ -49,21 +67,28 @@ function saudacaoClima(weatherCode, isDay) {
 
 // localização + °C (sem chave)
 function useLocalInfo() {
-  const [info, setInfo] = useState({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+  const [info, setInfo] = useState({
+    city: "",
+    region: "",
+    temp: null,
+    weatherCode: null,
+    isDay: 1,
+  });
   useEffect(() => {
     let vivo = true;
     const pegar = async (lat, lon) => {
       try {
         const r = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
         );
         const j = await r.json();
         const a = j.address || {};
         const city = a.city || a.town || a.village || a.municipality || "";
-        const region = a.state_code || a.state || (a.country_code || "").toUpperCase();
+        const region =
+          a.state_code || a.state || (a.country_code || "").toUpperCase();
 
         const w = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`,
         );
         const jw = await w.json();
         const temp = jw?.current?.temperature_2m ?? null;
@@ -72,20 +97,36 @@ function useLocalInfo() {
 
         if (vivo) setInfo({ city, region, temp, weatherCode: code, isDay });
       } catch {
-        if (vivo) setInfo({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+        if (vivo)
+          setInfo({
+            city: "",
+            region: "",
+            temp: null,
+            weatherCode: null,
+            isDay: 1,
+          });
       }
     };
-    const fallback = () => setInfo({ city: "", region: "", temp: null, weatherCode: null, isDay: 1 });
+    const fallback = () =>
+      setInfo({
+        city: "",
+        region: "",
+        temp: null,
+        weatherCode: null,
+        isDay: 1,
+      });
 
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => pegar(pos.coords.latitude, pos.coords.longitude),
         fallback,
-        { timeout: 4000 }
+        { timeout: 4000 },
       );
     } else fallback();
 
-    return () => { vivo = false; };
+    return () => {
+      vivo = false;
+    };
   }, []);
   return info;
 }
@@ -99,9 +140,7 @@ function PainelAgendaDia({ agendamentos, dataISO }) {
 
   if (items.length === 0) {
     return (
-      <small className="text-muted">
-        Nenhum agendamento para este dia.
-      </small>
+      <small className="text-muted">Nenhum agendamento para este dia.</small>
     );
   }
 
@@ -136,20 +175,24 @@ function AniversariosDoDia({ clientes, dataISO }) {
   const lista = (clientes || []).filter((p) => {
     if (!p?.nascimento) return false;
     const [, m, d2] = String(p.nascimento).split("-").map(Number);
-    return (m === mm && d2 === dd);
+    return m === mm && d2 === dd;
   });
 
-  if (lista.length === 0) return <small className="text-muted">Sem aniversariantes.</small>;
+  if (lista.length === 0)
+    return <small className="text-muted">Sem aniversariantes.</small>;
   return (
     <ul className="list-group">
       {lista.map((p) => (
-        <li key={p.id} className="list-group-item d-flex justify-content-between align-items-center">
+        <li
+          key={p.id}
+          className="list-group-item d-flex justify-content-between align-items-center"
+        >
           <span>{p.nome}</span>
           <a
             className="btn btn-sm btn-success"
-            href={`https://wa.me/${(p.telefone||"").replace(/\D/g,"")}?text=${encodeURIComponent(`Parabéns, ${p.nome}! 🎉`)}`
-            }
-            target="_blank" rel="noreferrer"
+            href={`https://wa.me/${(p.telefone || "").replace(/\D/g, "")}?text=${encodeURIComponent(`Parabéns, ${p.nome}! 🎉`)}`}
+            target="_blank"
+            rel="noreferrer"
           >
             WhatsApp
           </a>
@@ -169,24 +212,28 @@ export default function Agenda() {
 
   const [dataISO, setDataISO] = useState(hojeISO());
   function mudarDia(dias) {
-  const [ano, mes, dia] = dataISO.split("-").map(Number);
-  const novaData = new Date(ano, mes - 1, dia);
+    const [ano, mes, dia] = dataISO.split("-").map(Number);
+    const novaData = new Date(ano, mes - 1, dia);
 
-  novaData.setDate(novaData.getDate() + dias);
+    novaData.setDate(novaData.getDate() + dias);
 
-  const novoAno = novaData.getFullYear();
-  const novoMes = String(novaData.getMonth() + 1).padStart(2, "0");
-  const novoDia = String(novaData.getDate()).padStart(2, "0");
+    const novoAno = novaData.getFullYear();
+    const novoMes = String(novaData.getMonth() + 1).padStart(2, "0");
+    const novoDia = String(novaData.getDate()).padStart(2, "0");
 
-  setDataISO(`${novoAno}-${novoMes}-${novoDia}`);
-}
+    setDataISO(`${novoAno}-${novoMes}-${novoDia}`);
+  }
 
-function irParaHoje() {
-  setDataISO(hojeISO());
-}
+  function irParaHoje() {
+    setDataISO(hojeISO());
+  }
   const dataBRcurta = useMemo(() => {
     const d = new Date(dataISO);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
   }, [dataISO]);
   const diaSemana = useMemo(() => {
     const d = new Date(dataISO);
@@ -195,11 +242,27 @@ function irParaHoje() {
   }, [dataISO]);
 
   // slots
-  const baseSlots = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00"];
-  const [extraPorData, setExtraPorData] = useState(() => loadJSON("extraSlots", {}));
-  const [removidosPorData, setRemovidosPorData] = useState(() => loadJSON("removedSlots", {}));
+  const baseSlots = [
+    "08:00",
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+  ];
+  const [extraPorData, setExtraPorData] = useState(() =>
+    loadJSON("extraSlots", {}),
+  );
+  const [removidosPorData, setRemovidosPorData] = useState(() =>
+    loadJSON("removedSlots", {}),
+  );
   useEffect(() => saveJSON("extraSlots", extraPorData), [extraPorData]);
-  useEffect(() => saveJSON("removedSlots", removidosPorData), [removidosPorData]);
+  useEffect(
+    () => saveJSON("removedSlots", removidosPorData),
+    [removidosPorData],
+  );
 
   const mapaHoje = useMemo(() => {
     const map = {};
@@ -213,9 +276,11 @@ function irParaHoje() {
     const removidos = new Set(removidosPorData[dataISO] || []);
     const baseVisiveis = baseSlots.filter((h) => !removidos.has(h));
     const set = new Set(baseVisiveis);
-    (extraPorData[dataISO] || []).forEach((t) => { if (!removidos.has(t)) set.add(t); });
+    (extraPorData[dataISO] || []).forEach((t) => {
+      if (!removidos.has(t)) set.add(t);
+    });
     Object.keys(mapaHoje).forEach((t) => set.add(t));
-    return Array.from(set).sort((a,b)=>toMin(a)-toMin(b));
+    return Array.from(set).sort((a, b) => toMin(a) - toMin(b));
   }, [baseSlots, extraPorData, removidosPorData, mapaHoje, dataISO]);
 
   function addSlotManual(hhmm) {
@@ -224,7 +289,7 @@ function irParaHoje() {
       const obj = { ...prev };
       const cur = new Set(obj[dataISO] || []);
       cur.add(hhmm);
-      obj[dataISO] = Array.from(cur).sort((a,b)=>toMin(a)-toMin(b));
+      obj[dataISO] = Array.from(cur).sort((a, b) => toMin(a) - toMin(b));
       return obj;
     });
     setRemovidosPorData((prev) => {
@@ -270,7 +335,10 @@ function irParaHoje() {
 
   // remover slot
   function removerSlot(hhmm) {
-    if (mapaHoje[hhmm]) { alert("Existe agendamento neste horário."); return; }
+    if (mapaHoje[hhmm]) {
+      alert("Existe agendamento neste horário.");
+      return;
+    }
     if ((extraPorData[dataISO] || []).includes(hhmm)) {
       setExtraPorData((prev) => {
         const obj = { ...prev };
@@ -290,7 +358,9 @@ function irParaHoje() {
   const [lemHora, setLemHora] = useState("14:00");
   const [lemMsg, setLemMsg] = useState("");
   const [lemZap, setLemZap] = useState("");
-  const [lembretes, setLembretes] = useState(() => loadJSON("agendaLembretes", []));
+  const [lembretes, setLembretes] = useState(() =>
+    loadJSON("agendaLembretes", []),
+  );
   useEffect(() => saveJSON("agendaLembretes", lembretes), [lembretes]);
 
   function statusLembrete(item) {
@@ -298,7 +368,7 @@ function irParaHoje() {
     if (item.concluido) return "concluido";
     if (item.date !== dataISO) return "confirmado";
     const agora = new Date();
-    const agoraMin = agora.getHours()*60 + agora.getMinutes();
+    const agoraMin = agora.getHours() * 60 + agora.getMinutes();
     const alvoMin = toMin(item.time);
     const dif = alvoMin - agoraMin;
     if (dif <= 0 && dif >= -1) return "na hora";
@@ -307,12 +377,32 @@ function irParaHoje() {
   }
   const estiloLembrete = (st) => {
     switch (st) {
-      case "confirmado": return { borderLeft: "6px solid #28a745" };
-      case "proximo":    return { borderLeft: "6px solid #ffc107", background: "#fff8e1" };
-      case "na hora":    return { borderLeft: "6px solid #dc3545", background: "#fdecea", animation: "blink 1s step-start infinite" };
-      case "cancelado":  return { borderLeft: "6px solid #6c757d", color: "#6c757d", textDecoration: "line-through", background: "#f1f3f5" };
-      case "concluido":  return { borderLeft: "6px solid #0dcaf0", color: "#055160", textDecoration: "line-through", background: "#e7fafe" };
-      default: return {};
+      case "confirmado":
+        return { borderLeft: "6px solid #28a745" };
+      case "proximo":
+        return { borderLeft: "6px solid #ffc107", background: "#fff8e1" };
+      case "na hora":
+        return {
+          borderLeft: "6px solid #dc3545",
+          background: "#fdecea",
+          animation: "blink 1s step-start infinite",
+        };
+      case "cancelado":
+        return {
+          borderLeft: "6px solid #6c757d",
+          color: "#6c757d",
+          textDecoration: "line-through",
+          background: "#f1f3f5",
+        };
+      case "concluido":
+        return {
+          borderLeft: "6px solid #0dcaf0",
+          color: "#055160",
+          textDecoration: "line-through",
+          background: "#e7fafe",
+        };
+      default:
+        return {};
     }
   };
   function criarLembrete() {
@@ -324,16 +414,25 @@ function irParaHoje() {
       msg: lemMsg.trim(),
       zap: (lemZap || "").trim(),
       cancelado: false,
-      concluido: false
+      concluido: false,
     };
     setLembretes((prev) => [novo, ...prev].slice(0, 50));
-    setLemMsg(""); setLemZap("");
+    setLemMsg("");
+    setLemZap("");
   }
   function marcarConcluido(id) {
-    setLembretes((prev) => prev.map((x) => x.id === id ? { ...x, concluido: !x.concluido, cancelado: false } : x));
+    setLembretes((prev) =>
+      prev.map((x) =>
+        x.id === id ? { ...x, concluido: !x.concluido, cancelado: false } : x,
+      ),
+    );
   }
   function marcarCancelado(id) {
-    setLembretes((prev) => prev.map((x) => x.id === id ? { ...x, cancelado: !x.cancelado, concluido: false } : x));
+    setLembretes((prev) =>
+      prev.map((x) =>
+        x.id === id ? { ...x, cancelado: !x.cancelado, concluido: false } : x,
+      ),
+    );
   }
   function removerLembrete(id) {
     setLembretes((prev) => prev.filter((x) => x.id !== id));
@@ -348,19 +447,36 @@ function irParaHoje() {
 
   // estilos
   const topBox = {
-  background: "linear-gradient(135deg, #00bcd4, #607d8b)",
-  color: "#fff",
-  borderRadius: 14,
-  boxShadow: "0 4px 14px rgba(0,0,0,.10)"
-};
-  const slotBox = {
-    width: 80, height: 80, borderRadius: "50%",
-    background:"#fff", border:"2px solid #e5e7eb",
-    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-    gap:2, boxShadow:"0 1px 4px rgba(0,0,0,.08)", cursor:"pointer", userSelect:"none", position:"relative"
+    background: "linear-gradient(135deg, #00bcd4, #607d8b)",
+    color: "#fff",
+    borderRadius: 14,
+    boxShadow: "0 4px 14px rgba(0,0,0,.10)",
   };
-  const slotOff = { opacity:.5, cursor:"not-allowed" };
-  const chip = { position:"absolute", bottom:-10, fontSize:10, padding:"2px 6px", borderRadius:8, color:"#fff" };
+  const slotBox = {
+    width: 80,
+    height: 80,
+    borderRadius: "50%",
+    background: "#fff",
+    border: "2px solid #e5e7eb",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    boxShadow: "0 1px 4px rgba(0,0,0,.08)",
+    cursor: "pointer",
+    userSelect: "none",
+    position: "relative",
+  };
+  const slotOff = { opacity: 0.5, cursor: "not-allowed" };
+  const chip = {
+    position: "absolute",
+    bottom: -10,
+    fontSize: 10,
+    padding: "2px 6px",
+    borderRadius: 8,
+    color: "#fff",
+  };
 
   return (
     <div className="container py-3">
@@ -376,47 +492,51 @@ function irParaHoje() {
         <div className="text-center fs-3 fw-bold mt-1">{hora}</div>
 
         <div className="d-flex justify-content-center align-items-center gap-2 mt-2 flex-wrap">
-          {temp !== null && <span className="badge bg-light text-dark">{Math.round(temp)}°C</span>}
+          {temp !== null && (
+            <span className="badge bg-light text-dark">
+              {Math.round(temp)}°C
+            </span>
+          )}
           <span className="badge bg-light text-dark">
-            {city ? `${city}${region ? " - " + region : ""}` : "Localização indisponível"}
+            {city
+              ? `${city}${region ? " - " + region : ""}`
+              : "Localização indisponível"}
           </span>
         </div>
 
         <div className="mt-3 d-flex justify-content-center align-items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            className="btn btn-light btn-sm"
+            onClick={() => mudarDia(-1)}
+          >
+            ‹ Anterior
+          </button>
 
-  <button
-    type="button"
-    className="btn btn-light btn-sm"
-    onClick={() => mudarDia(-1)}
-  >
-    ‹ Anterior
-  </button>
+          <input
+            type="date"
+            className="form-control d-inline-block"
+            style={{ width: 220, textAlign: "center", fontWeight: 600 }}
+            value={dataISO}
+            onChange={(e) => setDataISO(e.target.value)}
+          />
 
-  <input
-    type="date"
-    className="form-control d-inline-block"
-    style={{ width: 220, textAlign: "center", fontWeight: 600 }}
-    value={dataISO}
-    onChange={(e) => setDataISO(e.target.value)}
-  />
+          <button
+            type="button"
+            className="btn btn-light btn-sm"
+            onClick={irParaHoje}
+          >
+            Hoje
+          </button>
 
-  <button
-    type="button"
-    className="btn btn-light btn-sm"
-    onClick={irParaHoje}
-  >
-    Hoje
-  </button>
-
-  <button
-    type="button"
-    className="btn btn-light btn-sm"
-    onClick={() => mudarDia(1)}
-  >
-    Próximo ›
-  </button>
-
-</div>
+          <button
+            type="button"
+            className="btn btn-light btn-sm"
+            onClick={() => mudarDia(1)}
+          >
+            Próximo ›
+          </button>
+        </div>
       </div>
 
       <div className="row g-3">
@@ -425,7 +545,7 @@ function irParaHoje() {
           <div className="card mb-3">
             <div className="card-body">
               <h6 className="m-0 mb-2">📅 Agenda do dia</h6>
-<PainelAgendaDia agendamentos={appointments} dataISO={dataISO} />
+              <PainelAgendaDia agendamentos={appointments} dataISO={dataISO} />
             </div>
           </div>
         </div>
@@ -453,7 +573,12 @@ function irParaHoje() {
 
               <div className="row g-2 align-items-center">
                 <div className="col-3">
-                  <input type="time" className="form-control" value={lemHora} onChange={(e)=>setLemHora(e.target.value)} />
+                  <input
+                    type="time"
+                    className="form-control"
+                    value={lemHora}
+                    onChange={(e) => setLemHora(e.target.value)}
+                  />
                 </div>
                 <div className="col">
                   <input
@@ -461,7 +586,7 @@ function irParaHoje() {
                     className="form-control"
                     placeholder="Ex: 22:00 ligar para Maria"
                     value={lemMsg}
-                    onChange={(e)=>setLemMsg(e.target.value)}
+                    onChange={(e) => setLemMsg(e.target.value)}
                   />
                 </div>
               </div>
@@ -473,46 +598,78 @@ function irParaHoje() {
                     className="form-control"
                     placeholder="WhatsApp (opcional)"
                     value={lemZap}
-                    onChange={(e)=>setLemZap(e.target.value)}
+                    onChange={(e) => setLemZap(e.target.value)}
                   />
                 </div>
                 <div className="col-auto">
-                  <button className="btn btn-primary" onClick={criarLembrete}>Criar</button>
+                  <button className="btn btn-primary" onClick={criarLembrete}>
+                    Criar
+                  </button>
                 </div>
               </div>
 
               <div className="mt-3">
-                {lembretes.filter(l=>l.date===dataISO).length===0 ? (
+                {lembretes.filter((l) => l.date === dataISO).length === 0 ? (
                   <small className="text-muted">Sem lembretes.</small>
                 ) : (
                   <ul className="list-group">
                     {lembretes
-                      .filter(l=>l.date===dataISO)
-                      .sort((a,b)=>toMin(a.time)-toMin(b.time))
-                      .map((l)=>{
+                      .filter((l) => l.date === dataISO)
+                      .sort((a, b) => toMin(a.time) - toMin(b.time))
+                      .map((l) => {
                         const st = statusLembrete(l);
                         const stStyle = estiloLembrete(st);
                         return (
-                          <li key={l.id}
-                              className="list-group-item d-flex justify-content-between align-items-start"
-                              style={stStyle}>
+                          <li
+                            key={l.id}
+                            className="list-group-item d-flex justify-content-between align-items-start"
+                            style={stStyle}
+                          >
                             <div className="me-2">
-                              <div className="fw-semibold">{l.time} — {l.msg}</div>
+                              <div className="fw-semibold">
+                                {l.time} — {l.msg}
+                              </div>
                               {l.zap && (
-                                <a href={zapLink(l.zap)} target="_blank" rel="noreferrer" className="small text-decoration-none">
+                                <a
+                                  href={zapLink(l.zap)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="small text-decoration-none"
+                                >
                                   WhatsApp: {l.zap}
                                 </a>
                               )}
                             </div>
                             <div className="d-flex gap-1">
                               {l.zap && (
-                                <a className="btn btn-sm btn-success" href={zapLink(l.zap)} target="_blank" rel="noreferrer" title="Abrir WhatsApp">
+                                <a
+                                  className="btn btn-sm btn-success"
+                                  href={zapLink(l.zap)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Abrir WhatsApp"
+                                >
                                   WA
                                 </a>
                               )}
-                              <button className="btn btn-sm btn-outline-primary" onClick={()=>marcarConcluido(l.id)}>Resolver</button>
-                              <button className="btn btn-sm btn-outline-secondary" onClick={()=>marcarCancelado(l.id)}>Cancelar</button>
-                              <button className="btn btn-sm btn-outline-danger" onClick={()=>removerLembrete(l.id)}>Remover</button>
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => marcarConcluido(l.id)}
+                              >
+                                Resolver
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => marcarCancelado(l.id)}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => removerLembrete(l.id)}
+                              >
+                                Remover
+                              </button>
                             </div>
                           </li>
                         );
@@ -527,11 +684,21 @@ function irParaHoje() {
 
       {/* legenda */}
       <div className="mt-3 d-flex flex-wrap gap-2">
-        <span className="badge" style={{ background:"#28a745" }}>confirmado</span>
-        <span className="badge text-dark" style={{ background:"#ffc107" }}>proximo</span>
-        <span className="badge" style={{ background:"#dc3545" }}>na hora</span>
-        <span className="badge" style={{ background:"#6c757d" }}>cancelado</span>
-        <span className="badge text-dark" style={{ background:"#0dcaf0" }}>concluido</span>
+        <span className="badge" style={{ background: "#28a745" }}>
+          confirmado
+        </span>
+        <span className="badge text-dark" style={{ background: "#ffc107" }}>
+          proximo
+        </span>
+        <span className="badge" style={{ background: "#dc3545" }}>
+          na hora
+        </span>
+        <span className="badge" style={{ background: "#6c757d" }}>
+          cancelado
+        </span>
+        <span className="badge text-dark" style={{ background: "#0dcaf0" }}>
+          concluido
+        </span>
       </div>
 
       {/* slots */}
@@ -547,47 +714,102 @@ function irParaHoje() {
               const status = (ag?.status || "").toLowerCase();
 
               const slotBox = {
-                width: 80, height: 80, borderRadius: "50%",
-                background:"#fff", border:"2px solid #e5e7eb",
-                display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                gap:2, boxShadow:"0 1px 4px rgba(0,0,0,.08)", cursor:"pointer", userSelect:"none", position:"relative"
+                width: 80,
+                height: 80,
+                borderRadius: "50%",
+                background: "#fff",
+                border: "2px solid #e5e7eb",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 2,
+                boxShadow: "0 1px 4px rgba(0,0,0,.08)",
+                cursor: "pointer",
+                userSelect: "none",
+                position: "relative",
               };
-              const slotOff = { opacity:.5, cursor:"not-allowed" };
+              const slotOff = { opacity: 0.5, cursor: "not-allowed" };
               const aro = (() => {
                 switch (status) {
-                  case "confirmado": return { borderColor:"#28a745", boxShadow:"0 0 0 3px rgba(40,167,69,.15)" };
-                  case "proximo":   return { borderColor:"#ffc107", boxShadow:"0 0 0 3px rgba(255,193,7,.2)" };
-                  case "na hora":   return { borderColor:"#dc3545", boxShadow:"0 0 0 3px rgba(220,53,69,.2)" };
-                  case "cancelado": return { borderColor:"#6c757d", boxShadow:"0 0 0 3px rgba(108,117,125,.15)" };
-                  case "concluido": return { borderColor:"#0dcaf0", boxShadow:"0 0 0 3px rgba(13,202,240,.2)" };
-                  default: return {};
+                  case "confirmado":
+                    return {
+                      borderColor: "#28a745",
+                      boxShadow: "0 0 0 3px rgba(40,167,69,.15)",
+                    };
+                  case "proximo":
+                    return {
+                      borderColor: "#ffc107",
+                      boxShadow: "0 0 0 3px rgba(255,193,7,.2)",
+                    };
+                  case "na hora":
+                    return {
+                      borderColor: "#dc3545",
+                      boxShadow: "0 0 0 3px rgba(220,53,69,.2)",
+                    };
+                  case "cancelado":
+                    return {
+                      borderColor: "#6c757d",
+                      boxShadow: "0 0 0 3px rgba(108,117,125,.15)",
+                    };
+                  case "concluido":
+                    return {
+                      borderColor: "#0dcaf0",
+                      boxShadow: "0 0 0 3px rgba(13,202,240,.2)",
+                    };
+                  default:
+                    return {};
                 }
               })();
-              const chip = { position:"absolute", bottom:-10, fontSize:10, padding:"2px 6px", borderRadius:8, color:"#fff" };
+              const chip = {
+                position: "absolute",
+                bottom: -10,
+                fontSize: 10,
+                padding: "2px 6px",
+                borderRadius: 8,
+                color: "#fff",
+              };
               const chipStyle = (() => {
                 switch (status) {
-                  case "confirmado": return { ...chip, background:"#28a745" };
-                  case "proximo":    return { ...chip, background:"#ffc107", color:"#222" };
-                  case "na hora":    return { ...chip, background:"#dc3545" };
-                  case "cancelado":  return { ...chip, background:"#6c757d" };
-                  case "concluido":  return { ...chip, background:"#0dcaf0", color:"#063" };
-                  default: return null;
+                  case "confirmado":
+                    return { ...chip, background: "#28a745" };
+                  case "proximo":
+                    return { ...chip, background: "#ffc107", color: "#222" };
+                  case "na hora":
+                    return { ...chip, background: "#dc3545" };
+                  case "cancelado":
+                    return { ...chip, background: "#6c757d" };
+                  case "concluido":
+                    return { ...chip, background: "#0dcaf0", color: "#063" };
+                  default:
+                    return null;
                 }
               })();
 
               return (
                 <div
                   key={hhmm}
-                  style={{ ...slotBox, ...(desliga?slotOff:{}), ...aro }}
-                  title={desliga ? "passado" : (tem ? "abrir" : "novo")}
+                  style={{ ...slotBox, ...(desliga ? slotOff : {}), ...aro }}
+                  title={desliga ? "passado" : tem ? "abrir" : "novo"}
                   onClick={() => abrirSlot(hhmm)}
                 >
                   {/* menu ⋮ */}
                   <button
                     type="button"
                     className="btn btn-sm btn-light"
-                    onClick={(e) => { e.stopPropagation(); setSlotMenu((s)=> s===hhmm?null:hhmm); }}
-                    style={{ position:"absolute", top:-8, right:-8, width:24, height:24, borderRadius:"50%", padding:0 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSlotMenu((s) => (s === hhmm ? null : hhmm));
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      padding: 0,
+                    }}
                     title="Menu"
                   >
                     ⋮
@@ -597,50 +819,74 @@ function irParaHoje() {
                   {slotMenu === hhmm && (
                     <div
                       className="bg-white border rounded shadow-sm"
-                      style={{ position:"absolute", top:26, right:0, zIndex:5, width:180 }}
-                      onClick={(e)=>e.stopPropagation()}
+                      style={{
+                        position: "absolute",
+                        top: 26,
+                        right: 0,
+                        zIndex: 5,
+                        width: 180,
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <button className="dropdown-item" onClick={()=>{ setSlotMenu(null); abrirSlot(hhmm); }}>
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          setSlotMenu(null);
+                          abrirSlot(hhmm);
+                        }}
+                      >
                         Abrir
                       </button>
 
-                     {tem ? (
-  <>
-    {ag.clienteId && (
-      <button
-        className="dropdown-item"
-        onClick={() => {
-          setSlotMenu(null);
-         navegar(`/prontuario?clienteId=${ag.clienteId}`);
-        }}
-      >
-        👤 Abrir paciente
-      </button>
-    )}
+                      {tem ? (
+                        <>
+                          {ag.clienteId && (
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                setSlotMenu(null);
+                                navegar(
+                                  `/prontuario?clienteId=${ag.clienteId}`,
+                                );
+                              }}
+                            >
+                              👤 Abrir paciente
+                            </button>
+                          )}
 
-    <button
-      className="dropdown-item"
-      onClick={() => {
-        setSlotMenu(null);
-        irParaAgendamento(dataISO, hhmm, ag);
-      }}
-    >
-      ✏️ Editar agendamento
-    </button>
-  </>
-) : (
+                          <button
+                            className="dropdown-item"
+                            onClick={() => {
+                              setSlotMenu(null);
+                              irParaAgendamento(dataISO, hhmm, ag);
+                            }}
+                          >
+                            ✏️ Editar agendamento
+                          </button>
+                        </>
+                      ) : (
                         <>
                           <button
                             className="dropdown-item"
-                            onClick={()=>{ setSlotMenu(null); /* abre modal */ setChooserHora(hhmm); }}
+                            onClick={() => {
+                              setSlotMenu(null);
+                              /* abre modal */ setChooserHora(hhmm);
+                            }}
                           >
                             Criar agendamento
                           </button>
                           <button
                             className="dropdown-item text-danger"
-                            onClick={()=>{ setSlotMenu(null); removerSlot(hhmm); }}
+                            onClick={() => {
+                              setSlotMenu(null);
+                              removerSlot(hhmm);
+                            }}
                             disabled={!!mapaHoje[hhmm]}
-                            title={mapaHoje[hhmm] ? "há agendamento" : "remover horário"}
+                            title={
+                              mapaHoje[hhmm]
+                                ? "há agendamento"
+                                : "remover horário"
+                            }
                           >
                             Remover horário
                           </button>
@@ -651,49 +897,64 @@ function irParaHoje() {
 
                   <div className="fw-semibold">{hhmm}</div>
 
-{tem && (
-  <small
-    className="text-center fw-semibold"
-    style={{
-      fontSize: "10px",
-      maxWidth: "65px",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap",
-    }}
-    title={ag.clienteNome || "Paciente"}
-  >
-    {ag.clienteNome || "Paciente"}
-  </small>
-)}
+                  {tem && (
+                    <small
+                      className="text-center fw-semibold"
+                      style={{
+                        fontSize: "10px",
+                        maxWidth: "65px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={ag.clienteNome || "Paciente"}
+                    >
+                      {ag.clienteNome || "Paciente"}
+                    </small>
+                  )}
 
-{!tem && !desliga && (
-  <small className="text-muted" style={{ fontSize: "10px" }}>
-    livre
-  </small>
-)}
+                  {!tem && !desliga && (
+                    <small className="text-muted" style={{ fontSize: "10px" }}>
+                      livre
+                    </small>
+                  )}
 
-{!desliga && tem && chipStyle && (
-  <span style={chipStyle}>{status}</span>
-)}
+                  {!desliga && tem && chipStyle && (
+                    <span style={chipStyle}>{status}</span>
+                  )}
 
-{desliga && !tem && (
-  <small className="text-muted" style={{ fontSize: "10px" }}>
-    passado
-  </small>
-)}
+                  {desliga && !tem && (
+                    <small className="text-muted" style={{ fontSize: "10px" }}>
+                      passado
+                    </small>
+                  )}
                 </div>
               );
             })}
           </div>
 
           <div className="d-flex align-items-center gap-2 mt-3">
-            <input type="time" id="novoSlot" defaultValue="09:00" className="form-control" style={{ width: 120 }} />
+            <input
+              type="time"
+              id="novoSlot"
+              defaultValue="09:00"
+              className="form-control"
+              style={{ width: 120 }}
+            />
             <button
               className="btn btn-primary"
               onClick={() => {
                 const v = document.getElementById("novoSlot").value;
+
+                if (!v) return;
+
+                if (mapaHoje[v]) {
+                  alert("Já existe um agendamento neste horário.");
+                  return;
+                }
+
                 addSlotManual(v);
+                setChooserHora(v);
               }}
             >
               + Adicionar horário
@@ -706,32 +967,47 @@ function irParaHoje() {
       {chooserHora && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100"
-          style={{ background:"rgba(0,0,0,.35)", zIndex:50 }}
-          onClick={()=>setChooserHora(null)}
+          style={{ background: "rgba(0,0,0,.35)", zIndex: 50 }}
+          onClick={() => setChooserHora(null)}
         >
           <div
             className="position-absolute top-50 start-50 translate-middle bg-white border rounded shadow p-3"
             style={{ width: 360 }}
-            onClick={(e)=>e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            <h6 className="mb-2">Agendar {dataISO} — {chooserHora}</h6>
+            <h6 className="mb-2">
+              Agendar {dataISO} — {chooserHora}
+            </h6>
             <p className="mb-3 text-muted small">Escolha o tipo:</p>
             <div className="d-flex justify-content-between">
               <button
                 className="btn btn-primary"
-                onClick={()=>{ setChooserHora(null); navegar(`/agendar?data=${dataISO}&hora=${chooserHora}`); }}
+                onClick={() => {
+                  setChooserHora(null);
+                  navegar(`/agendar?data=${dataISO}&hora=${chooserHora}&tipo=rapido`);
+                }}
               >
                 🧑‍⚕️ Consulta
               </button>
               <button
                 className="btn btn-secondary"
-                onClick={()=>{ setChooserHora(null); navegar(`/compromissos?data=${dataISO}&hora=${chooserHora}&novo=1`); }}
+                onClick={() => {
+                  setChooserHora(null);
+                  navegar(
+                    `/compromissos?data=${dataISO}&hora=${chooserHora}&novo=1`,
+                  );
+                }}
               >
                 🗓️ Compromisso
               </button>
             </div>
             <div className="text-end mt-3">
-              <button className="btn btn-link" onClick={()=>setChooserHora(null)}>Cancelar</button>
+              <button
+                className="btn btn-link"
+                onClick={() => setChooserHora(null)}
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
