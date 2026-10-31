@@ -8,7 +8,10 @@ export default function Header() {
   const isOn = logged();
 
   return (
-    <header className="proflex-gradient text-white py-3 mb-0">
+   <header
+  className="proflex-gradient text-white py-3 mb-0 sticky-top"
+  style={{ zIndex: 1030 }}
+>
       <div className="container d-flex justify-content-between align-items-center">
         <div className="proflex-brand">
   <div className="proflex-brand-icon">PF</div>
