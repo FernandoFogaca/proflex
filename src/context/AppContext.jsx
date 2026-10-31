@@ -1,5 +1,11 @@
 // contexto do app (mantém sua lógica em localStorage, só adiciona upload de fotos no Firebase Storage)
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { jsPDF } from "jspdf";
 import { storage } from "../services/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -36,78 +42,107 @@ export const COMORBIDADES = [
   "Obesidade",
   "Tabagismo",
   "Gestação",
-   "Câncer",
-  
+  "Câncer",
 ];
 
 export function AppProvider({ children }) {
   // pacientes (com foto de perfil opcional)
   const [clients, setClients] = useState(() => loadDoNavegador("clients", []));
   // agendamentos da Agenda
-  const [appointments, setAppointments] = useState(() => loadDoNavegador("appointments", []));
+  const [appointments, setAppointments] = useState(() =>
+    loadDoNavegador("appointments", []),
+  );
 
   useEffect(() => salvarNoNavegador("clients", clients), [clients]);
-  useEffect(() => salvarNoNavegador("appointments", appointments), [appointments]);
+  useEffect(
+    () => salvarNoNavegador("appointments", appointments),
+    [appointments],
+  );
 
+  function normalizarTexto(valor) {
+    return String(valor || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function buscarPacienteDuplicado(dados) {
+    const nome = normalizarTexto(dados.nome);
+    const telefone = String(dados.telefone || "").replace(/\D/g, "");
+    const email = normalizarTexto(dados.email);
+
+    return clients.find((cliente) => {
+      const mesmoNome = nome && normalizarTexto(cliente.nome) === nome;
+      const mesmoTelefone =
+        telefone &&
+        String(cliente.telefone || "").replace(/\D/g, "") === telefone;
+      const mesmoEmail = email && normalizarTexto(cliente.email) === email;
+
+      return (mesmoNome && mesmoTelefone) || (mesmoNome && mesmoEmail);
+    });
+  }
   // ------------------------ CLIENTES
  function addClient(dados) {
+  const duplicado = buscarPacienteDuplicado(dados);
+
+  if (duplicado) {
+    alert(
+      `Atenção! O paciente ${duplicado.nome} já está cadastrado.\n\n` +
+      "Abra o cadastro existente para atualizar as informações."
+    );
+    return null;
+  }
+
   const novo = {
-    id: novoId("cli"),
+      id: novoId("cli"),
 
-    // Dados pessoais
-    nome: dados.nome || "Sem nome",
-    email: dados.email || "",
-    telefone: dados.telefone || "",
-    endereco: dados.endereco || "",
-    nascimento: dados.nascimento || "",
-    peso: dados.peso || "",
-    altura: dados.altura || "",
-    genero: dados.genero || "",
+      // Dados pessoais
+      nome: dados.nome || "Sem nome",
+      email: dados.email || "",
+      telefone: dados.telefone || "",
+      endereco: dados.endereco || "",
+      nascimento: dados.nascimento || "",
+      peso: dados.peso || "",
+      altura: dados.altura || "",
+      genero: dados.genero || "",
 
-    // Dados clínicos
-    comorbidades: Array.isArray(dados.comorbidades)
-      ? dados.comorbidades
-      : [],
+      // Dados clínicos
+      comorbidades: Array.isArray(dados.comorbidades) ? dados.comorbidades : [],
 
-    doencasExtras: Array.isArray(dados.doencasExtras)
-      ? dados.doencasExtras
-      : [],
+      doencasExtras: Array.isArray(dados.doencasExtras)
+        ? dados.doencasExtras
+        : [],
 
-    doencasNeurologicas: Array.isArray(dados.doencasNeurologicas)
-      ? dados.doencasNeurologicas
-      : [],
+      doencasNeurologicas: Array.isArray(dados.doencasNeurologicas)
+        ? dados.doencasNeurologicas
+        : [],
 
-    sindromeDescricao: dados.sindromeDescricao || "",
+      sindromeDescricao: dados.sindromeDescricao || "",
 
-    outrosDiagnosticos: dados.outrosDiagnosticos || "",
-    remedios: dados.remedios || "",
-    anotacoesPaciente: dados.anotacoesPaciente || "",
+      outrosDiagnosticos: dados.outrosDiagnosticos || "",
+      remedios: dados.remedios || "",
+      anotacoesPaciente: dados.anotacoesPaciente || "",
 
-    areas: dados.areas || {},
+      areas: dados.areas || {},
 
-    // Arquivos e históricos
-    fotoPerfilUrl: dados.fotoPerfilUrl || "",
+      // Arquivos e históricos
+      fotoPerfilUrl: dados.fotoPerfilUrl || "",
 
-    consultas: Array.isArray(dados.consultas)
-      ? dados.consultas
-      : [],
+      consultas: Array.isArray(dados.consultas) ? dados.consultas : [],
 
-    receitas: Array.isArray(dados.receitas)
-      ? dados.receitas
-      : [],
+      receitas: Array.isArray(dados.receitas) ? dados.receitas : [],
 
-    atestados: Array.isArray(dados.atestados)
-      ? dados.atestados
-      : [],
-  };
+      atestados: Array.isArray(dados.atestados) ? dados.atestados : [],
+    };
 
-  setClients((atual) => [novo, ...atual]);
-  return novo;
-}
+    setClients((atual) => [novo, ...atual]);
+    return novo;
+  }
 
   function updateClient(idCliente, alteracoes) {
     setClients((lista) =>
-      lista.map((c) => (c.id === idCliente ? { ...c, ...alteracoes } : c))
+      lista.map((c) => (c.id === idCliente ? { ...c, ...alteracoes } : c)),
     );
   }
 
@@ -117,7 +152,11 @@ export function AppProvider({ children }) {
 
   // ------------------------ AGENDAMENTOS (Agenda)
   function addAppointment(appt) {
-    const registro = { id: novoId("apt"), createdAt: new Date().toISOString(), ...appt };
+    const registro = {
+      id: novoId("apt"),
+      createdAt: new Date().toISOString(),
+      ...appt,
+    };
     setAppointments((lista) => [registro, ...lista]);
     return registro;
   }
@@ -128,51 +167,51 @@ export function AppProvider({ children }) {
     return n < 10 ? `0${n}` : String(n);
   }
 
- function addConsulta(
-  idCliente,
-  {
-    dataISO,
-    hora,
-    texto = "",
-    queixa = "",
-    avaliacao = "",
-    procedimentos = "",
-    evolucao = "",
-    conduta = "",
+  function addConsulta(
+    idCliente,
+    {
+      dataISO,
+      hora,
+      texto = "",
+      queixa = "",
+      avaliacao = "",
+      procedimentos = "",
+      evolucao = "",
+      conduta = "",
+    },
+  ) {
+    setClients((lista) =>
+      lista.map((c) => {
+        if (c.id !== idCliente) return c;
+
+        const numero = proximoNumeroConsulta(c);
+
+        const nova = {
+          id: novoId("con"),
+          numero,
+          dataISO,
+          hora,
+
+          // Mantemos para compatibilidade com consultas antigas
+          texto,
+
+          // Prontuário estruturado
+          queixa,
+          avaliacao,
+          procedimentos,
+          evolucao,
+          conduta,
+
+          fotos: [],
+        };
+
+        return {
+          ...c,
+          consultas: [nova, ...(c.consultas || [])],
+        };
+      }),
+    );
   }
-) {
-  setClients((lista) =>
-    lista.map((c) => {
-      if (c.id !== idCliente) return c;
-
-      const numero = proximoNumeroConsulta(c);
-
-      const nova = {
-        id: novoId("con"),
-        numero,
-        dataISO,
-        hora,
-
-        // Mantemos para compatibilidade com consultas antigas
-        texto,
-
-        // Prontuário estruturado
-        queixa,
-        avaliacao,
-        procedimentos,
-        evolucao,
-        conduta,
-
-        fotos: [],
-      };
-
-      return {
-        ...c,
-        consultas: [nova, ...(c.consultas || [])],
-      };
-    })
-  );
-}
 
   function updateConsulta(idCliente, idConsulta, alteracoes) {
     setClients((lista) =>
@@ -181,16 +220,21 @@ export function AppProvider({ children }) {
         return {
           ...c,
           consultas: (c.consultas || []).map((con) =>
-            con.id === idConsulta ? { ...con, ...alteracoes } : con
+            con.id === idConsulta ? { ...con, ...alteracoes } : con,
           ),
         };
-      })
+      }),
     );
   }
 
   async function deleteConsultas(idCliente, idsConsultas) {
     if (!idsConsultas?.length) return;
-    if (!window.confirm("Tem certeza que deseja excluir as consultas selecionadas?")) return;
+    if (
+      !window.confirm(
+        "Tem certeza que deseja excluir as consultas selecionadas?",
+      )
+    )
+      return;
     const senha = prompt("Digite a senha de exclusão:");
     if (senha !== SENHA_EXCLUIR) {
       alert("Senha incorreta.");
@@ -201,15 +245,19 @@ export function AppProvider({ children }) {
         if (c.id !== idCliente) return c;
         return {
           ...c,
-          consultas: (c.consultas || []).filter((con) => !idsConsultas.includes(con.id)),
+          consultas: (c.consultas || []).filter(
+            (con) => !idsConsultas.includes(con.id),
+          ),
         };
-      })
+      }),
     );
   }
 
   async function deleteClient(idCliente) {
-    if (!window.confirm("Tem certeza que deseja excluir este paciente?")) return;
-    if (!window.confirm("Essa ação é irreversível. Confirmar exclusão?")) return;
+    if (!window.confirm("Tem certeza que deseja excluir este paciente?"))
+      return;
+    if (!window.confirm("Essa ação é irreversível. Confirmar exclusão?"))
+      return;
     const senha = prompt("Digite a senha de exclusão:");
     if (senha !== SENHA_EXCLUIR) {
       alert("Senha incorreta.");
@@ -222,9 +270,12 @@ export function AppProvider({ children }) {
     if (cliente?.email) {
       const subject = encodeURIComponent("Confirmação de exclusão de cadastro");
       const body = encodeURIComponent(
-        `Olá ${cliente.nome},\n\nSeu cadastro/consultas foram excluídos conforme solicitação.\n\nAtt,\nEquipe`
+        `Olá ${cliente.nome},\n\nSeu cadastro/consultas foram excluídos conforme solicitação.\n\nAtt,\nEquipe`,
       );
-      window.open(`mailto:${cliente.email}?subject=${subject}&body=${body}`, "_blank");
+      window.open(
+        `mailto:${cliente.email}?subject=${subject}&body=${body}`,
+        "_blank",
+      );
     }
   }
 
@@ -245,16 +296,28 @@ export function AppProvider({ children }) {
         cliente.altura || "-"
       }`,
       40,
-      y
+      y,
     );
-    y = linha(`Comorbidades: ${(cliente.comorbidades || []).join(", ") || "-"}`, 40, y);
-    y = linha(`Outros diagnósticos: ${cliente.outrosDiagnosticos || "-"}`, 40, y);
+    y = linha(
+      `Comorbidades: ${(cliente.comorbidades || []).join(", ") || "-"}`,
+      40,
+      y,
+    );
+    y = linha(
+      `Outros diagnósticos: ${cliente.outrosDiagnosticos || "-"}`,
+      40,
+      y,
+    );
     y = linha(`Remédios: ${cliente.remedios || "-"}`, 40, y);
     y += 10;
 
     consultasSelecionadas.forEach((cons, idx) => {
       doc.setFontSize(13);
-      y = linha(`Consulta ${cons.numero} — ${cons.dataISO} ${cons.hora || ""}`, 40, y);
+      y = linha(
+        `Consulta ${cons.numero} — ${cons.dataISO} ${cons.hora || ""}`,
+        40,
+        y,
+      );
       doc.setFontSize(11);
 
       // quebra de texto simples
@@ -277,7 +340,11 @@ export function AppProvider({ children }) {
 
       // só menciona quantas fotos tem (implementação enxuta de aluno)
       if (cons.fotos?.length) {
-        y = linha(`Fotos anexadas: ${cons.fotos.length} (visualize no sistema)`, 50, y);
+        y = linha(
+          `Fotos anexadas: ${cons.fotos.length} (visualize no sistema)`,
+          50,
+          y,
+        );
       }
 
       y += 10;
@@ -323,10 +390,10 @@ export function AppProvider({ children }) {
         return {
           ...c,
           consultas: (c.consultas || []).map((con) =>
-            con.id === idConsulta ? { ...con, fotos: urls } : con
+            con.id === idConsulta ? { ...con, fotos: urls } : con,
           ),
         };
-      })
+      }),
     );
     return urls;
   }
@@ -355,7 +422,7 @@ export function AppProvider({ children }) {
       gerarRelatorioPDF,
       COMORBIDADES,
     }),
-    [clients, appointments]
+    [clients, appointments],
   );
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
