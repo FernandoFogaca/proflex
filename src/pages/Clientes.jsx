@@ -59,7 +59,7 @@ export default function Clientes() {
     telefone: "",
     temWhatsapp: false,
     endereco: "",
-    pais: "",
+    pais: "Brasil",
     cep: "",
     rua: "",
     numero: "",
@@ -81,11 +81,90 @@ export default function Clientes() {
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const buscarCEP = async () => {
+    if (form.pais !== "Brasil") return;
+
+    const cep = form.cep.replace(/\D/g, "");
+
+    if (cep.length !== 8) return;
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+
+      if (!response.ok) throw new Error("CEP não encontrado");
+
+      const dados = await response.json();
+
+      if (dados.erro) {
+        alert("CEP não encontrado.");
+        return;
+      }
+
+      const SIGLAS_ESTADOS = {
+        AC: "Acre",
+        AL: "Alagoas",
+        AP: "Amapá",
+        AM: "Amazonas",
+        BA: "Bahia",
+        CE: "Ceará",
+        DF: "Distrito Federal",
+        ES: "Espírito Santo",
+        GO: "Goiás",
+        MA: "Maranhão",
+        MT: "Mato Grosso",
+        MS: "Mato Grosso do Sul",
+        MG: "Minas Gerais",
+        PA: "Pará",
+        PB: "Paraíba",
+        PR: "Paraná",
+        PE: "Pernambuco",
+        PI: "Piauí",
+        RJ: "Rio de Janeiro",
+        RN: "Rio Grande do Norte",
+        RS: "Rio Grande do Sul",
+        RO: "Rondônia",
+        RR: "Roraima",
+        SC: "Santa Catarina",
+        SP: "São Paulo",
+        SE: "Sergipe",
+        TO: "Tocantins",
+      };
+
+      const estado = SIGLAS_ESTADOS[dados.uf] || "";
+
+      setForm((anterior) => ({
+        ...anterior,
+        rua: dados.logradouro || "",
+        bairro: dados.bairro || "",
+        cidade: dados.localidade || "",
+        estado: estado,
+      }));
+    } catch (error) {
+      console.error(error);
+      alert("Não foi possível consultar o CEP.");
+    }
+  };
+
   const onSubmit = (e) => {
     e.preventDefault();
     if (!form.nome.trim()) return;
     addClient(form);
-    setForm({ nome: "", email: "", telefone: "", endereco: "" });
+  setForm({
+  nome: "",
+  email: "",
+  semEmail: false,
+  telefone: "",
+  temWhatsapp: false,
+  endereco: "",
+  pais: "Brasil",
+  cep: "",
+  rua: "",
+  numero: "",
+  complemento: "",
+  bairro: "",
+  cidade: "",
+  estado: "",
+});
   };
 
   return (
@@ -208,6 +287,7 @@ export default function Clientes() {
                 name={campo}
                 value={form[campo]}
                 onChange={onChange}
+                onBlur={campo === "cep" ? buscarCEP : undefined}
               />
             )}
           </div>
