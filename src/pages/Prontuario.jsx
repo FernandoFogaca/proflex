@@ -474,11 +474,38 @@ export default function Prontuario() {
             ← Pacientes
           </button>
 
-          <h2 className="mb-1">{paciente.nome}</h2>
+          <div className="d-flex align-items-center gap-3">
+            <div
+              className="rounded-circle bg-light border d-flex align-items-center justify-content-center overflow-hidden"
+              style={{
+                width: "80px",
+                height: "80px",
+                flexShrink: 0,
+              }}
+            >
+              {paciente.fotoPerfilUrl ? (
+                <img
+                  src={paciente.fotoPerfilUrl}
+                  alt={`Foto de ${paciente.nome}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: "35px" }}>👤</span>
+              )}
+            </div>
 
-          <div className="text-muted">
-            {paciente.telefone || "Sem telefone"}
-            {paciente.email ? ` • ${paciente.email}` : ""}
+            <div>
+              <h2 className="mb-1">{paciente.nome}</h2>
+
+              <div className="text-muted">
+                {paciente.telefone || "Sem telefone"}
+                {paciente.email ? ` • ${paciente.email}` : ""}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -487,7 +514,9 @@ export default function Prontuario() {
             type="button"
             className="btn btn-outline-primary"
             onClick={() =>
-              navigate(`/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`)
+              navigate(
+                `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`,
+              )
             }
           >
             ✏️ Completar / editar cadastro
@@ -544,6 +573,16 @@ export default function Prontuario() {
                 <div className="card-body">
                   <small className="text-muted">Email</small>
                   <div className="fw-semibold">{paciente.email || "-"}</div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-12">
+              <div className="card h-100">
+                <div className="card-body">
+                  <small className="text-muted">Endereço</small>
+                  <div className="fw-semibold">
+                    {paciente.endereco || "Não informado"}
+                  </div>
                 </div>
               </div>
             </div>
