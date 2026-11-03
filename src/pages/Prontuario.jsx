@@ -6,12 +6,37 @@ import { jsPDF } from "jspdf";
 export default function Prontuario() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { clients, getClient } = useApp();
+  const { clients, getClient, salvarFotoPerfil } = useApp();
 
   const clienteId = params.get("clienteId");
   const paciente = clienteId ? getClient(clienteId) : null;
-
   const [aba, setAba] = useState("resumo");
+
+  const [salvandoFoto, setSalvandoFoto] = useState(false);
+
+  const atualizarFoto = async (event) => {
+    const arquivo = event.target.files?.[0];
+
+    if (!arquivo || !clienteId) return;
+
+    if (!arquivo.type.startsWith("image/")) {
+      alert("Selecione uma imagem válida.");
+      return;
+    }
+
+    setSalvandoFoto(true);
+
+    try {
+      await salvarFotoPerfil(clienteId, arquivo);
+      alert("Foto do paciente salva com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar foto:", error);
+      alert("Não foi possível salvar a foto.");
+    } finally {
+      setSalvandoFoto(false);
+      event.target.value = "";
+    }
+  };
   const [mostrarAtestado, setMostrarAtestado] = useState(false);
   const [dataAtestado, setDataAtestado] = useState(
     new Date().toLocaleDateString("en-CA"),
@@ -482,7 +507,7 @@ export default function Prontuario() {
                 height: "80px",
                 flexShrink: 0,
               }}
-            > 
+            >
               {paciente.fotoPerfilUrl ? (
                 <img
                   src={paciente.fotoPerfilUrl}
@@ -500,6 +525,23 @@ export default function Prontuario() {
 
             <div>
               <h2 className="mb-1">{paciente.nome}</h2>
+              <label
+                className="btn btn-sm btn-outline-primary mb-2"
+                style={{ cursor: salvandoFoto ? "wait" : "pointer" }}
+              >
+                {salvandoFoto
+                  ? "Salvando foto..."
+                  : "📷 Adicionar / trocar foto"}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={atualizarFoto}
+                  disabled={salvandoFoto}
+                  style={{ display: "none" }}
+                />
+              </label>
 
               <div className="text-muted">
                 {paciente.telefone || "Sem telefone"}
@@ -512,14 +554,14 @@ export default function Prontuario() {
         <div className="d-flex gap-2">
           <button
             type="button"
-           className="btn btn-sm btn-primary"
-sstyle={{
-  padding: "2px 10px",
-  fontSize: "12px",
-  lineHeight: "1.2",
-  borderRadius: "6px",
-  boxShadow: "none"
-}}
+            className="btn btn-sm btn-primary"
+            sstyle={{
+              padding: "2px 10px",
+              fontSize: "12px",
+              lineHeight: "1.2",
+              borderRadius: "6px",
+              boxShadow: "none",
+            }}
             onClick={() =>
               navigate(
                 `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`,

@@ -9,7 +9,7 @@ import React, {
 import { jsPDF } from "jspdf";
 import { storage } from "../services/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
+import { salvarFotoTeste } from "../services/cloudinary.js";
 const AppContext = createContext(null);
 
 // helpers simples
@@ -382,16 +382,17 @@ estado: dados.estado || "",
   // ------------------------ UPLOAD DE FOTOS (Firebase Storage)
 
   // foto de perfil (1 por cliente)
-  async function salvarFotoPerfil(idCliente, arquivo) {
-    if (!idCliente || !arquivo) return null;
-    const caminho = `clients/${idCliente}/perfil_${Date.now()}.jpg`;
-    const referencia = ref(storage, caminho);
-    await uploadBytes(referencia, arquivo);
-    const url = await getDownloadURL(referencia);
-    updateClient(idCliente, { fotoPerfilUrl: url });
-    return url;
-  }
+async function salvarFotoPerfil(idCliente, arquivo) {
+  if (!idCliente || !arquivo) return null;
 
+  const url = await salvarFotoTeste(arquivo);
+
+  updateClient(idCliente, {
+    fotoPerfilUrl: url,
+  });
+
+  return url;
+}
   // até 3 fotos por consulta (sobrescreve a lista inteira com as novas URLs)
   async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
     if (!idCliente || !idConsulta || !arquivos?.length) return [];

@@ -105,7 +105,7 @@ const smallButtonStyle = {
 };
 
 export default function Clientes() {
-  const { clients, addClient } = useApp();
+ const { clients, addClient, salvarFotoPerfil } = useApp();
   const nav = useNavigate();
 
   const [q, setQ] = useState("");
@@ -293,17 +293,34 @@ export default function Clientes() {
     }
   };
 
-  const onSubmit = (e) => {
+ const onSubmit = async (e) => {
     e.preventDefault();
+if (form.nome.trim().split(/\s+/).length < 2) {
+  alert("Informe o nome e o sobrenome do paciente.");
+  return;
+}
 
-    if (!form.nome.trim()) return;
+const telefoneNumeros = form.telefone.replace(/\D/g, "");
 
-    if (fotoCapturada) {
-      alert(
-        "A foto está na prévia, mas o salvamento definitivo ainda precisa ser conectado ao Firebase. O cadastro não será enviado para evitar perder a foto."
-      );
-      return;
-    }
+if (telefoneNumeros.length < 9 || telefoneNumeros.length > 15) {
+  alert("Informe um telefone válido, com 9 a 15 dígitos.");
+  return;
+}
+
+if (!form.cep.trim()) {
+  alert("O CEP ou código postal é obrigatório.");
+  return;
+}
+
+if (
+  form.pais === "Brasil" &&
+  !/^\d{8}$/.test(form.cep.replace(/\D/g, ""))
+) {
+  alert("O CEP brasileiro deve conter 8 números.");
+  return;
+}
+
+ 
 
     const enderecoCompleto = [
       [form.rua, form.numero].filter(Boolean).join(", "),
@@ -317,14 +334,30 @@ export default function Clientes() {
       .filter(Boolean)
       .join(" - ");
 
-    addClient({
-      ...form,
-      endereco: enderecoCompleto,
-    });
+  const novoPaciente = addClient({
+  ...form,
+  endereco: enderecoCompleto,
+});
 
-    setForm({ ...initialForm });
-    setFotoCapturada(null);
-  };
+if (!novoPaciente) return;
+
+if (fotoCapturada) {
+  try {
+    await salvarFotoPerfil(novoPaciente.id, fotoCapturada);
+  } catch (error) {
+    console.error("Erro ao salvar foto:", error);
+    alert(
+      "O paciente foi cadastrado, mas a foto não foi salva. " +
+      "Mantenha esta página aberta e tente novamente depois."
+    );
+    return;
+  }
+}
+
+setForm({ ...initialForm });
+setFotoCapturada(null);
+setQ("");
+ };
 
   return (
     <div className="container py-4">
