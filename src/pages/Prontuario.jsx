@@ -464,7 +464,7 @@ export default function Prontuario() {
   return (
     <div className="container py-4">
       {/* CABEÇALHO */}
-      <div className="d-flex justify-content-between align-items-start mb-4">
+      <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3 mb-4">
         <div>
           <button
             type="button"
@@ -482,7 +482,7 @@ export default function Prontuario() {
                 height: "80px",
                 flexShrink: 0,
               }}
-            >
+            > 
               {paciente.fotoPerfilUrl ? (
                 <img
                   src={paciente.fotoPerfilUrl}
@@ -512,7 +512,14 @@ export default function Prontuario() {
         <div className="d-flex gap-2">
           <button
             type="button"
-            className="btn btn-outline-primary"
+           className="btn btn-sm btn-primary"
+sstyle={{
+  padding: "2px 10px",
+  fontSize: "12px",
+  lineHeight: "1.2",
+  borderRadius: "6px",
+  boxShadow: "none"
+}}
             onClick={() =>
               navigate(
                 `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`,
