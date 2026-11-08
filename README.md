@@ -1,169 +1,117 @@
-# 📘 ProFlex System
+# ProFlex — Professional Scheduling & Client Management
 
----
+**ProFlex** is a modern, responsive web application designed to help healthcare professionals and service providers manage appointments, clients, clinical records and daily activities in one place.
 
-## 🇬🇧 English (UK)
+The platform combines scheduling, client management and reporting tools with an intuitive interface, helping professionals organise their work more efficiently.
 
-**ProFlex** is a modern, responsive scheduling system built to assist professionals in managing appointments, client data, reminders and evaluations.
+## Key Features
 
-Built with **ReactJS** and styled using **Bootstrap**, it includes animations and persuasive UI components for an intuitive and engaging experience.
+### Appointment Management
+- Daily scheduling with customisable time slots
+- Appointment status tracking
+- Personal appointments and professional consultations
+- Date navigation and appointment management
 
----
+### Client & Clinical Records
+- Client registration and profile management
+- Medical history and relevant health information
+- Consultation notes and patient progress tracking
+- PDF report generation
 
-### 🔧 Tech Stack
-- ReactJS (with Vite)
-- React Router DOM
-- Bootstrap (custom theme)
-- Custom CSS (animations, gradients)
-- Public API usage (Reqres.in for mock users)
+### Productivity Tools
+- Quick reminders and task tracking
+- WhatsApp shortcuts
+- Birthday notifications
+- Real-time clock, local weather and location information
 
----
+### User Experience
+- Responsive design for desktop and mobile devices
+- Consistent ProFlex branding with a teal and navy colour palette
+- Persistent navigation header
+- Dedicated marketing and subscription information page
+- User registration and login interface
+- Protected application routes
 
-### 🚀 Features
-- Welcome screen with multilingual animated greetings
-- Modern, mobile-first responsive UI
-- Persistent navigation header across all pages
-- Styled login screen
-- Real-time geolocation-based greetings and weather
-- Protected Developer Access
-- Persuasive "Sign Up" marketing page with testimonials and visual cards
+## Technology Stack
 
----
+| Technology | Purpose |
+|---|---|
+| React | Front-end development |
+| Vite | Development and build tooling |
+| React Router | Application navigation |
+| Bootstrap | Responsive interface components |
+| CSS | Custom styling and animations |
+| Lucide React | Interface icons |
+| jsPDF | PDF document generation |
+| Firebase | File storage integration |
+| Browser Local Storage | Local data persistence |
 
-### 🔒 Developer Access
-A developer-only section accessible via footer ("Dev Access" button). Password-protected access to internal tools.
+## Project Structure
 
----
-
-### 📂 Folder Structure
-├── src
-│ ├── components
-│ │ ├── Header.jsx
-│ │ ├── DevLogin.jsx
-│ │ ├── AvaliacaoUsuario.jsx
-│ ├── pages
-│ │ ├── Home.jsx
-│ │ ├── Login.jsx
-│ │ ├── Agenda.jsx
-│ │ ├── Marketing.jsx
-│ ├── App.jsx
-│ ├── main.jsx
-│ └── index.css
-
-yaml
-Copier
-Modifier
-
----
-
-### 🛠️ How to Run Locally
-```bash
-git clone https://github.com/FernandoFogaca/proflex.git
-cd proflex
-npm install
-npm run dev
-🇧🇷 Português (BR)
-ProFlex é um sistema moderno e responsivo de agendamentos, voltado a profissionais como fisioterapeutas, médicos, veterinários, petshops e autônomos. Ele ajuda a organizar compromissos, clientes, lembretes e avaliações em um só lugar.
-
-🔧 Tecnologias usadas
-ReactJS (com Vite)
-
-React Router DOM
-
-Bootstrap (tema personalizado)
-
-CSS com gradientes e animações
-
-Consumo de API pública (Reqres para usuários simulados)
-
-🚀 Funcionalidades
-Tela de boas-vindas com frases animadas
-
-Interface responsiva e moderna (foco em mobile)
-
-Cabeçalho de navegação fixo em todas as páginas
-
-Tela de login estilizada
-
-Saudação personalizada com clima local
-
-Página de marketing com depoimentos e cards persuasivos
-
-Acesso restrito ao desenvolvedor (senha)
-
-Layout com foco em conversão (botão "Assine Já")
-
-🔒 Área do Desenvolvedor
-Área protegida por senha com botão de acesso no rodapé. Visível apenas para quem sabe o caminho.
-
-📂 Estrutura de Pastas
-css
-Copier
-Modifier
-├── src
-│   ├── components
-│   │   ├── Header.jsx
-│   │   ├── DevLogin.jsx
-│   │   ├── AvaliacaoUsuario.jsx
-│   ├── pages
-│   │   ├── Home.jsx
-│   │   ├── Login.jsx
-│   │   ├── Agenda.jsx
-│   │   ├── Marketing.jsx
+```text
+proflex/
+├── src/
+│   ├── authentication/
+│   ├── components/
+│   ├── context/
+│   ├── pages/
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css
-🛠️ Como Rodar Localmente
-bash
-Copier
-Modifier
+├── package.json
+└── README.md
+```
+
+## Getting Started
+
+Clone the repository:
+
+```bash
 git clone https://github.com/FernandoFogaca/proflex.git
 cd proflex
-npm install
-npm run dev
-👨‍💻 Designed by Fernando Fogaça
-Projeto ProFlex (React + Bootstrap + API + PWA Ready)
+```
 
+Install the dependencies:
 
-
-
-# ProFlex System
-
-ProFlex é um sistema de agendamento e gestão de clientes para profissionais.
-
-## Tecnologias
-- React (Vite)
-- React Router
-- Bootstrap
-- jsPDF (relatórios)
-
-## Funcionalidades
-- Agenda com horários e status (confirmado, concluído, cancelado)
-- Cadastro de clientes e prontuário simples (consultas com notas)
-- Compromissos pessoais (separados da agenda de pacientes)
-- Lembretes no navegador e atalho para WhatsApp
-- Geração de PDF (relatórios, receita e atestado)
-- Login simples com sessão
-
-## Como executar
 ```bash
 npm install
-npm run dev
+```
 
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Create a production build:
+
+```bash
 npm run build
+```
 
+## Development Status
 
-Agora salve e saia do `nano`:
-- **Ctrl + O**, Enter (salvar)
-- **Ctrl + X** (sair)
+**ProFlex is currently under active development.**
 
-## 3) Commit e push na sua branch
-```bash
-git add README.md
-git commit -m "docs: README neutro (sem menções acadêmicas)"
-git push
+The application includes functional scheduling, client management and reporting features. Further improvements to authentication, data persistence, backend services and deployment are planned.
 
+The project is not yet intended for production use with real sensitive patient information.
 
-git push 
+## Future Development
 
+- Python-based backend API
+- Secure user authentication and authorisation
+- Cloud-based database integration
+- Subscription and account management
+- Improved data security and access controls
+- Additional reporting and automation features
 
+## Author
+
+**Fernando Fogaça**
+
+Software Development — React, JavaScript and Python
+
+---
+
+*ProFlex — Management • Scheduling • Care*
