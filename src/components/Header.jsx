@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Activity } from "lucide-react";
 import { logged, logout } from "../authentication/session.jsx";
 
 export default function Header() {
@@ -24,9 +25,11 @@ export default function Header() {
       <div className="container">
         <div className="d-flex justify-content-between align-items-center gap-3">
 
-          {/* Marca ProFlex */}
+          {/* Nova marca ProFlex */}
           <div className="proflex-brand">
-            <div className="proflex-brand-icon">PF</div>
+            <div className="proflex-brand-icon">
+              <Activity size={25} strokeWidth={2.5} />
+            </div>
 
             <div className="proflex-brand-text">
               <span className="proflex-brand-name">
@@ -48,7 +51,7 @@ export default function Header() {
             {menuOpen ? "✕" : "☰"}
           </button>
 
-          {/* Navegação */}
+          {/* Navegação desktop */}
           <nav
             id="proflex-navigation"
             role="navigation"

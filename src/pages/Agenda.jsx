@@ -446,12 +446,15 @@ export default function Agenda() {
   const [slotMenu, setSlotMenu] = useState(null);
 
   // estilos
-  const topBox = {
-    background: "linear-gradient(135deg, #00bcd4, #607d8b)",
-    color: "#fff",
-    borderRadius: 14,
-    boxShadow: "0 4px 14px rgba(0,0,0,.10)",
-  };
+  
+const topBox = {
+  background:
+    "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+  color: "#fff",
+  borderRadius: 14,
+  boxShadow: "0 6px 20px rgba(15, 118, 110, 0.16)",
+};
+
   const slotBox = {
     width: 80,
     height: 80,
