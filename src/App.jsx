@@ -11,7 +11,7 @@ import Compromissos from "./pages/Compromissos";
 import Prontuario from "./pages/Prontuario";
 
 import Consulta from "./pages/Consulta";
-import TesteCloudinary from "./pages/TesteCloudinary";
+
 
 import { AppProvider } from "./context/AppContext.jsx";
 import ProtectedRoute from "./authentication/ProtectedRoute";
@@ -73,13 +73,6 @@ export default function App() {
   element={
     <ProtectedRoute>
       <Consulta />
-    </ProtectedRoute>
-  }
-/><Route
-  path="/teste-cloudinary"
-  element={
-    <ProtectedRoute>
-      <TesteCloudinary />
     </ProtectedRoute>
   }
 />
