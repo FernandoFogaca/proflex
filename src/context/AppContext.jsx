@@ -7,8 +7,7 @@ import React, {
   useState,
 } from "react";
 import { jsPDF } from "jspdf";
-import { storage } from "../services/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 import { salvarFotoTeste } from "../services/cloudinary.js";
 const AppContext = createContext(null);
 
@@ -394,32 +393,36 @@ async function salvarFotoPerfil(idCliente, arquivo) {
   return url;
 }
   // até 3 fotos por consulta (sobrescreve a lista inteira com as novas URLs)
-  async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
-    if (!idCliente || !idConsulta || !arquivos?.length) return [];
-    const limitar = Array.from(arquivos).slice(0, 3);
-    const urls = [];
-    for (let i = 0; i < limitar.length; i++) {
-      const arquivo = limitar[i];
-      const caminho = `clients/${idCliente}/consultas/${idConsulta}/foto_${i + 1}_${Date.now()}.jpg`;
-      const referencia = ref(storage, caminho);
-      await uploadBytes(referencia, arquivo);
-      const url = await getDownloadURL(referencia);
-      urls.push(url);
-    }
-    // grava as URLs no registro da consulta
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-        return {
-          ...c,
-          consultas: (c.consultas || []).map((con) =>
-            con.id === idConsulta ? { ...con, fotos: urls } : con,
-          ),
-        };
-      }),
-    );
-    return urls;
+  
+async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
+  if (!idCliente || !idConsulta || !arquivos?.length) return [];
+
+  const limitar = Array.from(arquivos).slice(0, 3);
+  const urls = [];
+
+  for (const arquivo of limitar) {
+    const url = await salvarFotoTeste(arquivo);
+    urls.push(url);
   }
+
+  setClients((lista) =>
+    lista.map((cliente) => {
+      if (cliente.id !== idCliente) return cliente;
+
+      return {
+        ...cliente,
+        consultas: (cliente.consultas || []).map((consulta) =>
+          consulta.id === idConsulta
+            ? { ...consulta, fotos: urls }
+            : consulta
+        ),
+      };
+    })
+  );
+
+  return urls;
+}
+
 
   const valor = useMemo(
     () => ({
