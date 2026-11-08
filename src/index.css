@@ -317,3 +317,187 @@ video {
     max-width: 100%;
   }
 }
+
+/* Nova identidade visual do Header ProFlex */
+
+header.proflex-gradient {
+  background: linear-gradient(
+    135deg,
+    #14b8a6 0%,
+    #0d9488 50%,
+    #0f766e 100%
+  ) !important;
+}
+
+header .proflex-brand-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+header .proflex-brand-name {
+  color: #10243b;
+  font-weight: 800;
+  letter-spacing: -1.3px;
+}
+
+header .proflex-brand-name span {
+  color: #ffffff;
+}
+
+header .proflex-brand-text small {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+/* ===================================================
+   PROFLEX - NOVA IDENTIDADE VISUAL GLOBAL
+   Verde-turquesa + verde profundo + azul-marinho
+=================================================== */
+
+:root {
+  --proflex-primary: #14b8a6;
+  --proflex-primary-hover: #0d9488;
+  --proflex-primary-dark: #0f766e;
+  --proflex-navy: #10243b;
+  --proflex-gradient: linear-gradient(
+    135deg,
+    #14b8a6 0%,
+    #0d9488 50%,
+    #0f766e 100%
+  );
+}
+
+/* Gradientes principais */
+.proflex-gradient,
+.bg-primary {
+  background: var(--proflex-gradient) !important;
+  color: #ffffff !important;
+}
+
+/* Botões principais */
+.btn-primary,
+.btn-info,
+.proflex-button {
+  background: var(--proflex-gradient) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.13);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.btn-primary:hover,
+.btn-info:hover,
+.proflex-button:hover {
+  background: linear-gradient(
+    135deg,
+    #0d9488,
+    #115e59
+  ) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 7px 18px rgba(15, 118, 110, 0.2);
+}
+
+/* Evitar deslocamentos em botões posicionados */
+.btn-primary:hover,
+.btn-info:hover {
+  filter: brightness(1.03);
+}
+
+/* Links e textos de destaque */
+.text-primary,
+.text-info,
+.btn-link {
+  color: var(--proflex-primary-dark) !important;
+}
+
+/* Bordas e elementos de destaque */
+.border-primary,
+.border-info {
+  border-color: var(--proflex-primary) !important;
+}
+
+/* Formulários */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--proflex-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.15) !important;
+}
+
+/* Checkbox e radio selecionados */
+.form-check-input:checked {
+  background-color: var(--proflex-primary-hover) !important;
+  border-color: var(--proflex-primary-hover) !important;
+}
+
+/* Botões outline */
+.btn-outline-primary,
+.btn-outline-info {
+  color: var(--proflex-primary-dark);
+  border-color: var(--proflex-primary);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-info:hover {
+  background: var(--proflex-gradient) !important;
+  border-color: transparent !important;
+  color: white !important;
+}
+
+/* Badges que utilizam a cor principal */
+.badge.bg-primary,
+.badge.bg-info {
+  background: var(--proflex-gradient) !important;
+  color: white !important;
+}
+
+/* Links */
+a:not(.btn):hover {
+  color: var(--proflex-primary-dark);
+}
+
+/* Respeitar acessibilidade */
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary,
+  .btn-info,
+  .proflex-button {
+    transition: none;
+  }
+}
+
+/* PROFLEX - Botão Start Now da Home */
+
+.home-container .proflex-button,
+.home-container .btn.btn-outline-info {
+  background: linear-gradient(
+    135deg,
+    #14b8a6 0%,
+    #0d9488 50%,
+    #0f766e 100%
+  ) !important;
+
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+.home-container .proflex-button:hover,
+.home-container .btn.btn-outline-info:hover {
+  background: linear-gradient(
+    135deg,
+    #0d9488,
+    #115e59
+  ) !important;
+  color: #ffffff !important;
+}
