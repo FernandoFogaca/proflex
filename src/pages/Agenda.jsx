@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
+import { Activity } from "lucide-react";
 
 // helpers
 const hojeISO = () => new Date().toISOString().split("T")[0];
@@ -1016,7 +1017,36 @@ const topBox = {
         </div>
       )}
 
-      <div className="text-center text-muted mt-4">ProFlex</div>
+     
+<div className="d-flex justify-content-center align-items-center gap-3 mt-4 mb-3">
+  <div
+    style={{
+      width: 50,
+      height: 50,
+      borderRadius: 13,
+      background: "linear-gradient(135deg, #14b8a6, #0f766e)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#fff",
+      boxShadow: "0 6px 18px rgba(15, 118, 110, 0.15)",
+    }}
+  >
+    <Activity size={26} strokeWidth={2.5} />
+  </div>
+
+  <span
+    style={{
+      fontSize: 27,
+      fontWeight: 800,
+      letterSpacing: "-1.2px",
+      color: "#10243b",
+    }}
+  >
+    Pro<span style={{ color: "#0d9488" }}>Flex</span>
+  </span>
+</div>
+
     </div>
   );
 }
