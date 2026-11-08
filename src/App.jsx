@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Cadastro from "./pages/Cadastro.jsx";
 import Agenda from "./pages/Agenda";
 import AgendamentoPage from "./pages/AgendamentoPage.jsx";
 import Clientes from "./pages/Clientes";
@@ -24,6 +25,7 @@ export default function App() {
         {/* públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/marketing" element={<Marketing />} />
         <Route path="/devlogin" element={<DevLogin />} />
 

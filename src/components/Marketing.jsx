@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import AvaliacaoUsuario from "./AvaliacaoUsuario";
 
 export default function Marketing() {
@@ -21,7 +22,12 @@ export default function Marketing() {
         >
           Organize seus atendimentos com inteligência, sem papelada, sem confusão.
         </p>
-        <button className="btn btn-primary px-4 py-2 mt-3">Assine Já</button>
+        <Link
+  to="/cadastro"
+  className="btn btn-primary px-4 py-2 mt-3"
+>
+  Assine Já
+</Link>
       </div>
 
       {/* Seção de Benefícios */}
