@@ -1,4 +1,4 @@
-{/* Local de utilizacao Login/Header/App/rotas 
+/* Local de utilizacao Login/Header/App/rotas 
 Efeito bloqueia/permite acesso às páginas e mantém
  o usuário logado enquanto o navegador guardar o localStorage.
     logged diz se está logado true/false
@@ -7,7 +7,7 @@ Efeito bloqueia/permite acesso às páginas e mantém
 getRole/setRole define o papel do usuário ex. owner, user.
 getTenant/setTenant define a empresa/conta ativa.
        
-    */}
+    */
 
 // chaves no localStorage (prefixo pf_ = proflex)
 const KEY_LOGGED = "pf_logged"; // "1" quando logado
@@ -29,7 +29,7 @@ export const logged = () => localStorage.getItem(KEY_LOGGED) === "1";
 
 export const login = ({ role = "user", tenant = null } = {}) => {
   localStorage.setItem(KEY_LOGGED, "1");
-  localStorage.setItem(KEY_LOGGED, "1");
+
   localStorage.setItem(KEY_ROLE, role);
   if (tenant) {
     localStorage.setItem(KEY_TENANT, JSON.stringify(tenant));
