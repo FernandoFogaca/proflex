@@ -1,5 +1,9 @@
+
 import { Routes, Route } from "react-router-dom";
+
 import Header from "./components/Header";
+import PageHeader from "./components/PageHeader";
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro.jsx";
@@ -16,19 +20,39 @@ import Consulta from "./pages/Consulta";
 import { AppProvider } from "./context/AppContext.jsx";
 import ProtectedRoute from "./authentication/ProtectedRoute";
 
+function ProtectedPage({ children }) {
+  return (
+    <ProtectedRoute>
+      <div
+        style={{
+          maxWidth: 1480,
+          margin: "0 auto",
+          padding: "26px 20px 0",
+        }}
+      >
+        <PageHeader />
+      </div>
+
+      {children}
+    </ProtectedRoute>
+  );
+}
+
 export default function App() {
   return (
     <AppProvider>
       <Header />
+
       <Routes>
-        {/* públicas */}
+        {/* PUBLIC PAGES */}
+
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/marketing" element={<Marketing />} />
         <Route path="/devlogin" element={<DevLogin />} />
 
-        {/* protegidas */}
+        {/* DASHBOARD */}
 
         <Route
           path="/dashboard"
@@ -39,6 +63,8 @@ export default function App() {
           }
         />
 
+        {/* AGENDA - WITHOUT DUPLICATE HEADER */}
+
         <Route
           path="/agenda"
           element={
@@ -47,44 +73,51 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* OTHER PROTECTED PAGES WITH PREMIUM HEADER */}
+
         <Route
           path="/agendar"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <AgendamentoPage />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
+
         <Route
           path="/clientes"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Clientes />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
+
         <Route
           path="/compromissos"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Compromissos />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
+
         <Route
           path="/prontuario"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Prontuario />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
+
         <Route
           path="/consulta"
           element={
-            <ProtectedRoute>
+            <ProtectedPage>
               <Consulta />
-            </ProtectedRoute>
+            </ProtectedPage>
           }
         />
       </Routes>
