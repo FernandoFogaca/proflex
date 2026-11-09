@@ -1,26 +1,33 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { logged } from "../authentication/session";
 
 export default function Home() {
   const navigate = useNavigate();
 
   return (
     <>
-      
       <div className="home-container">
         <h1 className="Fadetext-1">Welcome to Proflex</h1>
         <h1 className="Fadetext-2">Benvenue à Proflex</h1>
         <h1 className="Fadetext-3">Benvindo ao Proflex</h1>
 
         <p className="bottom-text">
-          Proflex system helps professionals manage their schedules, reminders, and client data – all in one place.
+          Proflex system helps professionals manage their schedules, reminders,
+          and client data – all in one place.
         </p>
 
         {/* 🔁 Agora vai para a tela de login */}
         <button
           type="button"
           className="btn btn-outline-info custom-button"
-          onClick={() => navigate("/login")}
+          onClick={() => {
+            if (logged()) {
+              navigate("/dashboard");
+            } else {
+              navigate("/login");
+            }
+          }}
         >
           Start Now
         </button>

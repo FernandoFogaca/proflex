@@ -10,9 +10,8 @@ import Marketing from "./components/Marketing";
 import DevLogin from "./components/DevLogin";
 import Compromissos from "./pages/Compromissos";
 import Prontuario from "./pages/Prontuario";
-
+import Dashboard from "./pages/Dashboard";
 import Consulta from "./pages/Consulta";
-
 
 import { AppProvider } from "./context/AppContext.jsx";
 import ProtectedRoute from "./authentication/ProtectedRoute";
@@ -30,6 +29,16 @@ export default function App() {
         <Route path="/devlogin" element={<DevLogin />} />
 
         {/* protegidas */}
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/agenda"
           element={
@@ -69,15 +78,15 @@ export default function App() {
               <Prontuario />
             </ProtectedRoute>
           }
-                  />
-                  <Route
-  path="/consulta"
-  element={
-    <ProtectedRoute>
-      <Consulta />
-    </ProtectedRoute>
-  }
-/>
+        />
+        <Route
+          path="/consulta"
+          element={
+            <ProtectedRoute>
+              <Consulta />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </AppProvider>
   );
