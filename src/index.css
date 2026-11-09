@@ -501,3 +501,16 @@ a:not(.btn):hover {
   ) !important;
   color: #ffffff !important;
 }
+/* Dashboard responsive chart */
+/* Dashboard - gráficos responsivos */
+.dashboard-chart {
+  width: 100%;
+  height: 240px;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-chart {
+    height: 180px;
+  }
+}

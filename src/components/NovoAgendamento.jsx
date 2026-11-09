@@ -142,6 +142,9 @@ export default function NovoAgendamento() {
     addClient,
     updateClient,
     addAppointment,
+    appointments,
+    setAppointments,
+    professionals,
     addConsulta,
     updateConsulta,
     deleteConsultas,
@@ -166,6 +169,101 @@ export default function NovoAgendamento() {
   );
   const [data, setData] = useState(dataInicial);
   const [hora, setHora] = useState(horaInicial);
+
+
+  // Profissional responsável pelo agendamento
+  const [professionalId, setProfessionalId] = useState(
+    params.get("professionalId") || ""
+  );
+
+  // Duração da consulta em minutos
+  const [duracao, setDuracao] = useState(60);
+
+  const profissionaisAtivos = (professionals || []).filter(
+    (profissional) => profissional.ativo !== false
+  );
+
+  const profissionalSelecionado = (professionals || []).find(
+    (profissional) => String(profissional.id) === String(professionalId)
+  );
+
+  useEffect(() => {
+    if (!professionalId && profissionaisAtivos.length === 1) {
+      setProfessionalId(String(profissionaisAtivos[0].id));
+    }
+  }, [professionalId, professionals]);
+
+  useEffect(() => {
+    if (profissionalSelecionado) {
+      setDuracao(Number(profissionalSelecionado.duracaoConsulta) || 60);
+    }
+  }, [profissionalSelecionado?.id, profissionalSelecionado?.duracaoConsulta]);
+
+
+  const validarHorario = () => {
+    if (editandoPeloProntuario) return true;
+
+    const inicio = hora.split(":").map(Number);
+    const inicioMin = inicio[0] * 60 + inicio[1];
+    const duracaoMin = Number(duracao);
+    const fimMin = inicioMin + duracaoMin;
+
+    if (!data || !hora || !Number.isFinite(inicioMin)) {
+      alert("Informe uma data e um horário válidos.");
+      return false;
+    }
+
+    if (!Number.isFinite(duracaoMin) || duracaoMin < 5 || duracaoMin > 480) {
+      alert("Informe uma duração entre 5 e 480 minutos.");
+      return false;
+    }
+
+    if (fimMin > 1440) {
+      alert("A consulta não pode ultrapassar a meia-noite.");
+      return false;
+    }
+
+    if (profissionaisAtivos.length > 0 && !profissionalSelecionado) {
+      alert("Selecione um profissional.");
+      return false;
+    }
+
+    const conflito = (appointments || []).some((agendamento) => {
+      if (agendamento.data !== data) return false;
+
+      if (
+        String(agendamento.professionalId || "") !==
+        String(professionalId || "")
+      ) {
+        return false;
+      }
+
+      if (["cancelado", "cancelada"].includes(agendamento.status)) {
+        return false;
+      }
+
+      const [h, m] = String(agendamento.hora || "").split(":").map(Number);
+
+      if (!Number.isFinite(h) || !Number.isFinite(m)) {
+        return false;
+      }
+
+      const outroInicio = h * 60 + m;
+      const outroFim =
+        outroInicio + (Number(agendamento.duracaoMin) || 60);
+
+      return inicioMin < outroFim && fimMin > outroInicio;
+    });
+
+    if (conflito) {
+      alert("Este profissional já possui uma consulta nesse horário.");
+      return false;
+    }
+
+    return true;
+  };
+
+
 
   const [buscaPaciente, setBuscaPaciente] = useState("");
   const [nome, setNome] = useState("");
@@ -362,8 +460,10 @@ export default function NovoAgendamento() {
   const idade = calcIdade(nascimento);
 
   // ----- salvar/atualizar paciente + agendamento + consulta 01 (com extras) -----
-  const handleSubmit = (e) => {
+   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!validarHorario()) return;
 
     const partesNome = nome.trim().split(/\s+/);
 
@@ -464,7 +564,9 @@ export default function NovoAgendamento() {
         conduta: condutaAtual.trim(),
       });
     }
-    if (data && hora && !clienteExistente && !editandoPeloProntuario) {
+   
+    // Salvar o agendamento para pacientes novos ou existentes
+    if (data && hora && !editandoPeloProntuario) {
       addAppointment({
         data,
         hora,
@@ -472,8 +574,13 @@ export default function NovoAgendamento() {
         clienteNome: cliente.nome,
         observacoes,
         tipo,
+        professionalId: professionalId || null,
+        profissionalNome: profissionalSelecionado?.nome || "",
+        duracaoMin: Number(duracao),
+        status: "agendado",
       });
     }
+
 
     alert("✅ Cadastro salvo!");
 
@@ -696,6 +803,60 @@ export default function NovoAgendamento() {
             onChange={(e) => setHora(e.target.value)}
           />
         </div>
+
+      {!editandoPeloProntuario && (
+        <>
+          <div className="col-md-6">
+            <label className="form-label">
+              Profissional responsável
+            </label>
+
+            <select
+              className="form-select"
+              value={professionalId}
+              onChange={(e) => setProfessionalId(e.target.value)}
+              required={profissionaisAtivos.length > 0}
+            >
+              <option value="">Selecione um profissional</option>
+
+              {profissionaisAtivos.map((profissional) => (
+                <option
+                  key={profissional.id}
+                  value={profissional.id}
+                >
+                  {profissional.nome}
+                  {profissional.especialidade
+                    ? ` — ${profissional.especialidade}`
+                    : ""}
+                </option>
+              ))}
+            </select>
+
+            {profissionaisAtivos.length === 0 && (
+              <small className="text-muted">
+                Nenhum profissional ativo cadastrado.
+              </small>
+            )}
+          </div>
+
+          <div className="col-md-3">
+            <label className="form-label">
+              Duração da consulta (minutos)
+            </label>
+
+            <input
+              type="number"
+              className="form-control"
+              min="5"
+              max="480"
+              step="5"
+              value={duracao}
+              onChange={(e) => setDuracao(Number(e.target.value))}
+              required
+            />
+          </div>
+        </>
+      )}
 
         <SectionHeader
           number="1"

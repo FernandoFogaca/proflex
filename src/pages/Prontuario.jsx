@@ -436,17 +436,10 @@ export default function Prontuario() {
   if (!paciente) {
     return (
       <div className="container py-4">
-        <div className="mb-4">
-          <h2 className="mb-1">Prontuários</h2>
-          <p className="text-muted mb-0">
-            Localize um paciente para acessar o prontuário clínico.
-          </p>
-        </div>
-
-        <div className="card">
+               <div className="card">
           <div className="card-body">
             <label className="form-label fw-semibold">Buscar paciente</label>
-
+            <p> Localize um paciente para acessar o prontuário clínico.</p>
             <input
               type="text"
               className="form-control mb-3"
