@@ -116,13 +116,7 @@ const saveLS = (k, v) => {
 
 function SectionHeader({ number, title, subtitle }) {
   return (
-    <div
-      className="col-12 mt-4 mb-2 p-3 rounded"
-      style={{
-        background: "linear-gradient(90deg, #12b8c8, #5f8797)",
-        color: "white",
-      }}
-    >
+    <div className="col-12 mt-4 mb-2 p-3 proflex-section-header">
       <h5 className="mb-1">
         {number}. {title}
       </h5>
@@ -170,21 +164,20 @@ export default function NovoAgendamento() {
   const [data, setData] = useState(dataInicial);
   const [hora, setHora] = useState(horaInicial);
 
-
   // Profissional responsável pelo agendamento
   const [professionalId, setProfessionalId] = useState(
-    params.get("professionalId") || ""
+    params.get("professionalId") || "",
   );
 
   // Duração da consulta em minutos
   const [duracao, setDuracao] = useState(60);
 
   const profissionaisAtivos = (professionals || []).filter(
-    (profissional) => profissional.ativo !== false
+    (profissional) => profissional.ativo !== false,
   );
 
   const profissionalSelecionado = (professionals || []).find(
-    (profissional) => String(profissional.id) === String(professionalId)
+    (profissional) => String(profissional.id) === String(professionalId),
   );
 
   useEffect(() => {
@@ -198,7 +191,6 @@ export default function NovoAgendamento() {
       setDuracao(Number(profissionalSelecionado.duracaoConsulta) || 60);
     }
   }, [profissionalSelecionado?.id, profissionalSelecionado?.duracaoConsulta]);
-
 
   const validarHorario = () => {
     if (editandoPeloProntuario) return true;
@@ -242,15 +234,16 @@ export default function NovoAgendamento() {
         return false;
       }
 
-      const [h, m] = String(agendamento.hora || "").split(":").map(Number);
+      const [h, m] = String(agendamento.hora || "")
+        .split(":")
+        .map(Number);
 
       if (!Number.isFinite(h) || !Number.isFinite(m)) {
         return false;
       }
 
       const outroInicio = h * 60 + m;
-      const outroFim =
-        outroInicio + (Number(agendamento.duracaoMin) || 60);
+      const outroFim = outroInicio + (Number(agendamento.duracaoMin) || 60);
 
       return inicioMin < outroFim && fimMin > outroInicio;
     });
@@ -262,8 +255,6 @@ export default function NovoAgendamento() {
 
     return true;
   };
-
-
 
   const [buscaPaciente, setBuscaPaciente] = useState("");
   const [nome, setNome] = useState("");
@@ -460,7 +451,7 @@ export default function NovoAgendamento() {
   const idade = calcIdade(nascimento);
 
   // ----- salvar/atualizar paciente + agendamento + consulta 01 (com extras) -----
-   const handleSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!validarHorario()) return;
@@ -564,7 +555,7 @@ export default function NovoAgendamento() {
         conduta: condutaAtual.trim(),
       });
     }
-   
+
     // Salvar o agendamento para pacientes novos ou existentes
     if (data && hora && !editandoPeloProntuario) {
       addAppointment({
@@ -580,7 +571,6 @@ export default function NovoAgendamento() {
         status: "agendado",
       });
     }
-
 
     alert("✅ Cadastro salvo!");
 
@@ -726,7 +716,7 @@ export default function NovoAgendamento() {
   const [atestadoTexto, setAtestadoTexto] = useState("");
 
   return (
-    <div className="container py-4">
+    <div className="container py-4 proflex-appointment-page">
       <h4 className="mb-3">
         Cadastro {clienteExistente ? "do Paciente" : "de Agendamento"}
       </h4>
@@ -804,59 +794,54 @@ export default function NovoAgendamento() {
           />
         </div>
 
-      {!editandoPeloProntuario && (
-        <>
-          <div className="col-md-6">
-            <label className="form-label">
-              Profissional responsável
-            </label>
+        {!editandoPeloProntuario && (
+          <>
+            <div className="col-md-6">
+              <label className="form-label">Profissional responsável</label>
 
-            <select
-              className="form-select"
-              value={professionalId}
-              onChange={(e) => setProfessionalId(e.target.value)}
-              required={profissionaisAtivos.length > 0}
-            >
-              <option value="">Selecione um profissional</option>
+              <select
+                className="form-select"
+                value={professionalId}
+                onChange={(e) => setProfessionalId(e.target.value)}
+                required={profissionaisAtivos.length > 0}
+              >
+                <option value="">Selecione um profissional</option>
 
-              {profissionaisAtivos.map((profissional) => (
-                <option
-                  key={profissional.id}
-                  value={profissional.id}
-                >
-                  {profissional.nome}
-                  {profissional.especialidade
-                    ? ` — ${profissional.especialidade}`
-                    : ""}
-                </option>
-              ))}
-            </select>
+                {profissionaisAtivos.map((profissional) => (
+                  <option key={profissional.id} value={profissional.id}>
+                    {profissional.nome}
+                    {profissional.especialidade
+                      ? ` — ${profissional.especialidade}`
+                      : ""}
+                  </option>
+                ))}
+              </select>
 
-            {profissionaisAtivos.length === 0 && (
-              <small className="text-muted">
-                Nenhum profissional ativo cadastrado.
-              </small>
-            )}
-          </div>
+              {profissionaisAtivos.length === 0 && (
+                <small className="text-muted">
+                  Nenhum profissional ativo cadastrado.
+                </small>
+              )}
+            </div>
 
-          <div className="col-md-3">
-            <label className="form-label">
-              Duração da consulta (minutos)
-            </label>
+            <div className="col-md-3">
+              <label className="form-label">
+                Duração da consulta (minutos)
+              </label>
 
-            <input
-              type="number"
-              className="form-control"
-              min="5"
-              max="480"
-              step="5"
-              value={duracao}
-              onChange={(e) => setDuracao(Number(e.target.value))}
-              required
-            />
-          </div>
-        </>
-      )}
+              <input
+                type="number"
+                className="form-control"
+                min="5"
+                max="480"
+                step="5"
+                value={duracao}
+                onChange={(e) => setDuracao(Number(e.target.value))}
+                required
+              />
+            </div>
+          </>
+        )}
 
         <SectionHeader
           number="1"
@@ -886,7 +871,13 @@ export default function NovoAgendamento() {
                     className="list-group-item list-group-item-action"
                     onClick={() =>
                       navigate(
-                        `/agendar?data=${data}&hora=${hora}&clienteId=${paciente.id}&tipo=rapido`,
+                        `/agendar?${new URLSearchParams({
+                          data,
+                          hora,
+                          clienteId: paciente.id,
+                          tipo: "rapido",
+                          ...(professionalId ? { professionalId } : {}),
+                        }).toString()}`,
                       )
                     }
                   >
@@ -938,30 +929,30 @@ export default function NovoAgendamento() {
             </label>
           </div>
         </div>
-       <div className="col-md-6">
-  <label className="form-label">Email</label>
-  <input
-    type="email"
-    className="form-control"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    disabled={semEmail}
-    required={!semEmail}
-  />
+        <div className="col-md-6">
+          <label className="form-label">Email</label>
+          <input
+            type="email"
+            className="form-control"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={semEmail}
+            required={!semEmail}
+          />
 
-  <label className="form-check-label mt-2">
-    <input
-      type="checkbox"
-      className="form-check-input me-2"
-      checked={semEmail}
-      onChange={(e) => {
-        setSemEmail(e.target.checked);
-        if (e.target.checked) setEmail("");
-      }}
-    />
-    Não possui e-mail
-  </label>
-</div>
+          <label className="form-check-label mt-2">
+            <input
+              type="checkbox"
+              className="form-check-input me-2"
+              checked={semEmail}
+              onChange={(e) => {
+                setSemEmail(e.target.checked);
+                if (e.target.checked) setEmail("");
+              }}
+            />
+            Não possui e-mail
+          </label>
+        </div>
         <div className="col-md-6">
           <label className="form-label">Endereço</label>
           <input
@@ -1297,7 +1288,6 @@ export default function NovoAgendamento() {
           >
             Cancelar
           </button>
-          <button className="proflex-button">Confirmar</button>
         </div>
       </form>
 

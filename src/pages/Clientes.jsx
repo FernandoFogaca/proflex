@@ -361,7 +361,7 @@ setQ("");
 
   return (
     <div className="container py-4">
-      <h3 className="mb-3">Paciente</h3>
+   
 
       <form onSubmit={onSubmit}>
 

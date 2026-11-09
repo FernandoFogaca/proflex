@@ -514,3 +514,107 @@ a:not(.btn):hover {
     height: 180px;
   }
 }
+
+/* ==========================================
+   PROFLEX — CADASTRO RÁPIDO E COMPLETO
+   ========================================== */
+
+.proflex-appointment-page {
+  max-width: 1140px;
+  margin: 0 auto;
+  color: #10243b;
+}
+
+/* Título principal */
+.proflex-appointment-page > h4 {
+  font-weight: 750;
+  letter-spacing: -0.5px;
+  margin-bottom: 1rem;
+}
+
+/* Títulos dos campos */
+.proflex-appointment-page .form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #29455a;
+}
+
+/* Campos e seletores */
+.proflex-appointment-page .form-control,
+.proflex-appointment-page .form-select {
+  background-color: #ffffff;
+  border: 1px solid #d4e2e3;
+  border-radius: 10px;
+  min-height: 42px;
+}
+
+/* Campos de texto maiores */
+.proflex-appointment-page textarea.form-control {
+  min-height: 100px;
+}
+
+/* Campo selecionado */
+.proflex-appointment-page .form-control:focus,
+.proflex-appointment-page .form-select:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.12);
+}
+
+/* Cabeçalhos das seções */
+.proflex-appointment-page .proflex-section-header {
+  background: linear-gradient(
+    135deg,
+    #14b8a6,
+    #0d9488,
+    #0f766e
+  );
+  color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 5px 14px rgba(15, 118, 110, 0.13);
+}
+
+.proflex-appointment-page .proflex-section-header h5 {
+  font-weight: 700;
+}
+
+/* Caixas de seleção */
+.proflex-appointment-page .form-check {
+  margin-bottom: 0;
+}
+
+.proflex-appointment-page .form-check-input {
+  cursor: pointer;
+}
+
+/* Busca de pacientes */
+.proflex-appointment-page .list-group-item-action:hover {
+  background: #eaf8f5;
+}
+
+/* Botões */
+.proflex-appointment-page .btn {
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Bordas dos painéis */
+.proflex-appointment-page .border.rounded {
+  border-color: #d8e7e7 !important;
+  border-radius: 12px !important;
+}
+
+/* Celulares */
+@media (max-width: 767.98px) {
+  .proflex-appointment-page {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .proflex-appointment-page .row.g-3 {
+    --bs-gutter-y: 0.8rem;
+  }
+
+  .proflex-appointment-page .proflex-section-header {
+    margin-top: 1.1rem !important;
+  }
+}

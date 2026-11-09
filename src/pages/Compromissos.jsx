@@ -104,7 +104,7 @@ export default function Compromissos() {
 
   return (
     <div className="container py-4">
-      <h4 className="mb-3">Compromissos</h4>
+    
 
       {/* Filtro */}
       <div className="row g-2 align-items-end">
@@ -177,7 +177,7 @@ export default function Compromissos() {
           )}
         </div>
         <small className="text-muted d-block mt-2">
-          Obs.: o envio automático real no WhatsApp exige servidor + WhatsApp Cloud API. Aqui, no horário, abrimos o WhatsApp com a mensagem.
+          Obs.: o envio automático real no WhatsApp exige servidor + WhatsApp Cloud API. Aqui, no horário, 
         </small>
       </div>
 
