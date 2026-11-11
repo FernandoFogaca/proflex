@@ -161,11 +161,11 @@ export function AppProvider({ children }) {
   // ------------------------ ESTADOS EXISTENTES
 
   const [clients, setClients] = useState(() =>
-    loadDoNavegador("clients", []),
+    [],
   );
 
   const [appointments, setAppointments] = useState(() =>
-    loadDoNavegador("appointments", []),
+    [],
   );
 
   // ------------------------ NOVO ESTADO: PROFISSIONAIS
