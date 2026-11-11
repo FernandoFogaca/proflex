@@ -1,5 +1,4 @@
-
- // Contexto principal do ProFlex
+// Contexto principal do ProFlex
 import React, {
   createContext,
   useContext,
@@ -7,8 +6,21 @@ import React, {
   useMemo,
   useState,
 } from "react";
+
 import { jsPDF } from "jspdf";
 import { salvarFotoTeste } from "../services/cloudinary.js";
+
+// Firebase
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import { auth, db } from "../services/firebase";
 
 const AppContext = createContext(null);
 
@@ -68,8 +80,7 @@ function normalizarDuracao(valor, padrao = 60) {
 }
 
 function horarioValido(valor) {
-  return typeof valor === "string" &&
-    /^([01]\d|2[0-3]):[0-5]\d$/.test(valor);
+  return typeof valor === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(valor);
 }
 
 function minutos(horario) {
@@ -108,9 +119,7 @@ function configurarProfissional(dados = {}, anterior = null) {
     throw new Error("O fim do expediente deve ser após o início.");
   }
 
-  const temIntervalo = dados.temIntervalo ??
-    base.temIntervalo ??
-    true;
+  const temIntervalo = dados.temIntervalo ?? base.temIntervalo ?? true;
 
   if (temIntervalo) {
     if (
@@ -144,9 +153,7 @@ function configurarProfissional(dados = {}, anterior = null) {
     duracaoConsulta: normalizarDuracao(
       dados.duracaoConsulta ?? base.duracaoConsulta,
     ),
-    diasTrabalho: normalizarDias(
-      dados.diasTrabalho ?? base.diasTrabalho,
-    ),
+    diasTrabalho: normalizarDias(dados.diasTrabalho ?? base.diasTrabalho),
     inicioExpediente: inicio,
     fimExpediente: fim,
     temIntervalo: Boolean(temIntervalo),
@@ -158,15 +165,48 @@ function configurarProfissional(dados = {}, anterior = null) {
 }
 
 export function AppProvider({ children }) {
+  const [uid, setUid] = useState(null);
+  const [authCarregando, setAuthCarregando] = useState(true);
+
+  useEffect(() => {
+    const cancelar = onAuthStateChanged(auth, (usuario) => {
+      setUid(usuario?.uid ?? null);
+      setAuthCarregando(false);
+    });
+
+    return () => cancelar();
+  }, []);
   // ------------------------ ESTADOS EXISTENTES
 
-  const [clients, setClients] = useState(() =>
-    [],
-  );
+  const [clients, setClients] = useState(() => []);
+  useEffect(() => {
+    if (!uid) {
+      setClients([]);
+      return;
+    }
 
-  const [appointments, setAppointments] = useState(() =>
-    [],
-  );
+    const pacientesRef = collection(db, "usuarios", uid, "pacientes");
+
+    const cancelar = onSnapshot(
+      pacientesRef,
+      (snapshot) => {
+        const pacientes = snapshot.docs.map((documento) => ({
+          ...documento.data(),
+          id: documento.id,
+        }));
+
+        setClients(pacientes);
+      },
+      (erro) => {
+        console.error("Erro ao carregar pacientes:", erro);
+        setClients([]);
+      },
+    );
+
+    return () => cancelar();
+  }, [uid]);
+
+  const [appointments, setAppointments] = useState(() => []);
 
   // ------------------------ NOVO ESTADO: PROFISSIONAIS
 
@@ -174,10 +214,6 @@ export function AppProvider({ children }) {
     const dados = loadDoNavegador("proflexProfessionals", []);
     return Array.isArray(dados) ? dados : [];
   });
-
-  useEffect(() => {
-    salvarNoNavegador("clients", clients);
-  }, [clients]);
 
   useEffect(() => {
     salvarNoNavegador("appointments", appointments);
@@ -198,32 +234,23 @@ export function AppProvider({ children }) {
   }
 
   function updateProfessional(idProfissional, alteracoes) {
-    const existente = professionals.find(
-      (p) => p.id === idProfissional,
-    );
+    const existente = professionals.find((p) => p.id === idProfissional);
 
     if (!existente) {
       throw new Error("Profissional não encontrado.");
     }
 
-    const atualizado = configurarProfissional(
-      alteracoes,
-      existente,
-    );
+    const atualizado = configurarProfissional(alteracoes, existente);
 
     setProfessionals((lista) =>
-      lista.map((p) =>
-        p.id === idProfissional ? atualizado : p,
-      ),
+      lista.map((p) => (p.id === idProfissional ? atualizado : p)),
     );
 
     return atualizado;
   }
 
   function getProfessional(idProfissional) {
-    return professionals.find(
-      (p) => p.id === idProfissional,
-    ) || null;
+    return professionals.find((p) => p.id === idProfissional) || null;
   }
 
   function deactivateProfessional(idProfissional) {
@@ -238,9 +265,7 @@ export function AppProvider({ children }) {
     });
   }
 
-  const activeProfessionals = professionals.filter(
-    (p) => p.ativo !== false,
-  );
+  const activeProfessionals = professionals.filter((p) => p.ativo !== false);
 
   // ------------------------ CLIENTES
 
@@ -254,23 +279,20 @@ export function AppProvider({ children }) {
 
   function buscarPacienteDuplicado(dados) {
     const nome = normalizarTexto(dados.nome);
-    const telefone = String(dados.telefone || "")
-      .replace(/\D/g, "");
+    const telefone = String(dados.telefone || "").replace(/\D/g, "");
     const email = normalizarTexto(dados.email);
     const documento = String(dados.documento || "")
       .replace(/[^a-zA-Z0-9]/g, "")
       .toLowerCase();
 
     return clients.find((cliente) => {
-      const mesmoNome =
-        nome && normalizarTexto(cliente.nome) === nome;
+      const mesmoNome = nome && normalizarTexto(cliente.nome) === nome;
 
       const mesmoTelefone =
         telefone &&
         String(cliente.telefone || "").replace(/\D/g, "") === telefone;
 
-      const mesmoEmail =
-        email && normalizarTexto(cliente.email) === email;
+      const mesmoEmail = email && normalizarTexto(cliente.email) === email;
 
       const mesmoDocumento =
         documento &&
@@ -278,22 +300,17 @@ export function AppProvider({ children }) {
           .replace(/[^a-zA-Z0-9]/g, "")
           .toLowerCase() === documento;
 
-      return (
-        mesmoNome ||
-        mesmoTelefone ||
-        mesmoEmail ||
-        mesmoDocumento
-      );
+      return mesmoNome || mesmoTelefone || mesmoEmail || mesmoDocumento;
     });
   }
 
-  function addClient(dados) {
+  async function addClient(dados) {
     const duplicado = buscarPacienteDuplicado(dados);
 
     if (duplicado) {
       alert(
         `Atenção! O paciente ${duplicado.nome} já está cadastrado.\n\n` +
-        "Abra o cadastro existente para atualizar as informações.",
+          "Abra o cadastro existente para atualizar as informações.",
       );
       return null;
     }
@@ -323,9 +340,7 @@ export function AppProvider({ children }) {
       estado: dados.estado || "",
 
       // Dados clínicos
-      comorbidades: Array.isArray(dados.comorbidades)
-        ? dados.comorbidades
-        : [],
+      comorbidades: Array.isArray(dados.comorbidades) ? dados.comorbidades : [],
 
       doencasExtras: Array.isArray(dados.doencasExtras)
         ? dados.doencasExtras
@@ -343,30 +358,44 @@ export function AppProvider({ children }) {
 
       // Arquivos e históricos
       fotoPerfilUrl: dados.fotoPerfilUrl || "",
-      consultas: Array.isArray(dados.consultas)
-        ? dados.consultas
-        : [],
-      receitas: Array.isArray(dados.receitas)
-        ? dados.receitas
-        : [],
-      atestados: Array.isArray(dados.atestados)
-        ? dados.atestados
-        : [],
+      consultas: Array.isArray(dados.consultas) ? dados.consultas : [],
+      receitas: Array.isArray(dados.receitas) ? dados.receitas : [],
+      atestados: Array.isArray(dados.atestados) ? dados.atestados : [],
     };
 
-    setClients((atual) => [novo, ...atual]);
+    if (!auth.currentUser) {
+      throw new Error("Faça login para cadastrar pacientes.");
+    }
+
+    const pacienteRef = doc(
+      db,
+      "usuarios",
+      auth.currentUser.uid,
+      "pacientes",
+      novo.id,
+    );
+
+    await setDoc(pacienteRef, novo);
 
     return novo;
   }
 
-  function updateClient(idCliente, alteracoes) {
-    setClients((lista) =>
-      lista.map((c) =>
-        c.id === idCliente
-          ? { ...c, ...alteracoes }
-          : c,
-      ),
+  async function updateClient(idCliente, alteracoes) {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    const pacienteRef = doc(
+      db,
+      "usuarios",
+      usuario.uid,
+      "pacientes",
+      idCliente,
     );
+
+    await updateDoc(pacienteRef, alteracoes);
   }
 
   function getClient(idCliente) {
@@ -387,7 +416,23 @@ export function AppProvider({ children }) {
 
     return registro;
   }
+  async function salvarConsultasNoFirebase(idCliente, consultas) {
+    const usuario = auth.currentUser;
 
+    if (!usuario) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    const pacienteRef = doc(
+      db,
+      "usuarios",
+      usuario.uid,
+      "pacientes",
+      idCliente,
+    );
+
+    await updateDoc(pacienteRef, { consultas });
+  }
   // ------------------------ CONSULTAS (PRONTUÁRIO)
 
   function proximoNumeroConsulta(cliente) {
@@ -395,115 +440,101 @@ export function AppProvider({ children }) {
     return n < 10 ? `0${n}` : String(n);
   }
 
-  function addConsulta(
-    idCliente,
-    {
-      dataISO,
-      hora,
-      texto = "",
-      queixa = "",
-      avaliacao = "",
-      procedimentos = "",
-      evolucao = "",
-      conduta = "",
-    },
+  async function addConsulta(
+  idCliente,
+  {
+    dataISO,
+    hora,
+    texto = "",
+    queixa = "",
+    avaliacao = "",
+    procedimentos = "",
+    evolucao = "",
+    conduta = "",
+  },
+) {
+  const cliente = clients.find((c) => c.id === idCliente);
+
+  if (!cliente) {
+    throw new Error("Paciente não encontrado.");
+  }
+
+  const nova = {
+    id: novoId("con"),
+    numero: proximoNumeroConsulta(cliente),
+    dataISO,
+    hora,
+    texto,
+    queixa,
+    avaliacao,
+    procedimentos,
+    evolucao,
+    conduta,
+    fotos: [],
+  };
+
+  const consultasAtualizadas = [nova, ...(cliente.consultas || [])];
+
+  await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
+
+  return nova;
+
+    
+  }
+
+  async function updateConsulta(idCliente, idConsulta, alteracoes) {
+  const cliente = clients.find((c) => c.id === idCliente);
+
+  if (!cliente) {
+    throw new Error("Paciente não encontrado.");
+  }
+
+  const consultasAtualizadas = (cliente.consultas || []).map((consulta) =>
+    consulta.id === idConsulta
+      ? { ...consulta, ...alteracoes }
+      : consulta
+  );
+
+  await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
+}
+
+ async function deleteConsultas(idCliente, idsConsultas) {
+  if (!idsConsultas?.length) return;
+
+  if (
+    !window.confirm(
+      "Tem certeza que deseja excluir as consultas selecionadas?"
+    )
   ) {
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-
-        const numero = proximoNumeroConsulta(c);
-
-        const nova = {
-          id: novoId("con"),
-          numero,
-          dataISO,
-          hora,
-
-          // Compatibilidade com consultas antigas
-          texto,
-
-          // Prontuário estruturado
-          queixa,
-          avaliacao,
-          procedimentos,
-          evolucao,
-          conduta,
-
-          fotos: [],
-        };
-
-        return {
-          ...c,
-          consultas: [nova, ...(c.consultas || [])],
-        };
-      }),
-    );
+    return;
   }
 
-  function updateConsulta(idCliente, idConsulta, alteracoes) {
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
+  const senha = prompt("Digite a senha de exclusão:");
 
-        return {
-          ...c,
-          consultas: (c.consultas || []).map((con) =>
-            con.id === idConsulta
-              ? { ...con, ...alteracoes }
-              : con,
-          ),
-        };
-      }),
-    );
+  if (senha !== SENHA_EXCLUIR) {
+    alert("Senha incorreta.");
+    return;
   }
 
-  async function deleteConsultas(idCliente, idsConsultas) {
-    if (!idsConsultas?.length) return;
+  const cliente = clients.find((c) => c.id === idCliente);
 
-    if (
-      !window.confirm(
-        "Tem certeza que deseja excluir as consultas selecionadas?",
-      )
-    ) {
-      return;
-    }
-
-    const senha = prompt("Digite a senha de exclusão:");
-
-    if (senha !== SENHA_EXCLUIR) {
-      alert("Senha incorreta.");
-      return;
-    }
-
-    setClients((lista) =>
-      lista.map((c) => {
-        if (c.id !== idCliente) return c;
-
-        return {
-          ...c,
-          consultas: (c.consultas || []).filter(
-            (con) => !idsConsultas.includes(con.id),
-          ),
-        };
-      }),
-    );
+  if (!cliente) {
+    throw new Error("Paciente não encontrado.");
   }
+
+  const consultasAtualizadas = (cliente.consultas || []).filter(
+    (consulta) => !idsConsultas.includes(consulta.id)
+  );
+
+  await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
+}
 
   async function deleteClient(idCliente) {
-    if (
-      !window.confirm(
-        "Tem certeza que deseja excluir este paciente?",
-      )
-    ) {
+    if (!window.confirm("Tem certeza que deseja excluir este paciente?")) {
       return;
     }
 
-    if (
-      !window.confirm(
-        "Essa ação é irreversível. Confirmar exclusão?",
-      )
-    ) {
+    if (!window.confirm("Essa ação é irreversível. Confirmar exclusão?")) {
       return;
     }
 
@@ -516,14 +547,24 @@ export function AppProvider({ children }) {
 
     const cliente = clients.find((c) => c.id === idCliente);
 
-    setClients((lista) =>
-      lista.filter((c) => c.id !== idCliente),
-    );
+   const usuario = auth.currentUser;
+
+if (!usuario) {
+  throw new Error("Usuário não autenticado.");
+}
+
+const pacienteRef = doc(
+  db,
+  "usuarios",
+  usuario.uid,
+  "pacientes",
+  idCliente
+);
+
+await deleteDoc(pacienteRef);
 
     if (cliente?.email) {
-      const subject = encodeURIComponent(
-        "Confirmação de exclusão de cadastro",
-      );
+      const subject = encodeURIComponent("Confirmação de exclusão de cadastro");
 
       const body = encodeURIComponent(
         `Olá ${cliente.nome},\n\nSeu cadastro/consultas foram excluídos conforme solicitação.\n\nAtt,\nEquipe`,
@@ -552,11 +593,7 @@ export function AppProvider({ children }) {
     let y = 50;
 
     doc.setFontSize(16);
-    y = linha(
-      `Relatório de Consultas - ${cliente.nome}`,
-      40,
-      y,
-    );
+    y = linha(`Relatório de Consultas - ${cliente.nome}`, 40, y);
 
     doc.setFontSize(11);
 
@@ -578,11 +615,7 @@ export function AppProvider({ children }) {
       y,
     );
 
-    y = linha(
-      `Remédios: ${cliente.remedios || "-"}`,
-      40,
-      y,
-    );
+    y = linha(`Remédios: ${cliente.remedios || "-"}`, 40, y);
 
     y += 10;
 
@@ -628,18 +661,13 @@ export function AppProvider({ children }) {
 
       y += 10;
 
-      if (
-        y > 780 &&
-        idx < consultasSelecionadas.length - 1
-      ) {
+      if (y > 780 && idx < consultasSelecionadas.length - 1) {
         doc.addPage();
         y = 50;
       }
     });
 
-    doc.save(
-      `relatorio_${cliente.nome.replace(/\s+/g, "_")}.pdf`,
-    );
+    doc.save(`relatorio_${cliente.nome.replace(/\s+/g, "_")}.pdf`);
   }
 
   // ------------------------ UPLOAD DE FOTOS (CLOUDINARY)
@@ -649,18 +677,14 @@ export function AppProvider({ children }) {
 
     const url = await salvarFotoTeste(arquivo);
 
-    updateClient(idCliente, {
+     await updateClient(idCliente, {
       fotoPerfilUrl: url,
     });
 
     return url;
   }
 
-  async function salvarFotosDaConsulta(
-    idCliente,
-    idConsulta,
-    arquivos,
-  ) {
+  async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
     if (!idCliente || !idConsulta || !arquivos?.length) {
       return [];
     }
@@ -679,11 +703,10 @@ export function AppProvider({ children }) {
 
         return {
           ...cliente,
-          consultas: (cliente.consultas || []).map(
-            (consulta) =>
-              consulta.id === idConsulta
-                ? { ...consulta, fotos: urls }
-                : consulta,
+          consultas: (cliente.consultas || []).map((consulta) =>
+            consulta.id === idConsulta
+              ? { ...consulta, fotos: urls }
+              : consulta,
           ),
         };
       }),
@@ -734,20 +757,14 @@ export function AppProvider({ children }) {
     [clients, appointments, professionals],
   );
 
-  return (
-    <AppContext.Provider value={valor}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {
   const ctx = useContext(AppContext);
 
   if (!ctx) {
-    throw new Error(
-      "useApp deve ser usado dentro de AppProvider",
-    );
+    throw new Error("useApp deve ser usado dentro de AppProvider");
   }
 
   return ctx;

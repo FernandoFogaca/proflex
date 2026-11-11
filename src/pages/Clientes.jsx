@@ -85,6 +85,9 @@ const initialForm = {
   semEmail: false,
   telefone: "",
   temWhatsapp: false,
+  tipoDocumento: "CPF",
+  documento: "",
+  semDocumento: false,
   endereco: "",
   pais: "Brasil",
   cep: "",
@@ -99,22 +102,71 @@ const initialForm = {
 const smallButtonStyle = {
   width: "auto",
   minWidth: 0,
-  padding: "5px 10px",
-  fontSize: "12px",
+  padding: "7px 12px",
+  fontSize: "13px",
   borderRadius: "7px",
 };
 
+function somenteNumeros(valor) {
+  return String(valor || "").replace(/\D/g, "");
+}
+
+function cpfValido(valor) {
+  const cpf = somenteNumeros(valor);
+
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+    return false;
+  }
+
+  const calcularDigito = (quantidade) => {
+    let soma = 0;
+
+    for (let i = 0; i < quantidade; i++) {
+      soma += Number(cpf[i]) * (quantidade + 1 - i);
+    }
+
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+
+  return (
+    calcularDigito(9) === Number(cpf[9]) &&
+    calcularDigito(10) === Number(cpf[10])
+  );
+}
+
+function formatarCPF(valor) {
+  const numeros = somenteNumeros(valor).slice(0, 11);
+
+  return numeros
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
+
+function normalizarBusca(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export default function Clientes() {
- const { clients, addClient, salvarFotoPerfil } = useApp();
+  const { clients, addClient, salvarFotoPerfil } = useApp();
   const nav = useNavigate();
 
   const [q, setQ] = useState("");
   const [form, setForm] = useState(initialForm);
+  const [modoCadastro, setModoCadastro] = useState("rapido");
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [salvando, setSalvando] = useState(false);
   const [cameraAberta, setCameraAberta] = useState(false);
   const [fotoCapturada, setFotoCapturada] = useState(null);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const formularioRef = useRef(null);
 
   const fotoPreviewUrl = useMemo(() => {
     if (!fotoCapturada) return null;
@@ -136,20 +188,32 @@ export default function Clientes() {
   }, []);
 
   const filtered = useMemo(() => {
-    const needle = q.toLowerCase();
+    const needle = normalizarBusca(q);
+    const numeros = somenteNumeros(q);
 
-    return clients.filter((client) =>
-      [
+    if (!needle) return clients;
+
+    return clients.filter((client) => {
+      const campos = [
         client.nome,
         client.email,
         client.telefone,
+        client.documento,
         client.endereco,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(needle)
-    );
+        client.cidade,
+        client.bairro,
+      ];
+
+      const texto = normalizarBusca(campos.filter(Boolean).join(" "));
+
+      const buscaPorNumero =
+        numeros.length >= 3 &&
+        [client.telefone, client.documento].some((valor) =>
+          somenteNumeros(valor).includes(numeros)
+        );
+
+      return texto.includes(needle) || buscaPorNumero;
+    });
   }, [q, clients]);
 
   const onChange = (e) => {
@@ -157,7 +221,10 @@ export default function Clientes() {
 
     setForm((previous) => ({
       ...previous,
-      [name]: value,
+      [name]:
+        name === "documento" && previous.tipoDocumento === "CPF"
+          ? formatarCPF(value)
+          : value,
     }));
   };
 
@@ -260,7 +327,7 @@ export default function Clientes() {
   const buscarCEP = async () => {
     if (form.pais !== "Brasil") return;
 
-    const cep = form.cep.replace(/\D/g, "");
+    const cep = somenteNumeros(form.cep);
 
     if (cep.length !== 8) return;
 
@@ -293,34 +360,69 @@ export default function Clientes() {
     }
   };
 
- const onSubmit = async (e) => {
+  const abrirFormulario = (modo = "rapido") => {
+    setModoCadastro(modo);
+    setMostrarFormulario(true);
+
+    setTimeout(() => {
+      formularioRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
+
+  const cancelarCadastro = () => {
+    if (salvando) return;
+
+    closeCamera();
+    setFotoCapturada(null);
+    setForm({ ...initialForm });
+    setMostrarFormulario(false);
+    setModoCadastro("rapido");
+  };
+
+  const onSubmit = async (e) => {
     e.preventDefault();
-if (form.nome.trim().split(/\s+/).length < 2) {
-  alert("Informe o nome e o sobrenome do paciente.");
-  return;
-}
 
-const telefoneNumeros = form.telefone.replace(/\D/g, "");
+    if (salvando) return;
 
-if (telefoneNumeros.length < 9 || telefoneNumeros.length > 15) {
-  alert("Informe um telefone válido, com 9 a 15 dígitos.");
-  return;
-}
+    if (form.nome.trim().split(/\s+/).length < 2) {
+      alert("Informe o nome e o sobrenome do paciente.");
+      return;
+    }
 
-if (!form.cep.trim()) {
-  alert("O CEP ou código postal é obrigatório.");
-  return;
-}
+    const telefoneNumeros = somenteNumeros(form.telefone);
 
-if (
-  form.pais === "Brasil" &&
-  !/^\d{8}$/.test(form.cep.replace(/\D/g, ""))
-) {
-  alert("O CEP brasileiro deve conter 8 números.");
-  return;
-}
+    if (telefoneNumeros.length < 9 || telefoneNumeros.length > 15) {
+      alert("Informe um telefone válido, com 9 a 15 dígitos.");
+      return;
+    }
 
- 
+    if (
+      !form.semDocumento &&
+      form.documento.trim() &&
+      form.tipoDocumento === "CPF" &&
+      !cpfValido(form.documento)
+    ) {
+      alert("Informe um CPF válido ou marque 'Paciente não informou documento'.");
+      return;
+    }
+
+    if (modoCadastro === "completo") {
+      if (!form.cep.trim()) {
+        alert("O CEP ou código postal é obrigatório.");
+        return;
+      }
+
+      if (
+        form.pais === "Brasil" &&
+        !/^\d{8}$/.test(somenteNumeros(form.cep))
+      ) {
+        alert("O CEP brasileiro deve conter 8 números.");
+        return;
+      }
+    }
 
     const enderecoCompleto = [
       [form.rua, form.numero].filter(Boolean).join(", "),
@@ -334,435 +436,807 @@ if (
       .filter(Boolean)
       .join(" - ");
 
-  const novoPaciente = addClient({
-  ...form,
-  endereco: enderecoCompleto,
-});
+    const dadosPaciente = {
+      ...form,
+      tipoDocumento: form.semDocumento ? "" : form.tipoDocumento,
+      documento: form.semDocumento ? "" : form.documento.trim(),
+      endereco:
+        modoCadastro === "completo" ? enderecoCompleto : "",
+    };
 
-if (!novoPaciente) return;
+    setSalvando(true);
 
-if (fotoCapturada) {
-  try {
-    await salvarFotoPerfil(novoPaciente.id, fotoCapturada);
-  } catch (error) {
-    console.error("Erro ao salvar foto:", error);
-    alert(
-      "O paciente foi cadastrado, mas a foto não foi salva. " +
-      "Mantenha esta página aberta e tente novamente depois."
-    );
-    return;
-  }
-}
+    let novoPaciente;
 
-setForm({ ...initialForm });
-setFotoCapturada(null);
-setQ("");
- };
+    try {
+      novoPaciente = await addClient(dadosPaciente);
+    } catch (erro) {
+      console.error("Erro ao cadastrar paciente:", erro);
+      alert("Não foi possível salvar o paciente no Firebase.");
+      setSalvando(false);
+      return;
+    }
+
+    if (!novoPaciente) {
+      setSalvando(false);
+      return;
+    }
+
+    if (fotoCapturada) {
+      try {
+        await salvarFotoPerfil(novoPaciente.id, fotoCapturada);
+      } catch (error) {
+        console.error("Erro ao salvar foto:", error);
+
+        alert(
+          "O paciente foi cadastrado, mas a foto não foi salva. " +
+          "O cadastro permanece salvo no Firebase."
+        );
+      }
+    }
+
+    setForm({ ...initialForm });
+    setFotoCapturada(null);
+    setQ("");
+    setSalvando(false);
+    setMostrarFormulario(false);
+    setModoCadastro("rapido");
+
+    alert("Paciente cadastrado com sucesso!");
+  };
 
   return (
     <div className="container py-4">
-   
 
-      <form onSubmit={onSubmit}>
+      {/* CABEÇALHO */}
 
-        {/* DADOS DO PACIENTE */}
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+          <h3 className="mb-1">Pacientes</h3>
+          <p className="text-muted mb-0">
+            Encontre pacientes, consulte prontuários ou faça um novo cadastro.
+          </p>
+        </div>
 
-        <div
-          className="card border-0 shadow-sm mb-3"
-          style={{ borderRadius: "12px" }}
+        <button
+          type="button"
+          className="proflex-button"
+          style={{
+            width: "auto",
+            minWidth: "150px",
+            padding: "10px 18px",
+            borderRadius: "8px",
+          }}
+          onClick={() => abrirFormulario("rapido")}
         >
-          <div className="card-body p-3 p-md-4">
-            <h5 className="mb-3">Dados do paciente</h5>
+          + Novo paciente
+        </button>
+      </div>
 
-            <div className="row g-3 align-items-start">
+      {/* PESQUISA NO TOPO */}
 
-              {/* FOTO E BOTÕES */}
+      <div
+        className="card border-0 shadow-sm mb-4"
+        style={{ borderRadius: "12px" }}
+      >
+        <div className="card-body p-3 p-md-4">
 
-              <div className="col-12 col-md-4 col-lg-3">
-                <div className="d-flex flex-column align-items-start gap-2">
+          <label htmlFor="pesquisaPacientes" className="form-label fw-semibold">
+            Pesquisar pacientes
+          </label>
 
-                  <div
-                    style={{
-                      width: "90px",
-                      height: "120px",
-                      border: "1px solid #ccc",
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "#f5f5f5",
-                    }}
-                  >
-                    {fotoPreviewUrl ? (
-                      <img
-                        src={fotoPreviewUrl}
-                        alt="Foto do paciente"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: "32px" }}>👤</span>
-                    )}
-                  </div>
+          <div className="input-group">
+            <span className="input-group-text" aria-hidden="true">
+              🔎
+            </span>
 
-                  <div className="d-flex flex-wrap align-items-center gap-2">
+            <input
+              id="pesquisaPacientes"
+              type="search"
+              className="form-control"
+              placeholder="Nome, CPF, telefone, e-mail ou endereço"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="Pesquisar pacientes"
+            />
+          </div>
 
-                    <label
-                      className="proflex-button"
-                      style={{
-                        ...smallButtonStyle,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginBottom: 0,
-                      }}
-                    >
-                      Escolher foto
+          <small className="text-muted d-block mt-2">
+            Digite uma informação do paciente para encontrá-lo rapidamente.
+          </small>
 
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        onChange={choosePhoto}
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      className="proflex-button"
-                      style={smallButtonStyle}
-                      onClick={openCamera}
-                    >
-                      📷 Tirar foto
-                    </button>
-
-                  </div>
-                </div>
-              </div>
-
-              {/* NOME, EMAIL E TELEFONE */}
-
-              <div className="col-12 col-md-8 col-lg-9">
-                <div className="row g-3">
-
-                  <div className="col-12">
-                    <label className="form-label">Nome completo</label>
-                    <input
-                      className="form-control"
-                      name="nome"
-                      placeholder="Nome do paciente"
-                      value={form.nome}
-                      onChange={onChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="col-12 col-lg-6">
-                    <label className="form-label">E-mail</label>
-
-                    <input
-                      type="email"
-                      className="form-control"
-                      name="email"
-                      placeholder="E-mail do paciente"
-                      value={form.email}
-                      onChange={onChange}
-                      disabled={form.semEmail}
-                      required={!form.semEmail}
-                    />
-
-                    <label className="form-check-label d-flex align-items-center gap-2 mt-2">
-                      <input
-                        type="checkbox"
-                        className="form-check-input mt-0"
-                        checked={form.semEmail}
-                        onChange={(e) =>
-                          setForm((previous) => ({
-                            ...previous,
-                            semEmail: e.target.checked,
-                            email: e.target.checked
-                              ? ""
-                              : previous.email,
-                          }))
-                        }
-                      />
-                      <span>Não possui e-mail</span>
-                    </label>
-                  </div>
-
-                  <div className="col-12 col-lg-6">
-                    <label className="form-label">Telefone</label>
-
-                    <input
-                      type="tel"
-                      className="form-control"
-                      name="telefone"
-                      placeholder="Telefone do paciente"
-                      value={form.telefone}
-                      onChange={onChange}
-                      required
-                    />
-
-                    <label className="form-check-label d-flex align-items-center gap-2 mt-2">
-                      <input
-                        type="checkbox"
-                        className="form-check-input mt-0"
-                        checked={form.temWhatsapp}
-                        onChange={(e) =>
-                          setForm((previous) => ({
-                            ...previous,
-                            temWhatsapp: e.target.checked,
-                          }))
-                        }
-                      />
-                      <span>Este número também é WhatsApp</span>
-                    </label>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* CÂMERA */}
-
-              {cameraAberta && (
-                <div className="col-12">
-                  <div
-                    className="p-3 border rounded"
-                    style={{ maxWidth: "440px" }}
-                  >
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      style={{
-                        width: "100%",
-                        borderRadius: "8px",
-                        backgroundColor: "#111",
-                      }}
-                    />
-
-                    <div className="d-flex flex-wrap gap-2 mt-2">
-                      <button
-                        type="button"
-                        className="proflex-button"
-                        style={smallButtonStyle}
-                        onClick={capturePhoto}
-                      >
-                        📸 Capturar foto
-                      </button>
-
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={closeCamera}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
+          <div className="mt-3 text-muted small">
+            {q.trim()
+              ? `${filtered.length} paciente(s) encontrado(s)`
+              : `${clients.length} paciente(s) cadastrado(s)`}
           </div>
         </div>
-
-        {/* ENDEREÇO */}
-
-        <div
-          className="card border-0 shadow-sm mb-3"
-          style={{ borderRadius: "12px" }}
-        >
-          <div className="card-body p-3 p-md-4">
-            <h5 className="mb-3">Endereço</h5>
-
-            <div className="row g-3">
-
-              {/* PAÍS */}
-
-              <div className="col-12">
-                <label className="form-check-label d-flex align-items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className="form-check-input mt-0"
-                    checked={form.pais === "Brasil"}
-                    onChange={(e) =>
-                      setForm((previous) => ({
-                        ...previous,
-                        pais: e.target.checked ? "Brasil" : "",
-                        estado: "",
-                      }))
-                    }
-                  />
-                  <span>Brasil</span>
-                </label>
-
-                {form.pais !== "Brasil" && (
-                  <select
-                    className="form-select form-select-sm mt-2"
-                    style={{ maxWidth: "260px" }}
-                    value={form.pais}
-                    onChange={(e) =>
-                      setForm((previous) => ({
-                        ...previous,
-                        pais: e.target.value,
-                        estado: "",
-                      }))
-                    }
-                  >
-                    <option value="">Selecione o país</option>
-                    <option value="Portugal">Portugal</option>
-                    <option value="Países Baixos">Países Baixos</option>
-                    <option value="Irlanda">Irlanda</option>
-                    <option value="Alemanha">Alemanha</option>
-                    <option value="Outro">Outro</option>
-                  </select>
-                )}
-              </div>
-
-              {[
-                ["cep", "CEP / Código postal"],
-                ["rua", "Rua"],
-                ["numero", "Número"],
-                ["complemento", "Complemento"],
-                ["bairro", "Bairro"],
-                ["cidade", "Cidade"],
-                ["estado", "Estado / Província"],
-              ].map(([campo, titulo]) => (
-                <div
-                  key={campo}
-                  className={
-                    campo === "rua"
-                      ? "col-12 col-md-6 col-lg-5"
-                      : campo === "cep"
-                      ? "col-12 col-sm-6 col-md-3 col-lg-2"
-                      : campo === "numero"
-                      ? "col-12 col-sm-6 col-md-3 col-lg-2"
-                      : campo === "complemento"
-                      ? "col-12 col-sm-6 col-md-6 col-lg-3"
-                      : "col-12 col-sm-6 col-lg-4"
-                  }
-                >
-                  <label className="form-label">{titulo}</label>
-
-                  {campo === "estado" &&
-                  (form.pais === "Brasil" ||
-                    form.pais === "Países Baixos") ? (
-                    <select
-                      className="form-select"
-                      name="estado"
-                      value={form.estado}
-                      onChange={onChange}
-                    >
-                      <option value="">
-                        Selecione o estado
-                      </option>
-
-                      {(form.pais === "Brasil"
-                        ? ESTADOS_BRASIL
-                        : PROVINCIAS_HOLANDA
-                      ).map((estado) => (
-                        <option key={estado} value={estado}>
-                          {estado}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      className="form-control"
-                      name={campo}
-                      value={form[campo]}
-                      onChange={onChange}
-                      onBlur={
-                        campo === "cep"
-                          ? buscarCEP
-                          : undefined
-                      }
-                    />
-                  )}
-                </div>
-              ))}
-
-            </div>
-          </div>
-        </div>
-
-        {/* ADICIONAR */}
-
-        <div className="d-flex justify-content-end mb-4">
-          <button
-            type="submit"
-            className="proflex-button"
-            style={{
-              width: "auto",
-              minWidth: 0,
-              padding: "8px 20px",
-              fontSize: "13px",
-              borderRadius: "7px",
-            }}
-          >
-            Adicionar
-          </button>
-        </div>
-
-      </form>
-
-      {/* PESQUISA */}
-
-      <div className="mb-2">
-        <input
-          className="form-control"
-          placeholder="Pesquisar..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
       </div>
 
       {/* LISTA DE PACIENTES */}
 
-      <div className="table-responsive">
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Email</th>
-              <th>Telefone</th>
-              <th>Endereço</th>
-            </tr>
-          </thead>
+      <div
+        className="card border-0 shadow-sm mb-4"
+        style={{ borderRadius: "12px" }}
+      >
+        <div className="card-body p-3 p-md-4">
 
-          <tbody>
-            {filtered.map((client) => (
-              <tr
-                key={client.id}
-                style={{ cursor: "pointer" }}
-                onClick={() =>
-                  nav(`/prontuario?clienteId=${client.id}`)
-                }
-              >
-                <td>{client.nome}</td>
-                <td>{client.email}</td>
-                <td>{client.telefone}</td>
-                <td>{client.endereco}</td>
-              </tr>
-            ))}
+          <h5 className="mb-3">Pacientes cadastrados</h5>
 
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={4} className="text-center">
-                  Nenhum cliente
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          <div className="table-responsive">
+            <table className="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Telefone</th>
+                  <th scope="col" className="d-none d-md-table-cell">
+                    E-mail
+                  </th>
+                  <th scope="col" className="d-none d-lg-table-cell">
+                    Documento
+                  </th>
+                  <th scope="col" className="text-end">
+                    Ação
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filtered.map((client) => (
+                  <tr key={client.id}>
+                    <td>
+                      <strong>{client.nome}</strong>
+
+                      {client.cidade && (
+                        <small className="d-block text-muted">
+                          {client.cidade}
+                        </small>
+                      )}
+                    </td>
+
+                    <td>
+                      <span style={{ overflowWrap: "anywhere" }}>
+                        {client.telefone || "—"}
+                      </span>
+                    </td>
+
+                    <td className="d-none d-md-table-cell">
+                      {client.email || "Não informado"}
+                    </td>
+
+                    <td className="d-none d-lg-table-cell">
+                      {client.documento
+                        ? `${client.tipoDocumento || "Documento"}: ${client.documento}`
+                        : "Não informado"}
+                    </td>
+
+                    <td className="text-end">
+                      <button
+                        type="button"
+                        className="proflex-button"
+                        style={{
+                          ...smallButtonStyle,
+                          whiteSpace: "normal",
+                        }}
+                        onClick={() =>
+                          nav(`/prontuario?clienteId=${client.id}`)
+                        }
+                        aria-label={`Abrir prontuário de ${client.nome}`}
+                      >
+                        Abrir prontuário
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {filtered.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="text-center py-4 text-muted"
+                    >
+                      {q.trim()
+                        ? "Nenhum paciente encontrado. Tente outra informação."
+                        : "Nenhum paciente cadastrado. Clique em Novo paciente para começar."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
+      {/* FORMULÁRIO DE CADASTRO */}
+
+      {mostrarFormulario && (
+        <div ref={formularioRef}>
+
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+              <h4 className="mb-1">Cadastrar paciente</h4>
+              <p className="text-muted mb-0">
+                Escolha como deseja preencher o cadastro.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={cancelarCadastro}
+              disabled={salvando}
+            >
+              Fechar cadastro
+            </button>
+          </div>
+
+          {/* MODOS DE CADASTRO */}
+
+          <div
+            className="card border-0 shadow-sm mb-3"
+            style={{ borderRadius: "12px" }}
+          >
+            <div className="card-body p-3 p-md-4">
+
+              <div className="d-flex flex-wrap gap-2 mb-3">
+
+                <button
+                  type="button"
+                  className={
+                    modoCadastro === "rapido"
+                      ? "proflex-button"
+                      : "btn btn-outline-secondary"
+                  }
+                  style={
+                    modoCadastro === "rapido"
+                      ? smallButtonStyle
+                      : undefined
+                  }
+                  aria-pressed={modoCadastro === "rapido"}
+                  onClick={() => setModoCadastro("rapido")}
+                >
+                  Cadastro rápido
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    modoCadastro === "completo"
+                      ? "proflex-button"
+                      : "btn btn-outline-secondary"
+                  }
+                  style={
+                    modoCadastro === "completo"
+                      ? smallButtonStyle
+                      : undefined
+                  }
+                  aria-pressed={modoCadastro === "completo"}
+                  onClick={() => setModoCadastro("completo")}
+                >
+                  Cadastro completo
+                </button>
+
+              </div>
+
+              <p className="text-muted small mb-0">
+                {modoCadastro === "rapido"
+                  ? "Cadastro rápido: informe os dados principais. O endereço e outras informações poderão ser acrescentados depois no cadastro do paciente."
+                  : "Cadastro completo: preencha os dados pessoais e o endereço. As informações clínicas são registradas no prontuário."}
+              </p>
+
+            </div>
+          </div>
+
+          <form onSubmit={onSubmit}>
+
+            {/* DADOS DO PACIENTE */}
+
+            <div
+              className="card border-0 shadow-sm mb-3"
+              style={{ borderRadius: "12px" }}
+            >
+              <div className="card-body p-3 p-md-4">
+
+                <h5 className="mb-2">Dados do paciente</h5>
+
+                <p className="text-muted small mb-3">
+                  Preencha os campos obrigatórios para identificar e
+                  contactar o paciente.
+                </p>
+
+                <div className="row g-3 align-items-start">
+
+                  {/* FOTO E BOTÕES */}
+
+                  <div className="col-12 col-md-4 col-lg-3">
+                    <div className="d-flex flex-column align-items-start gap-2">
+
+                      <div
+                        style={{
+                          width: "90px",
+                          height: "120px",
+                          border: "1px solid #ccc",
+                          borderRadius: "8px",
+                          overflow: "hidden",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: "#f5f5f5",
+                        }}
+                      >
+                        {fotoPreviewUrl ? (
+                          <img
+                            src={fotoPreviewUrl}
+                            alt="Foto do paciente"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: "32px" }}>👤</span>
+                        )}
+                      </div>
+
+                      <div className="d-flex flex-wrap align-items-center gap-2">
+
+                        <label
+                          className="proflex-button"
+                          style={{
+                            ...smallButtonStyle,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginBottom: 0,
+                          }}
+                        >
+                          Escolher foto
+
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: "none" }}
+                            onChange={choosePhoto}
+                          />
+                        </label>
+
+                        <button
+                          type="button"
+                          className="proflex-button"
+                          style={smallButtonStyle}
+                          onClick={openCamera}
+                        >
+                          📷 Tirar foto
+                        </button>
+
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* NOME, EMAIL E TELEFONE */}
+
+                  <div className="col-12 col-md-8 col-lg-9">
+                    <div className="row g-3">
+
+                      <div className="col-12">
+                        <label htmlFor="nomePaciente" className="form-label">
+                          Nome completo *
+                        </label>
+
+                        <input
+                          id="nomePaciente"
+                          className="form-control"
+                          name="nome"
+                          placeholder="Nome e sobrenome do paciente"
+                          value={form.nome}
+                          onChange={onChange}
+                          autoComplete="name"
+                          required
+                        />
+                      </div>
+
+                      <div className="col-12 col-lg-6">
+                        <label htmlFor="emailPaciente" className="form-label">
+                          E-mail
+                        </label>
+
+                        <input
+                          id="emailPaciente"
+                          type="email"
+                          className="form-control"
+                          name="email"
+                          placeholder="E-mail do paciente"
+                          value={form.email}
+                          onChange={onChange}
+                          disabled={form.semEmail}
+                          required={!form.semEmail}
+                          autoComplete="email"
+                        />
+
+                        <label className="form-check-label d-flex align-items-center gap-2 mt-2">
+                          <input
+                            type="checkbox"
+                            className="form-check-input mt-0"
+                            checked={form.semEmail}
+                            onChange={(e) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                semEmail: e.target.checked,
+                                email: e.target.checked
+                                  ? ""
+                                  : previous.email,
+                              }))
+                            }
+                          />
+
+                          <span>Não possui e-mail</span>
+                        </label>
+                      </div>
+
+                      <div className="col-12 col-lg-6">
+                        <label htmlFor="telefonePaciente" className="form-label">
+                          Telefone *
+                        </label>
+
+                        <input
+                          id="telefonePaciente"
+                          type="tel"
+                          className="form-control"
+                          name="telefone"
+                          placeholder="Telefone com DDD ou código do país"
+                          value={form.telefone}
+                          onChange={onChange}
+                          autoComplete="tel"
+                          required
+                        />
+
+                        <label className="form-check-label d-flex align-items-center gap-2 mt-2">
+                          <input
+                            type="checkbox"
+                            className="form-check-input mt-0"
+                            checked={form.temWhatsapp}
+                            onChange={(e) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                temWhatsapp: e.target.checked,
+                              }))
+                            }
+                          />
+
+                          <span>Este número também é WhatsApp</span>
+                        </label>
+                      </div>
+
+                      {/* DOCUMENTO */}
+
+                      <div className="col-12">
+                        <hr className="my-2" />
+
+                        <h6 className="mb-2">
+                          Documento de identificação
+                        </h6>
+
+                        <p className="text-muted small mb-2">
+                          O documento ajuda a identificar pacientes com
+                          nomes semelhantes. Não é obrigatório.
+                        </p>
+                      </div>
+
+                      <div className="col-12 col-sm-5">
+                        <label
+                          htmlFor="tipoDocumento"
+                          className="form-label"
+                        >
+                          Tipo de documento
+                        </label>
+
+                        <select
+                          id="tipoDocumento"
+                          className="form-select"
+                          name="tipoDocumento"
+                          value={form.tipoDocumento}
+                          disabled={form.semDocumento}
+                          onChange={(e) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              tipoDocumento: e.target.value,
+                              documento: "",
+                            }))
+                          }
+                        >
+                          <option value="CPF">CPF</option>
+                          <option value="Passaporte">Passaporte</option>
+                          <option value="Outro">Outro documento</option>
+                        </select>
+                      </div>
+
+                      <div className="col-12 col-sm-7">
+                        <label
+                          htmlFor="documento"
+                          className="form-label"
+                        >
+                          Número do documento
+                        </label>
+
+                        <input
+                          id="documento"
+                          name="documento"
+                          className="form-control"
+                          value={form.documento}
+                          onChange={onChange}
+                          disabled={form.semDocumento}
+                          inputMode={
+                            form.tipoDocumento === "CPF"
+                              ? "numeric"
+                              : "text"
+                          }
+                          maxLength={
+                            form.tipoDocumento === "CPF"
+                              ? 14
+                              : 50
+                          }
+                          placeholder={
+                            form.tipoDocumento === "CPF"
+                              ? "000.000.000-00"
+                              : "Número do documento"
+                          }
+                        />
+                      </div>
+
+                      <div className="col-12">
+                        <label className="form-check-label d-flex align-items-center gap-2">
+                          <input
+                            type="checkbox"
+                            className="form-check-input mt-0"
+                            checked={form.semDocumento}
+                            onChange={(e) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                semDocumento: e.target.checked,
+                                documento: e.target.checked
+                                  ? ""
+                                  : previous.documento,
+                              }))
+                            }
+                          />
+
+                          <span>Paciente não informou documento</span>
+                        </label>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* CÂMERA */}
+
+                  {cameraAberta && (
+                    <div className="col-12">
+                      <div
+                        className="p-3 border rounded"
+                        style={{ maxWidth: "440px" }}
+                      >
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          style={{
+                            width: "100%",
+                            borderRadius: "8px",
+                            backgroundColor: "#111",
+                          }}
+                        />
+
+                        <div className="d-flex flex-wrap gap-2 mt-2">
+                          <button
+                            type="button"
+                            className="proflex-button"
+                            style={smallButtonStyle}
+                            onClick={capturePhoto}
+                          >
+                            📸 Capturar foto
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={closeCamera}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            </div>
+
+            {/* ENDEREÇO - CADASTRO COMPLETO */}
+
+            {modoCadastro === "completo" && (
+              <div
+                className="card border-0 shadow-sm mb-3"
+                style={{ borderRadius: "12px" }}
+              >
+                <div className="card-body p-3 p-md-4">
+
+                  <h5 className="mb-2">Endereço</h5>
+
+                  <p className="text-muted small mb-3">
+                    Informe o endereço do paciente. Para endereços no Brasil,
+                    o CEP pode preencher automaticamente alguns campos.
+                  </p>
+
+                  <div className="row g-3">
+
+                    {/* PAÍS */}
+
+                    <div className="col-12">
+                      <label className="form-check-label d-flex align-items-center gap-2">
+                        <input
+                          type="checkbox"
+                          className="form-check-input mt-0"
+                          checked={form.pais === "Brasil"}
+                          onChange={(e) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              pais: e.target.checked ? "Brasil" : "",
+                              estado: "",
+                            }))
+                          }
+                        />
+
+                        <span>Brasil</span>
+                      </label>
+
+                      {form.pais !== "Brasil" && (
+                        <select
+                          className="form-select form-select-sm mt-2"
+                          style={{ maxWidth: "260px" }}
+                          value={form.pais}
+                          onChange={(e) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              pais: e.target.value,
+                              estado: "",
+                            }))
+                          }
+                        >
+                          <option value="">Selecione o país</option>
+                          <option value="Portugal">Portugal</option>
+                          <option value="Países Baixos">Países Baixos</option>
+                          <option value="Irlanda">Irlanda</option>
+                          <option value="Alemanha">Alemanha</option>
+                          <option value="Outro">Outro</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {[
+                      ["cep", "CEP / Código postal"],
+                      ["rua", "Rua"],
+                      ["numero", "Número"],
+                      ["complemento", "Complemento"],
+                      ["bairro", "Bairro"],
+                      ["cidade", "Cidade"],
+                      ["estado", "Estado / Província"],
+                    ].map(([campo, titulo]) => (
+                      <div
+                        key={campo}
+                        className={
+                          campo === "rua"
+                            ? "col-12 col-md-6 col-lg-5"
+                            : campo === "cep"
+                            ? "col-12 col-sm-6 col-md-3 col-lg-2"
+                            : campo === "numero"
+                            ? "col-12 col-sm-6 col-md-3 col-lg-2"
+                            : campo === "complemento"
+                            ? "col-12 col-sm-6 col-md-6 col-lg-3"
+                            : "col-12 col-sm-6 col-lg-4"
+                        }
+                      >
+                        <label
+                          htmlFor={`endereco-${campo}`}
+                          className="form-label"
+                        >
+                          {titulo}
+                          {campo === "cep" ? " *" : ""}
+                        </label>
+
+                        {campo === "estado" &&
+                        (form.pais === "Brasil" ||
+                          form.pais === "Países Baixos") ? (
+                          <select
+                            id={`endereco-${campo}`}
+                            className="form-select"
+                            name="estado"
+                            value={form.estado}
+                            onChange={onChange}
+                          >
+                            <option value="">
+                              Selecione o estado
+                            </option>
+
+                            {(form.pais === "Brasil"
+                              ? ESTADOS_BRASIL
+                              : PROVINCIAS_HOLANDA
+                            ).map((estado) => (
+                              <option key={estado} value={estado}>
+                                {estado}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            id={`endereco-${campo}`}
+                            className="form-control"
+                            name={campo}
+                            value={form[campo]}
+                            onChange={onChange}
+                            onBlur={
+                              campo === "cep"
+                                ? buscarCEP
+                                : undefined
+                            }
+                            autoComplete={
+                              campo === "cep"
+                                ? "postal-code"
+                                : campo === "rua"
+                                ? "address-line1"
+                                : campo === "cidade"
+                                ? "address-level2"
+                                : undefined
+                            }
+                          />
+                        )}
+                      </div>
+                    ))}
+
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* BOTÕES DO CADASTRO */}
+
+            <div className="d-flex flex-wrap justify-content-end gap-2 mb-4">
+
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={cancelarCadastro}
+                disabled={salvando}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                className="proflex-button"
+                disabled={salvando}
+                style={{
+                  width: "auto",
+                  minWidth: "160px",
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  borderRadius: "8px",
+                }}
+              >
+                {salvando
+                  ? "Salvando..."
+                  : "Salvar paciente"}
+              </button>
+
+            </div>
+
+          </form>
+        </div>
+      )}
+
     </div>
   );
 }
