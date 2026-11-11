@@ -1,17 +1,41 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Only authenticated users can read their own profile.
     match /usuarios/{userId} {
+
+      // Somente o dono pode consultar seu perfil
       allow read: if request.auth != null
         && request.auth.uid == userId;
 
-      allow create, update, delete: if false;
+      // Cadastro do próprio usuário
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.keys().hasOnly([
+          'uid', 'nome', 'cpf', 'email', 'tipoPerfil',
+          'whatsapp', 'telefone', 'endereco',
+          'profissao', 'registroProfissional',
+          'nomeClinica', 'cnpj', 'enderecoClinica',
+          'whatsappClinica', 'criadoEm', 'atualizadoEm'
+        ])
+        && request.resource.data.tipoPerfil in [
+          'autonomo', 'clinica', 'hibrido'
+        ];
+
+      allow update, delete: if false;
+
+      // Caixinha dos pacientes deste usuário
+      match /pacientes/{pacienteId} {
+        allow read, write: if request.auth != null
+          && request.auth.uid == userId;
+      }
     }
 
-    // Deny access to all other collections.
+    // Bloqueia outros caminhos
     match /{document=**} {
       allow read, write: if false;
     }
