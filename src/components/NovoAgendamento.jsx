@@ -728,35 +728,52 @@ export default function NovoAgendamento() {
         <strong>Cadastro iniciado em:</strong> {carimbo}
       </div>
 
+      
       {/* Tipo */}
-      <div className="mb-3">
-        <label className="form-label me-3">Tipo:</label>
-        <div className="form-check form-check-inline">
-          <input
-            className="form-check-input"
-            type="radio"
-            id="t-rap"
-            checked={tipo === "rapido"}
-            onChange={() => setTipo("rapido")}
-          />
-          <label className="form-check-label" htmlFor="t-rap">
-            Rápido
-          </label>
-        </div>
-        <div className="form-check form-check-inline">
-          <input
-            className="form-check-input"
-            type="radio"
-            id="t-comp"
-            checked={tipo === "completo"}
-            onChange={() => setTipo("completo")}
-          />
-          <label className="form-check-label" htmlFor="t-comp">
-            Completo
-          </label>
-        </div>
-      </div>
+<div
+  className="card border-0 shadow-sm mb-3"
+  style={{ borderRadius: "12px" }}
+>
+  <div className="card-body p-3 p-md-4">
+  <div className="d-flex flex-wrap gap-2 mb-3">
+    <button
+      type="button"
+      className={tipo === "rapido" ? "proflex-button" : "btn btn-outline-secondary"}
+      onClick={() => setTipo("rapido")}
+    >
+      Cadastro rápido
+    </button>
 
+    <button
+  type="button"
+  className={
+    tipo === "completo"
+      ? "proflex-button"
+      : "btn btn-outline-secondary"
+  }
+  style={
+    tipo === "completo"
+      ? {
+  padding: "8px 14px",
+  fontSize: "14px",
+  fontWeight: 600,
+  borderRadius: "8px",
+}
+      : undefined
+  }
+  onClick={() => setTipo("completo")}
+>
+  Cadastro completo
+</button>
+  </div>
+
+  <p className="text-muted mb-0">
+    {tipo === "rapido"
+      ? "Cadastro rápido: informe os dados principais. O endereço e outras informações poderão ser acrescentados depois no cadastro do paciente."
+      : "Cadastro completo: preencha os dados pessoais e o endereço. As informações clínicas são registradas no prontuário."}
+  </p>
+  </div>
+</div>
       {/* FORM PRINCIPAL */}
       <form className="row g-3" onSubmit={handleSubmit}>
         {/* Botão de salvar sempre acessível */}

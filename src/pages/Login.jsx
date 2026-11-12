@@ -1,7 +1,10 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { auth } from "../services/firebase";
 import { login } from "../authentication/session.jsx";
 
@@ -18,6 +21,22 @@ export default function Login() {
   useEffect(() => {
     emailRef.current?.focus();
   }, []);
+  async function recuperarSenha() {
+    if (!email.trim()) {
+      setMensagem("Digite seu e-mail para recuperar a senha.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setMensagem(
+        "Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha.",
+      );
+    } catch (erro) {
+      console.error("Erro ao recuperar senha:", erro.code);
+      setMensagem("Não foi possível enviar o e-mail. Tente novamente.");
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -34,7 +53,7 @@ export default function Login() {
       const credencial = await signInWithEmailAndPassword(
         auth,
         email.trim(),
-        senha
+        senha,
       );
 
       if (!credencial.user.emailVerified) {
@@ -45,7 +64,6 @@ export default function Login() {
 
       login({ role: "owner" });
       navigate("/agenda");
-
     } catch (erro) {
       console.error("Erro no login:", erro.code);
 
@@ -112,6 +130,16 @@ export default function Login() {
           />
         </div>
 
+        <div className="text-end mb-3">
+          <button
+            type="button"
+            className="btn btn-link p-0"
+            onClick={recuperarSenha}
+          >
+            Esqueci minha senha?
+          </button>
+        </div>
+
         {mensagem && (
           <div className="alert alert-danger" role="alert">
             {mensagem}
@@ -127,10 +155,7 @@ export default function Login() {
         </button>
       </form>
 
-      <button
-        onClick={() => navigate("/")}
-        className="btn btn-link mt-3"
-      >
+      <button onClick={() => navigate("/")} className="btn btn-link mt-3">
         Voltar à página inicial
       </button>
     </div>
