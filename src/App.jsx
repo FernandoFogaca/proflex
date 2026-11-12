@@ -1,9 +1,8 @@
-
 import { Routes, Route } from "react-router-dom";
-
+import OwnerRoute from "./authentication/OwnerRoute";
 import Header from "./components/Header";
 import PageHeader from "./components/PageHeader";
-
+import Team from "./pages/Team.jsx";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro.jsx";
@@ -16,7 +15,7 @@ import Compromissos from "./pages/Compromissos";
 import Prontuario from "./pages/Prontuario";
 import Dashboard from "./pages/Dashboard";
 import Consulta from "./pages/Consulta";
-
+import AdminPremium from "./pages/AdminPremium.jsx";
 import { AppProvider } from "./context/AppContext.jsx";
 import ProtectedRoute from "./authentication/ProtectedRoute";
 
@@ -60,6 +59,14 @@ export default function App() {
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-premium"
+          element={
+            <OwnerRoute>
+              <AdminPremium />
+            </OwnerRoute>
           }
         />
 
@@ -109,6 +116,14 @@ export default function App() {
             <ProtectedPage>
               <Prontuario />
             </ProtectedPage>
+          }
+        />
+        <Route
+          path="/team"
+          element={
+            <OwnerRoute>
+              <Team />
+            </OwnerRoute>
           }
         />
 
