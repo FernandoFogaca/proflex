@@ -315,6 +315,12 @@ export default function Cadastro() {
       novosErros.senha = "Senha obrigatória.";
     } else if (senha.length < 8) {
       novosErros.senha = "Use pelo menos 8 caracteres.";
+      } else if (!/[A-Z]/.test(senha)) {
+  novosErros.senha = "Inclua pelo menos uma letra maiúscula.";
+} else if (!/[a-z]/.test(senha)) {
+  novosErros.senha = "Inclua pelo menos uma letra minúscula.";
+} else if (!/[0-9]/.test(senha)) {
+  novosErros.senha = "Inclua pelo menos um número.";
     } else if (temSequencia(senha)) {
   novosErros.senha = "Não utilize sequências ou caracteres repetidos.";
 }
