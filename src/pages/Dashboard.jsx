@@ -1171,12 +1171,12 @@ export default function Dashboard() {
             color: #991B1B;
           }
 
-          .pf-empty {
-            text-align: center;
-            padding: 35px 15px;
-            color: #94A3B8;
-            font-size: 13px;
-          }
+         .pf-empty {
+  text-align: center;
+  padding: 16px 15px;
+  color: #94A3B8;
+  font-size: 13px;
+}
 
           .pf-empty svg {
             display: block;
@@ -1486,58 +1486,70 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="col-12 col-lg-6">
-          <div className="pf-card">
-            <SectionHeading
-              icon={ChartNoAxesCombined}
-              title="Evolução dos atendimentos"
-              subtitle="Consultas registradas nos últimos seis meses"
-            />
+       
+<div className="col-12 col-lg-6">
+  <div className="pf-card">
+    <SectionHeading
+      icon={ChartNoAxesCombined}
+      title="Evolução dos atendimentos"
+      subtitle="Consultas registradas nos últimos seis meses"
+    />
 
-            <div className="pf-chart">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={monthlyData}
-                  margin={{
-                    top: 15,
-                    right: 20,
-                    left: 0,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid stroke="#EDF2F5" strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{
-                      fontSize: 12,
-                      fill: "#718096",
-                    }}
-                  />
-                  <YAxis
-                    allowDecimals={false}
-                    tick={{
-                      fontSize: 12,
-                      fill: "#718096",
-                    }}
-                  />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Consultas registradas"
-                    stroke={COLORS.primary}
-                    strokeWidth={3}
-                    dot={{
-                      r: 4,
-                      fill: COLORS.primary,
-                    }}
-                    activeDot={{ r: 7 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+    {monthlyData.some((item) => item.total > 0) ? (
+      <div className="pf-chart">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={monthlyData}
+            margin={{
+              top: 15,
+              right: 20,
+              left: 0,
+              bottom: 5,
+            }}
+          >
+            <CartesianGrid
+              stroke="#EDF2F5"
+              strokeDasharray="3 3"
+            />
+            <XAxis
+              dataKey="month"
+              tick={{
+                fontSize: 12,
+                fill: "#718096",
+              }}
+            />
+            <YAxis
+              allowDecimals={false}
+              tick={{
+                fontSize: 12,
+                fill: "#718096",
+              }}
+            />
+            <Tooltip />
+            <Line
+              type="monotone"
+              dataKey="total"
+              name="Consultas registradas"
+              stroke={COLORS.primary}
+              strokeWidth={3}
+              dot={{
+                r: 4,
+                fill: COLORS.primary,
+              }}
+              activeDot={{ r: 7 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    ) : (
+      <div className="pf-empty">
+        <ChartNoAxesCombined size={29} />
+        Nenhum atendimento registrado nos últimos seis meses.
+      </div>
+    )}
+  </div>
+</div>
+
       </div>
 
       <div className="row g-3 mb-4">
