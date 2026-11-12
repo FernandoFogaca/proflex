@@ -7,12 +7,11 @@ import { auth } from "../services/firebase";
 import { logged, logout } from "../authentication/session.jsx";
 
 const navigationLinks = [
-  { label: "Assinar", path: "/marketing" },
+  { label: "Dashboard", path: "/dashboard" },
   { label: "Agenda", path: "/agenda" },
-  { label: "Cadastro", path: "/clientes" },
+  { label: "Pacientes", path: "/clientes" },
   { label: "Prontuários", path: "/prontuario" },
   { label: "Compromissos", path: "/compromissos" },
-  { label: "Home", path: "/" },
 ];
 
 export default function Header() {
@@ -93,7 +92,7 @@ export default function Header() {
 
       {profileOpen && (
         <div
-      className="position-absolute start-0 mt-2 bg-white text-dark rounded shadow p-3"
+          className="position-absolute start-0 mt-2 bg-white text-dark rounded shadow p-3"
           style={{
             minWidth: 220,
             maxWidth: "calc(100vw - 32px)",
@@ -160,21 +159,41 @@ export default function Header() {
             aria-label="Principal"
             className="d-none d-lg-flex align-items-center gap-3"
           >
-            {navigationLinks.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="text-white text-decoration-none"
-                onClick={closeMenu}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {isOn ? (
+              <>
+                {navigationLinks.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="text-white text-decoration-none"
+                    onClick={closeMenu}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
 
-            {isOn && (
+                <div className="d-flex align-items-center gap-2">
+                  {profileButton}
+                  {sessionButtons}
+                </div>
+              </>
+            ) : (
               <div className="d-flex align-items-center gap-2">
-                {profileButton}
-                {sessionButtons}
+                <Link
+                  to="/marketing"
+                  className="btn btn-warning fw-semibold"
+                  onClick={closeMenu}
+                >
+                  Assinar
+                </Link>
+
+                <Link
+                  to="/login"
+                  className="btn btn-outline-light"
+                  onClick={closeMenu}
+                >
+                  Entrar
+                </Link>
               </div>
             )}
           </nav>
@@ -202,21 +221,41 @@ export default function Header() {
             aria-label="Principal no celular"
             className="d-lg-none d-flex flex-column gap-3 pt-3 mt-3 border-top"
           >
-            {navigationLinks.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="text-white text-decoration-none"
-                onClick={closeMenu}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {isOn ? (
+              <>
+                {navigationLinks.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="text-white text-decoration-none"
+                    onClick={closeMenu}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
 
-            {isOn && (
+                <div className="d-flex flex-wrap align-items-center gap-2">
+                  {profileButton}
+                  {sessionButtons}
+                </div>
+              </>
+            ) : (
               <div className="d-flex flex-wrap align-items-center gap-2">
-                {profileButton}
-                {sessionButtons}
+                <Link
+                  to="/marketing"
+                  className="btn btn-warning fw-semibold"
+                  onClick={closeMenu}
+                >
+                  Assinar
+                </Link>
+
+                <Link
+                  to="/login"
+                  className="btn btn-outline-light"
+                  onClick={closeMenu}
+                >
+                  Entrar
+                </Link>
               </div>
             )}
           </nav>
