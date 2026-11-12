@@ -1,7 +1,9 @@
-
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
+import { auth, db } from "../services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 import {
   Activity,
@@ -123,17 +125,9 @@ function parseDate(value) {
 }
 
 function daysBetween(start, end) {
-  const a = Date.UTC(
-    start.getFullYear(),
-    start.getMonth(),
-    start.getDate()
-  );
+  const a = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
 
-  const b = Date.UTC(
-    end.getFullYear(),
-    end.getMonth(),
-    end.getDate()
-  );
+  const b = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
 
   return Math.floor((b - a) / 86400000);
 }
@@ -153,7 +147,7 @@ function getSituation(client) {
       client.situacao ||
       client.statusCadastro ||
       client.statusPaciente ||
-      ""
+      "",
   );
 }
 
@@ -184,14 +178,10 @@ function isBlocked(client) {
 }
 
 function getLastAttendance(client) {
-  const records = Array.isArray(client.consultas)
-    ? client.consultas
-    : [];
+  const records = Array.isArray(client.consultas) ? client.consultas : [];
 
   const dates = records
-    .map((record) =>
-      parseDate(record.dataISO || record.data)
-    )
+    .map((record) => parseDate(record.dataISO || record.data))
     .filter(Boolean)
     .sort((a, b) => b.getTime() - a.getTime());
 
@@ -215,9 +205,7 @@ function getEmail(client) {
 }
 
 function getPhone(client) {
-  return String(
-    client.whatsapp || client.telefone || ""
-  ).trim();
+  return String(client.whatsapp || client.telefone || "").trim();
 }
 
 function formatTime(value) {
@@ -227,16 +215,12 @@ function formatTime(value) {
 function formatDateBR(value) {
   const date = parseDate(value);
 
-  return date
-    ? date.toLocaleDateString("pt-BR")
-    : String(value || "—");
+  return date ? date.toLocaleDateString("pt-BR") : String(value || "—");
 }
 
 function sortByTime(items) {
   return [...items].sort((a, b) =>
-    String(a.hora || "").localeCompare(
-      String(b.hora || "")
-    )
+    String(a.hora || "").localeCompare(String(b.hora || "")),
   );
 }
 
@@ -263,39 +247,21 @@ function MetricCard({
       aria-expanded={active || undefined}
     >
       <div className="pf-metric-top">
-        <div
-          className="pf-metric-icon"
-          style={{ background: iconBackground }}
-        >
-          <Icon
-            size={23}
-            strokeWidth={1.8}
-            color={accent}
-          />
+        <div className="pf-metric-icon" style={{ background: iconBackground }}>
+          <Icon size={23} strokeWidth={1.8} color={accent} />
         </div>
 
-        <ArrowUpRight
-          size={18}
-          strokeWidth={1.8}
-          color="#94A3B8"
-        />
+        <ArrowUpRight size={18} strokeWidth={1.8} color="#94A3B8" />
       </div>
 
       <div className="pf-metric-value">{value}</div>
       <div className="pf-metric-title">{title}</div>
-      <div className="pf-metric-description">
-        {description}
-      </div>
+      <div className="pf-metric-description">{description}</div>
     </button>
   );
 }
 
-function SectionHeading({
-  icon: Icon,
-  title,
-  subtitle,
-  action,
-}) {
+function SectionHeading({ icon: Icon, title, subtitle, action }) {
   return (
     <div className="pf-section-heading">
       <div className="pf-section-heading-main">
@@ -305,9 +271,7 @@ function SectionHeading({
 
         <div>
           <h5 className="pf-section-title">{title}</h5>
-          {subtitle && (
-            <p className="pf-section-subtitle">{subtitle}</p>
-          )}
+          {subtitle && <p className="pf-section-subtitle">{subtitle}</p>}
         </div>
       </div>
 
@@ -316,12 +280,7 @@ function SectionHeading({
   );
 }
 
-function TimeRow({
-  time,
-  title,
-  subtitle,
-  icon: Icon = CalendarCheck2,
-}) {
+function TimeRow({ time, title, subtitle, icon: Icon = CalendarCheck2 }) {
   return (
     <div className="pf-time-row">
       <div className="pf-time">{time}</div>
@@ -342,6 +301,37 @@ function TimeRow({
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [isOwner, setIsOwner] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsOwner(false);
+
+      if (!user || !user.emailVerified) return;
+
+      try {
+        const snapshot = await getDoc(doc(db, "usuarios", user.uid));
+        const data = snapshot.data();
+
+        if (active && auth.currentUser?.uid === user.uid) {
+          setIsOwner(
+            snapshot.exists() &&
+              data.uid === user.uid &&
+              data.email === user.email,
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao verificar proprietário:", error);
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
   const { clients = [], appointments = [] } = useApp();
 
   const [chartView, setChartView] = useState("days");
@@ -368,17 +358,13 @@ export default function Dashboard() {
   // ====================================================
 
   const consultations = appointments.filter(
-    (item) =>
-      item.tipo !== "pessoal" &&
-      item.tipo !== "compromisso"
+    (item) => item.tipo !== "pessoal" && item.tipo !== "compromisso",
   );
 
   const todayConsultations = sortByTime(
     consultations.filter(
-      (item) =>
-        item.data === today &&
-        normalize(item.status) !== "cancelado"
-    )
+      (item) => item.data === today && normalize(item.status) !== "cancelado",
+    ),
   );
 
   const personalToday = sortByTime(
@@ -386,8 +372,8 @@ export default function Dashboard() {
       (item) =>
         ["pessoal", "compromisso"].includes(item.tipo) &&
         item.data === today &&
-        normalize(item.status) !== "cancelado"
-    )
+        normalize(item.status) !== "cancelado",
+    ),
   );
 
   const upcomingConsultations = consultations
@@ -395,14 +381,12 @@ export default function Dashboard() {
       (item) =>
         typeof item.data === "string" &&
         item.data > today &&
-        normalize(item.status) !== "cancelado"
+        normalize(item.status) !== "cancelado",
     )
     .sort(
       (a, b) =>
         String(a.data).localeCompare(String(b.data)) ||
-        String(a.hora || "").localeCompare(
-          String(b.hora || "")
-        )
+        String(a.hora || "").localeCompare(String(b.hora || "")),
     )
     .slice(0, 5);
 
@@ -412,8 +396,7 @@ export default function Dashboard() {
     if (!birth || isBlocked(client)) return false;
 
     return (
-      birth.getDate() === now.getDate() &&
-      birth.getMonth() === now.getMonth()
+      birth.getDate() === now.getDate() && birth.getMonth() === now.getMonth()
     );
   });
 
@@ -429,14 +412,9 @@ export default function Dashboard() {
     }
 
     const clientId =
-      appointment.clienteId ||
-      appointment.clientId ||
-      appointment.pacienteId;
+      appointment.clienteId || appointment.clientId || appointment.pacienteId;
 
-    const client = clients.find(
-      (item) =>
-        String(item.id) === String(clientId)
-    );
+    const client = clients.find((item) => String(item.id) === String(clientId));
 
     return client?.nome || "Paciente não identificado";
   };
@@ -467,12 +445,9 @@ export default function Dashboard() {
       })
       .filter(
         (client) =>
-          client.daysInactive !== null &&
-          client.daysInactive >= inactiveDays
+          client.daysInactive !== null && client.daysInactive >= inactiveDays,
       )
-      .sort(
-        (a, b) => b.daysInactive - a.daysInactive
-      );
+      .sort((a, b) => b.daysInactive - a.daysInactive);
   }, [clients, inactiveDays, today]);
 
   function eligibility(client) {
@@ -492,8 +467,7 @@ export default function Dashboard() {
 
     if (
       (channel === "email" || channel === "both") &&
-      (!getEmail(client) ||
-        !getConsent(client, "email"))
+      (!getEmail(client) || !getConsent(client, "email"))
     ) {
       return {
         allowed: false,
@@ -503,8 +477,7 @@ export default function Dashboard() {
 
     if (
       (channel === "whatsapp" || channel === "both") &&
-      (!getPhone(client) ||
-        !getConsent(client, "whatsapp"))
+      (!getPhone(client) || !getConsent(client, "whatsapp"))
     ) {
       return {
         allowed: false,
@@ -519,21 +492,20 @@ export default function Dashboard() {
   }
 
   const eligibleCandidates = candidates.filter(
-    (client) => eligibility(client).allowed
+    (client) => eligibility(client).allowed,
   );
 
-  const filteredCandidates = candidates.filter(
-    (client) =>
-      String(client.nome || "")
-        .toLowerCase()
-        .includes(search.toLowerCase())
+  const filteredCandidates = candidates.filter((client) =>
+    String(client.nome || "")
+      .toLowerCase()
+      .includes(search.toLowerCase()),
   );
 
   const selectedRecipients = candidates.filter(
     (client) =>
       selectedIds.includes(String(client.id)) &&
       reviewedIds.includes(String(client.id)) &&
-      eligibility(client).allowed
+      eligibility(client).allowed,
   );
 
   function resetSelection() {
@@ -562,9 +534,7 @@ export default function Dashboard() {
   function toggleReviewed(id) {
     setReviewedIds((previous) => {
       if (previous.includes(id)) {
-        setSelectedIds((selected) =>
-          selected.filter((item) => item !== id)
-        );
+        setSelectedIds((selected) => selected.filter((item) => item !== id));
 
         return previous.filter((item) => item !== id);
       }
@@ -584,7 +554,7 @@ export default function Dashboard() {
 
     // Revalidate against the current patient data.
     const recipients = selectedRecipients.filter(
-      (client) => eligibility(client).allowed
+      (client) => eligibility(client).allowed,
     );
 
     if (
@@ -613,26 +583,19 @@ export default function Dashboard() {
         body: JSON.stringify({
           channel,
           message: message.trim(),
-          recipientIds: recipients.map(
-            (client) => client.id
-          ),
+          recipientIds: recipients.map((client) => client.id),
           inactiveDays,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Serviço de envio indisponível (${response.status}).`
-        );
+        throw new Error(`Serviço de envio indisponível (${response.status}).`);
       }
 
       const result = await response.json();
 
       if (result.success !== true) {
-        throw new Error(
-          result.message ||
-            "O serviço não confirmou o envio."
-        );
+        throw new Error(result.message || "O serviço não confirmou o envio.");
       }
 
       setFeedback({
@@ -646,9 +609,7 @@ export default function Dashboard() {
     } catch (error) {
       setFeedback({
         type: "error",
-        text:
-          error.message ||
-          "Não foi possível enviar a campanha.",
+        text: error.message || "Não foi possível enviar a campanha.",
       });
     } finally {
       setSending(false);
@@ -665,7 +626,7 @@ export default function Dashboard() {
       typeof item.data === "string" &&
       typeof item.hora === "string" &&
       /^\d{4}-\d{2}-\d{2}$/.test(item.data) &&
-      /^\d{2}:\d{2}/.test(item.hora)
+      /^\d{2}:\d{2}/.test(item.hora),
   );
 
   const weekdayData = [
@@ -690,9 +651,7 @@ export default function Dashboard() {
 
   validAppointments.forEach((item) => {
     const hour = item.hora.slice(0, 2) + "h";
-    const existing = hourlyData.find(
-      (entry) => entry.hour === hour
-    );
+    const existing = hourlyData.find((entry) => entry.hour === hour);
 
     if (existing) {
       existing.total += 1;
@@ -701,38 +660,31 @@ export default function Dashboard() {
     }
   });
 
-  hourlyData.sort((a, b) =>
-    a.hour.localeCompare(b.hour)
-  );
+  hourlyData.sort((a, b) => a.hour.localeCompare(b.hour));
 
   const statusData = [
     {
       name: "Agendadas",
       value: consultations.filter(
-        (item) =>
-          !item.status ||
-          normalize(item.status) === "agendado"
+        (item) => !item.status || normalize(item.status) === "agendado",
       ).length,
     },
     {
       name: "Confirmadas",
       value: consultations.filter(
-        (item) =>
-          normalize(item.status) === "confirmado"
+        (item) => normalize(item.status) === "confirmado",
       ).length,
     },
     {
       name: "Concluídas",
       value: consultations.filter(
-        (item) =>
-          normalize(item.status) === "concluido"
+        (item) => normalize(item.status) === "concluido",
       ).length,
     },
     {
       name: "Canceladas",
       value: consultations.filter(
-        (item) =>
-          normalize(item.status) === "cancelado"
+        (item) => normalize(item.status) === "cancelado",
       ).length,
     },
     {
@@ -740,59 +692,41 @@ export default function Dashboard() {
       value: consultations.filter(
         (item) =>
           item.status &&
-          ![
-            "agendado",
-            "confirmado",
-            "concluido",
-            "cancelado",
-          ].includes(normalize(item.status))
+          !["agendado", "confirmado", "concluido", "cancelado"].includes(
+            normalize(item.status),
+          ),
       ).length,
     },
   ];
 
-  const totalStatus = statusData.reduce(
-    (sum, item) => sum + item.value,
-    0
-  );
+  const totalStatus = statusData.reduce((sum, item) => sum + item.value, 0);
 
   const completedConsultations = clients.flatMap(
-    (client) => client.consultas || []
+    (client) => client.consultas || [],
   );
 
-  const monthlyData = Array.from(
-    { length: 6 },
-    (_, index) => {
-      const date = new Date(
-        now.getFullYear(),
-        now.getMonth() - 5 + index,
-        1
-      );
+  const monthlyData = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1);
 
-      const year = date.getFullYear();
-      const month = String(
-        date.getMonth() + 1
-      ).padStart(2, "0");
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
 
-      const key = `${year}-${month}`;
+    const key = `${year}-${month}`;
 
-      return {
-        month: date.toLocaleDateString("pt-BR", {
-          month: "short",
-          year: "2-digit",
-        }),
-        total: completedConsultations.filter(
-          (consultation) =>
-            typeof consultation.dataISO === "string" &&
-            consultation.dataISO.startsWith(key)
-        ).length,
-      };
-    }
-  );
+    return {
+      month: date.toLocaleDateString("pt-BR", {
+        month: "short",
+        year: "2-digit",
+      }),
+      total: completedConsultations.filter(
+        (consultation) =>
+          typeof consultation.dataISO === "string" &&
+          consultation.dataISO.startsWith(key),
+      ).length,
+    };
+  });
 
-  const activityData =
-    chartView === "days"
-      ? weekdayData
-      : hourlyData;
+  const activityData = chartView === "days" ? weekdayData : hourlyData;
 
   // ====================================================
   // INTERFACE
@@ -1292,14 +1226,21 @@ export default function Dashboard() {
               ProFlex · Visão geral
             </div>
 
-            <h1 className="pf-hero-title">
-              Seu consultório, sob controle.
-            </h1>
+            <h1 className="pf-hero-title">Seu consultório, sob controle.</h1>
 
             <p className="pf-hero-subtitle">
               Pacientes, agenda e oportunidades em um só lugar.
             </p>
           </div>
+          {isOwner && (
+            <button
+              type="button"
+              className="btn btn-warning fw-semibold"
+              onClick={() => navigate("/admin-premium")}
+            >
+              Central Premium
+            </button>
+          )}
 
           <div className="pf-hero-date">
             <CalendarDays size={17} />
@@ -1341,9 +1282,7 @@ export default function Dashboard() {
             active={activePanel === "consultations"}
             onClick={() =>
               setActivePanel((previous) =>
-                previous === "consultations"
-                  ? null
-                  : "consultations"
+                previous === "consultations" ? null : "consultations",
               )
             }
           />
@@ -1360,9 +1299,7 @@ export default function Dashboard() {
             active={activePanel === "commitments"}
             onClick={() =>
               setActivePanel((previous) =>
-                previous === "commitments"
-                  ? null
-                  : "commitments"
+                previous === "commitments" ? null : "commitments",
               )
             }
           />
@@ -1379,9 +1316,7 @@ export default function Dashboard() {
             active={activePanel === "birthdays"}
             onClick={() =>
               setActivePanel((previous) =>
-                previous === "birthdays"
-                  ? null
-                  : "birthdays"
+                previous === "birthdays" ? null : "birthdays",
               )
             }
           />
@@ -1399,15 +1334,15 @@ export default function Dashboard() {
               activePanel === "consultations"
                 ? CalendarCheck2
                 : activePanel === "commitments"
-                ? CalendarClock
-                : Cake
+                  ? CalendarClock
+                  : Cake
             }
             title={
               activePanel === "consultations"
                 ? "Consultas e próximos atendimentos"
                 : activePanel === "commitments"
-                ? "Compromissos de hoje"
-                : "Aniversariantes de hoje"
+                  ? "Compromissos de hoje"
+                  : "Aniversariantes de hoje"
             }
             action={
               <button
@@ -1423,9 +1358,7 @@ export default function Dashboard() {
 
           {activePanel === "consultations" && (
             <>
-              <h6 className="fw-bold mb-2">
-                Consultas de hoje
-              </h6>
+              <h6 className="fw-bold mb-2">Consultas de hoje</h6>
 
               {todayConsultations.length ? (
                 todayConsultations.map((item) => (
@@ -1433,22 +1366,15 @@ export default function Dashboard() {
                     key={item.id}
                     time={formatTime(item.hora)}
                     title={getPatientName(item)}
-                    subtitle={
-                      "Situação: " +
-                      (item.status || "agendado")
-                    }
+                    subtitle={"Situação: " + (item.status || "agendado")}
                   />
                 ))
               ) : (
-                <p className="text-muted small">
-                  Nenhuma consulta hoje.
-                </p>
+                <p className="text-muted small">Nenhuma consulta hoje.</p>
               )}
 
               <div className="mt-4">
-                <h6 className="fw-bold mb-2">
-                  Próximos atendimentos
-                </h6>
+                <h6 className="fw-bold mb-2">Próximos atendimentos</h6>
 
                 {upcomingConsultations.length ? (
                   upcomingConsultations.map((item) => (
@@ -1481,9 +1407,7 @@ export default function Dashboard() {
                 />
               ))
             ) : (
-              <p className="text-muted small mb-0">
-                Nenhum compromisso hoje.
-              </p>
+              <p className="text-muted small mb-0">Nenhum compromisso hoje.</p>
             ))}
 
           {activePanel === "birthdays" &&
@@ -1498,9 +1422,7 @@ export default function Dashboard() {
                 />
               ))
             ) : (
-              <p className="text-muted small mb-0">
-                Nenhum aniversário hoje.
-              </p>
+              <p className="text-muted small mb-0">Nenhum aniversário hoje.</p>
             ))}
         </div>
       )}
@@ -1534,10 +1456,7 @@ export default function Dashboard() {
                       stroke="none"
                     >
                       {statusData.map((item) => (
-                        <Cell
-                          key={item.name}
-                          fill={STATUS_COLORS[item.name]}
-                        />
+                        <Cell key={item.name} fill={STATUS_COLORS[item.name]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -1553,18 +1472,14 @@ export default function Dashboard() {
 
             <div className="pf-legend">
               {statusData.map((item) => (
-                <div
-                  key={item.name}
-                  className="pf-legend-item"
-                >
+                <div key={item.name} className="pf-legend-item">
                   <span
                     className="pf-legend-dot"
                     style={{
                       background: STATUS_COLORS[item.name],
                     }}
                   />
-                  {item.name}:{" "}
-                  <strong>{item.value}</strong>
+                  {item.name}: <strong>{item.value}</strong>
                 </div>
               ))}
             </div>
@@ -1590,10 +1505,7 @@ export default function Dashboard() {
                     bottom: 5,
                   }}
                 >
-                  <CartesianGrid
-                    stroke="#EDF2F5"
-                    strokeDasharray="3 3"
-                  />
+                  <CartesianGrid stroke="#EDF2F5" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="month"
                     tick={{
@@ -1640,9 +1552,7 @@ export default function Dashboard() {
             <div className="d-flex gap-2 mb-3">
               <button
                 type="button"
-                className={`pf-tab ${
-                  chartView === "days" ? "active" : ""
-                }`}
+                className={`pf-tab ${chartView === "days" ? "active" : ""}`}
                 onClick={() => setChartView("days")}
               >
                 Por dia
@@ -1650,9 +1560,7 @@ export default function Dashboard() {
 
               <button
                 type="button"
-                className={`pf-tab ${
-                  chartView === "hours" ? "active" : ""
-                }`}
+                className={`pf-tab ${chartView === "hours" ? "active" : ""}`}
                 onClick={() => setChartView("hours")}
               >
                 Por horário
@@ -1671,16 +1579,9 @@ export default function Dashboard() {
                       bottom: 5,
                     }}
                   >
-                    <CartesianGrid
-                      stroke="#EDF2F5"
-                      strokeDasharray="3 3"
-                    />
+                    <CartesianGrid stroke="#EDF2F5" strokeDasharray="3 3" />
                     <XAxis
-                      dataKey={
-                        chartView === "days"
-                          ? "day"
-                          : "hour"
-                      }
+                      dataKey={chartView === "days" ? "day" : "hour"}
                       tick={{
                         fontSize: 12,
                         fill: "#718096",
@@ -1747,8 +1648,8 @@ export default function Dashboard() {
                 </h5>
 
                 <p className="pf-section-subtitle">
-                  Recupere oportunidades com uma comunicação
-                  personalizada e responsável.
+                  Recupere oportunidades com uma comunicação personalizada e
+                  responsável.
                 </p>
               </div>
             </div>
@@ -1756,16 +1657,12 @@ export default function Dashboard() {
             <button
               type="button"
               className="pf-button pf-button-primary"
-              onClick={() =>
-                setCampaignOpen((previous) => !previous)
-              }
+              onClick={() => setCampaignOpen((previous) => !previous)}
               aria-expanded={campaignOpen}
             >
               <Megaphone size={17} />
 
-              {campaignOpen
-                ? "Fechar campanha"
-                : "Criar campanha"}
+              {campaignOpen ? "Fechar campanha" : "Criar campanha"}
 
               {campaignOpen ? (
                 <ChevronUp size={16} />
@@ -1782,11 +1679,10 @@ export default function Dashboard() {
           <div>
             <strong>Comunicação segura</strong>
             <div>
-              O ProFlex só permite selecionar pacientes com
-              situação ativa, consentimento registrado para o
-              canal escolhido e revisão individual concluída.
-              A informação de falecimento ou hospitalização
-              precisa estar atualizada no cadastro.
+              O ProFlex só permite selecionar pacientes com situação ativa,
+              consentimento registrado para o canal escolhido e revisão
+              individual concluída. A informação de falecimento ou
+              hospitalização precisa estar atualizada no cadastro.
             </div>
           </div>
         </div>
@@ -1797,10 +1693,7 @@ export default function Dashboard() {
 
             <div className="row g-3 mb-4">
               <div className="col-12 col-md-4">
-                <label
-                  className="pf-field-label"
-                  htmlFor="pf-inactive-days"
-                >
+                <label className="pf-field-label" htmlFor="pf-inactive-days">
                   Sem atendimento há
                 </label>
 
@@ -1820,10 +1713,7 @@ export default function Dashboard() {
               </div>
 
               <div className="col-12 col-md-4">
-                <label
-                  className="pf-field-label"
-                  htmlFor="pf-recipient-limit"
-                >
+                <label className="pf-field-label" htmlFor="pf-recipient-limit">
                   Limite de pacientes
                 </label>
 
@@ -1844,10 +1734,7 @@ export default function Dashboard() {
               </div>
 
               <div className="col-12 col-md-4">
-                <label
-                  className="pf-field-label"
-                  htmlFor="pf-channel"
-                >
+                <label className="pf-field-label" htmlFor="pf-channel">
                   Canal de envio
                 </label>
 
@@ -1862,9 +1749,7 @@ export default function Dashboard() {
                 >
                   <option value="email">E-mail</option>
                   <option value="whatsapp">WhatsApp</option>
-                  <option value="both">
-                    E-mail e WhatsApp
-                  </option>
+                  <option value="both">E-mail e WhatsApp</option>
                 </select>
               </div>
             </div>
@@ -1874,9 +1759,7 @@ export default function Dashboard() {
             <div className="row g-3 mb-4">
               <div className="col-12 col-md-4">
                 <div className="pf-mini-stat">
-                  <div className="pf-mini-stat-value">
-                    {candidates.length}
-                  </div>
+                  <div className="pf-mini-stat-value">{candidates.length}</div>
                   <div className="pf-mini-stat-label">
                     Pacientes sem atendimento
                   </div>
@@ -1884,27 +1767,19 @@ export default function Dashboard() {
               </div>
 
               <div className="col-12 col-md-4">
-                <div
-                  className="pf-mini-stat"
-                  style={{ background: "#ECFDF5" }}
-                >
+                <div className="pf-mini-stat" style={{ background: "#ECFDF5" }}>
                   <div
                     className="pf-mini-stat-value"
                     style={{ color: COLORS.primary }}
                   >
                     {eligibleCandidates.length}
                   </div>
-                  <div className="pf-mini-stat-label">
-                    Aptos para revisão
-                  </div>
+                  <div className="pf-mini-stat-label">Aptos para revisão</div>
                 </div>
               </div>
 
               <div className="col-12 col-md-4">
-                <div
-                  className="pf-mini-stat"
-                  style={{ background: "#EFF6FF" }}
-                >
+                <div className="pf-mini-stat" style={{ background: "#EFF6FF" }}>
                   <div
                     className="pf-mini-stat-value"
                     style={{ color: COLORS.blue }}
@@ -1922,13 +1797,10 @@ export default function Dashboard() {
 
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
               <div>
-                <h6 className="fw-bold mb-1">
-                  Selecionar destinatários
-                </h6>
+                <h6 className="fw-bold mb-1">Selecionar destinatários</h6>
 
                 <p className="pf-section-subtitle">
-                  Confira individualmente antes de incluir
-                  cada paciente.
+                  Confira individualmente antes de incluir cada paciente.
                 </p>
               </div>
 
@@ -1950,9 +1822,7 @@ export default function Dashboard() {
                     style={{ paddingLeft: 39 }}
                     placeholder="Pesquisar paciente"
                     value={search}
-                    onChange={(event) =>
-                      setSearch(event.target.value)
-                    }
+                    onChange={(event) => setSearch(event.target.value)}
                   />
                 </div>
               </div>
@@ -1966,11 +1836,9 @@ export default function Dashboard() {
                   const id = String(client.id);
                   const check = eligibility(client);
 
-                  const reviewed =
-                    reviewedIds.includes(id);
+                  const reviewed = reviewedIds.includes(id);
 
-                  const selected =
-                    selectedIds.includes(id);
+                  const selected = selectedIds.includes(id);
 
                   return (
                     <div className="pf-candidate" key={id}>
@@ -1994,9 +1862,9 @@ export default function Dashboard() {
 
                           <div className="pf-candidate-detail">
                             Último atendimento:{" "}
-                            {client.lastAttendance
-                              ?.toLocaleDateString("pt-BR") ||
-                              "Não informado"}
+                            {client.lastAttendance?.toLocaleDateString(
+                              "pt-BR",
+                            ) || "Não informado"}
                             {" · "}
                             {client.daysInactive} dias
                           </div>
@@ -2031,14 +1899,10 @@ export default function Dashboard() {
                               <input
                                 type="checkbox"
                                 checked={reviewed}
-                                onChange={() =>
-                                  toggleReviewed(id)
-                                }
+                                onChange={() => toggleReviewed(id)}
                               />
-
-                              Confirmei que a situação do
-                              paciente está atualizada e que
-                              o contato é apropriado.
+                              Confirmei que a situação do paciente está
+                              atualizada e que o contato é apropriado.
                             </label>
                           )}
                         </div>
@@ -2050,13 +1914,9 @@ export default function Dashboard() {
                           disabled={
                             !check.allowed ||
                             !reviewed ||
-                            (!selected &&
-                              selectedIds.length >=
-                                recipientLimit)
+                            (!selected && selectedIds.length >= recipientLimit)
                           }
-                          onChange={() =>
-                            toggleSelected(id)
-                          }
+                          onChange={() => toggleSelected(id)}
                         />
                       </div>
                     </div>
@@ -2074,14 +1934,9 @@ export default function Dashboard() {
 
             <div className="mt-4">
               <div className="d-flex align-items-center gap-2 mb-2">
-                <MessageCircle
-                  size={19}
-                  color={COLORS.primary}
-                />
+                <MessageCircle size={19} color={COLORS.primary} />
 
-                <h6 className="fw-bold mb-0">
-                  Mensagem da promoção
-                </h6>
+                <h6 className="fw-bold mb-0">Mensagem da promoção</h6>
               </div>
 
               <p className="pf-section-subtitle mb-3">
@@ -2113,9 +1968,7 @@ export default function Dashboard() {
             {/* PREVIEW */}
 
             <div className="mt-3">
-              <h6 className="fw-bold mb-3">
-                Resumo da campanha
-              </h6>
+              <h6 className="fw-bold mb-3">Resumo da campanha</h6>
 
               <div
                 className="p-3"
@@ -2137,15 +1990,9 @@ export default function Dashboard() {
                   {channel === "email" ? (
                     <Mail size={16} color={COLORS.blue} />
                   ) : channel === "whatsapp" ? (
-                    <MessageCircle
-                      size={16}
-                      color={COLORS.primary}
-                    />
+                    <MessageCircle size={16} color={COLORS.primary} />
                   ) : (
-                    <CheckCheck
-                      size={16}
-                      color={COLORS.primary}
-                    />
+                    <CheckCheck size={16} color={COLORS.primary} />
                   )}
 
                   <span
@@ -2157,8 +2004,8 @@ export default function Dashboard() {
                     {channel === "email"
                       ? "Envio por e-mail"
                       : channel === "whatsapp"
-                      ? "Envio por WhatsApp"
-                      : "Envio por e-mail e WhatsApp"}
+                        ? "Envio por WhatsApp"
+                        : "Envio por e-mail e WhatsApp"}
                   </span>
                 </div>
               </div>
@@ -2167,20 +2014,15 @@ export default function Dashboard() {
             {/* SAFETY */}
 
             <div className="pf-notice pf-notice-warning mt-3">
-              <ShieldCheck
-                size={19}
-                style={{ flexShrink: 0 }}
-              />
+              <ShieldCheck size={19} style={{ flexShrink: 0 }} />
 
               <div>
                 <strong>Verificação obrigatória</strong>
                 <div>
-                  Não envie campanhas para pacientes falecidos,
-                  hospitalizados, com restrição de contato ou
-                  sem consentimento promocional válido.
-                  O sistema não descobre automaticamente
-                  falecimentos ou internações. A verificação
-                  deve ocorrer antes do envio.
+                  Não envie campanhas para pacientes falecidos, hospitalizados,
+                  com restrição de contato ou sem consentimento promocional
+                  válido. O sistema não descobre automaticamente falecimentos ou
+                  internações. A verificação deve ocorrer antes do envio.
                 </div>
               </div>
             </div>
@@ -2198,15 +2040,12 @@ export default function Dashboard() {
               <input
                 type="checkbox"
                 checked={confirmSend}
-                onChange={(event) =>
-                  setConfirmSend(event.target.checked)
-                }
+                onChange={(event) => setConfirmSend(event.target.checked)}
               />
 
               <span>
-                Confirmo que revisei os destinatários,
-                o conteúdo da campanha e as autorizações
-                para os canais selecionados.
+                Confirmo que revisei os destinatários, o conteúdo da campanha e
+                as autorizações para os canais selecionados.
               </span>
             </label>
 
@@ -2217,10 +2056,7 @@ export default function Dashboard() {
                   color: "#718096",
                 }}
               >
-                <ShieldCheck
-                  size={16}
-                  className="me-2"
-                />
+                <ShieldCheck size={16} className="me-2" />
                 Envio sujeito à integração segura dos canais.
               </div>
 
