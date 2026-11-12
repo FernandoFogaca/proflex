@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Activity } from "lucide-react";
@@ -24,7 +23,6 @@ export default function Header() {
     >
       <div className="container">
         <div className="d-flex justify-content-between align-items-center gap-3">
-
           {/* Nova marca ProFlex */}
           <div className="proflex-brand">
             <div className="proflex-brand-icon">
@@ -58,22 +56,69 @@ export default function Header() {
             aria-label="Principal"
             className="d-none d-lg-flex align-items-center gap-3"
           >
-            <Link to="/marketing" className="text-white text-decoration-none" onClick={closeMenu}>Assinar</Link>
-            <Link to="/agenda" className="text-white text-decoration-none" onClick={closeMenu}>Agenda</Link>
-            <Link to="/clientes" className="text-white text-decoration-none" onClick={closeMenu}>Cadastro</Link>
-            <Link to="/prontuario" className="text-white text-decoration-none" onClick={closeMenu}>Prontuários</Link>
-            <Link to="/compromissos" className="text-white text-decoration-none" onClick={closeMenu}>Compromissos</Link>
-            <Link to="/" className="text-white text-decoration-none" onClick={closeMenu}>Home</Link>
+            <Link
+              to="/marketing"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Assinar
+            </Link>
+            <Link
+              to="/agenda"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Agenda
+            </Link>
+            <Link
+              to="/clientes"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Cadastro
+            </Link>
+            <Link
+              to="/prontuario"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Prontuários
+            </Link>
+            <Link
+              to="/compromissos"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Compromissos
+            </Link>
+            <Link
+              to="/"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Home
+            </Link>
 
             {isOn && (
-              <button
-                type="button"
-                className="btn btn-sm btn-light ms-2"
-                onClick={handleLogout}
-              >
-                Sair
-              </button>
-            )}
+  <div className="d-flex align-items-center gap-2">
+    <button
+      type="button"
+      className="btn btn-sm btn-warning"
+      disabled
+      title="Funcionalidade em desenvolvimento"
+    >
+      Pausar
+    </button>
+
+    <button
+      type="button"
+      className="btn btn-sm btn-light"
+      onClick={handleLogout}
+    >
+      Sair
+    </button>
+  </div>
+)}
           </nav>
         </div>
 
@@ -83,21 +128,68 @@ export default function Header() {
             aria-label="Principal no celular"
             className="d-lg-none d-flex flex-column gap-3 pt-3 mt-3 border-top"
           >
-            <Link to="/marketing" className="text-white text-decoration-none" onClick={closeMenu}>Assinar</Link>
-            <Link to="/agenda" className="text-white text-decoration-none" onClick={closeMenu}>Agenda</Link>
-            <Link to="/clientes" className="text-white text-decoration-none" onClick={closeMenu}>Cadastro</Link>
-            <Link to="/prontuario" className="text-white text-decoration-none" onClick={closeMenu}>Prontuários</Link>
-            <Link to="/compromissos" className="text-white text-decoration-none" onClick={closeMenu}>Compromissos</Link>
-            <Link to="/" className="text-white text-decoration-none" onClick={closeMenu}>Home</Link>
+            <Link
+              to="/marketing"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Assinar
+            </Link>
+            <Link
+              to="/agenda"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Agenda
+            </Link>
+            <Link
+              to="/clientes"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Cadastro
+            </Link>
+            <Link
+              to="/prontuario"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Prontuários
+            </Link>
+            <Link
+              to="/compromissos"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Compromissos
+            </Link>
+            <Link
+              to="/"
+              className="text-white text-decoration-none"
+              onClick={closeMenu}
+            >
+              Home
+            </Link>
 
             {isOn && (
-              <button
-                type="button"
-                className="btn btn-sm btn-light align-self-start"
-                onClick={handleLogout}
-              >
-                Sair
-              </button>
+              <div className="d-flex align-items-center gap-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-warning"
+                  disabled
+                  title="Funcionalidade em desenvolvimento"
+                >
+                  Pausar
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-sm btn-light"
+                  onClick={handleLogout}
+                >
+                  Sair
+                </button>
+              </div>
             )}
           </nav>
         )}
