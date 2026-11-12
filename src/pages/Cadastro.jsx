@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { UserRound, Building2, CalendarRange } from "lucide-react";
 
@@ -12,16 +11,33 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 // ESTADOS BRASILEIROS
 const ESTADOS = [
-  ["AC", "Acre"], ["AL", "Alagoas"], ["AP", "Amapá"],
-  ["AM", "Amazonas"], ["BA", "Bahia"], ["CE", "Ceará"],
-  ["DF", "Distrito Federal"], ["ES", "Espírito Santo"],
-  ["GO", "Goiás"], ["MA", "Maranhão"], ["MT", "Mato Grosso"],
-  ["MS", "Mato Grosso do Sul"], ["MG", "Minas Gerais"],
-  ["PA", "Pará"], ["PB", "Paraíba"], ["PR", "Paraná"],
-  ["PE", "Pernambuco"], ["PI", "Piauí"], ["RJ", "Rio de Janeiro"],
-  ["RN", "Rio Grande do Norte"], ["RS", "Rio Grande do Sul"],
-  ["RO", "Rondônia"], ["RR", "Roraima"], ["SC", "Santa Catarina"],
-  ["SP", "São Paulo"], ["SE", "Sergipe"], ["TO", "Tocantins"],
+  ["AC", "Acre"],
+  ["AL", "Alagoas"],
+  ["AP", "Amapá"],
+  ["AM", "Amazonas"],
+  ["BA", "Bahia"],
+  ["CE", "Ceará"],
+  ["DF", "Distrito Federal"],
+  ["ES", "Espírito Santo"],
+  ["GO", "Goiás"],
+  ["MA", "Maranhão"],
+  ["MT", "Mato Grosso"],
+  ["MS", "Mato Grosso do Sul"],
+  ["MG", "Minas Gerais"],
+  ["PA", "Pará"],
+  ["PB", "Paraíba"],
+  ["PR", "Paraná"],
+  ["PE", "Pernambuco"],
+  ["PI", "Piauí"],
+  ["RJ", "Rio de Janeiro"],
+  ["RN", "Rio Grande do Norte"],
+  ["RS", "Rio Grande do Sul"],
+  ["RO", "Rondônia"],
+  ["RR", "Roraima"],
+  ["SC", "Santa Catarina"],
+  ["SP", "São Paulo"],
+  ["SE", "Sergipe"],
+  ["TO", "Tocantins"],
 ];
 
 // REGISTROS PROFISSIONAIS
@@ -60,26 +76,47 @@ const PERFIS = [
 ];
 
 const somenteNumeros = (valor) => valor.replace(/\D/g, "");
+function temSequencia(senha) {
+  const texto = senha.toLowerCase();
 
+  for (let i = 0; i <= texto.length - 4; i++) {
+    const trecho = texto.slice(i, i + 4);
+
+    if (/^(.)\1{3}$/.test(trecho)) {
+      return true;
+    }
+
+    let crescente = true;
+    let decrescente = true;
+
+    for (let j = 1; j < trecho.length; j++) {
+      const diferenca =
+        trecho.charCodeAt(j) - trecho.charCodeAt(j - 1);
+
+      if (diferenca !== 1) crescente = false;
+      if (diferenca !== -1) decrescente = false;
+    }
+
+    if (crescente || decrescente) {
+      return true;
+    }
+  }
+
+  return false;
+}
 // TRADUZ ERROS DO FIREBASE
 function traduzirErroFirebase(codigo) {
   const mensagens = {
-    "auth/email-already-in-use":
-      "Este e-mail já possui uma conta cadastrada.",
-    "auth/invalid-email":
-      "O endereço de e-mail informado é inválido.",
-    "auth/weak-password":
-      "A senha é muito fraca.",
-    "auth/network-request-failed":
-      "Falha na conexão. Verifique sua internet.",
+    "auth/email-already-in-use": "Este e-mail já possui uma conta cadastrada.",
+    "auth/invalid-email": "O endereço de e-mail informado é inválido.",
+    "auth/weak-password": "A senha é muito fraca.",
+    "auth/network-request-failed": "Falha na conexão. Verifique sua internet.",
     "auth/operation-not-allowed":
       "O cadastro por e-mail e senha não está habilitado.",
-    "auth/too-many-requests":
-      "Muitas tentativas. Aguarde alguns minutos.",
+    "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos.",
     "permission-denied":
       "O Firestore não permitiu salvar os dados. Verifique as regras de segurança.",
-    "unavailable":
-      "O banco de dados está indisponível. Tente novamente.",
+    unavailable: "O banco de dados está indisponível. Tente novamente.",
   };
 
   return (
@@ -166,7 +203,7 @@ export default function Cadastro() {
       try {
         const resposta = await fetch(
           `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${endereco.estado}/municipios`,
-          { signal: controller.signal }
+          { signal: controller.signal },
         );
 
         if (!resposta.ok) {
@@ -180,7 +217,7 @@ export default function Cadastro() {
         }
 
         const listaOrdenada = dados.sort((a, b) =>
-          a.nome.localeCompare(b.nome, "pt-BR")
+          a.nome.localeCompare(b.nome, "pt-BR"),
         );
 
         setCidades(listaOrdenada);
@@ -214,9 +251,7 @@ export default function Cadastro() {
     setConsultandoCEP(true);
 
     try {
-      const resposta = await fetch(
-        `https://viacep.com.br/ws/${numeros}/json/`
-      );
+      const resposta = await fetch(`https://viacep.com.br/ws/${numeros}/json/`);
 
       if (!resposta.ok) {
         throw new Error("Falha ao consultar CEP.");
@@ -245,9 +280,7 @@ export default function Cadastro() {
       });
     } catch (erro) {
       console.error("Erro ao consultar CEP:", erro);
-      setErroCEP(
-        "Não foi possível consultar o CEP. Confira o endereço."
-      );
+      setErroCEP("Não foi possível consultar o CEP. Confira o endereço.");
     } finally {
       setConsultandoCEP(false);
     }
@@ -274,9 +307,7 @@ export default function Cadastro() {
 
     if (!email.trim()) {
       novosErros.email = "E-mail obrigatório.";
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-    ) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       novosErros.email = "Informe um e-mail válido.";
     }
 
@@ -284,7 +315,9 @@ export default function Cadastro() {
       novosErros.senha = "Senha obrigatória.";
     } else if (senha.length < 8) {
       novosErros.senha = "Use pelo menos 8 caracteres.";
-    }
+    } else if (temSequencia(senha)) {
+  novosErros.senha = "Não utilize sequências ou caracteres repetidos.";
+}
 
     if (!confirmarSenha) {
       novosErros.confirmarSenha = "Confirme sua senha.";
@@ -328,17 +361,13 @@ export default function Cadastro() {
     }
 
     // PROFISSIONAL INDIVIDUAL OU HÍBRIDO
-    if (
-      tipoPerfil === "autonomo" ||
-      tipoPerfil === "hibrido"
-    ) {
+    if (tipoPerfil === "autonomo" || tipoPerfil === "hibrido") {
       if (!profissao) {
         novosErros.profissao = "Selecione sua profissão.";
       }
 
       if (!registroProfissional.trim()) {
-        novosErros.registroProfissional =
-          "Informe seu registro profissional.";
+        novosErros.registroProfissional = "Informe seu registro profissional.";
       }
     }
 
@@ -355,19 +384,16 @@ export default function Cadastro() {
       }
 
       if (!enderecoClinica.trim()) {
-        novosErros.enderecoClinica =
-          "Endereço da clínica obrigatório.";
+        novosErros.enderecoClinica = "Endereço da clínica obrigatório.";
       }
 
       if (!whatsappClinica.trim()) {
-        novosErros.whatsappClinica =
-          "WhatsApp da clínica obrigatório.";
+        novosErros.whatsappClinica = "WhatsApp da clínica obrigatório.";
       } else if (
         somenteNumeros(whatsappClinica).length < 10 ||
         somenteNumeros(whatsappClinica).length > 15
       ) {
-        novosErros.whatsappClinica =
-          "Informe um telefone válido.";
+        novosErros.whatsappClinica = "Informe um telefone válido.";
       }
     }
 
@@ -413,9 +439,7 @@ export default function Cadastro() {
 
     if (Object.keys(novosErros).length > 0) {
       requestAnimationFrame(() => {
-        const primeiroErro = document.querySelector(
-          ".is-invalid"
-        );
+        const primeiroErro = document.querySelector(".is-invalid");
 
         primeiroErro?.scrollIntoView({
           behavior: "smooth",
@@ -443,7 +467,7 @@ export default function Cadastro() {
       const credencial = await createUserWithEmailAndPassword(
         auth,
         email.trim().toLowerCase(),
-        senha
+        senha,
       );
 
       usuarioCriado = credencial.user;
@@ -477,10 +501,7 @@ export default function Cadastro() {
       };
 
       // 3. SALVA NO FIRESTORE USANDO O UID
-      await setDoc(
-        doc(db, "usuarios", usuarioCriado.uid),
-        dadosCadastro
-      );
+      await setDoc(doc(db, "usuarios", usuarioCriado.uid), dadosCadastro);
 
       // 4. CADASTRO CONCLUÍDO
       setCadastroConcluido(true);
@@ -493,17 +514,17 @@ export default function Cadastro() {
 
         setMensagem(
           "Conta criada com sucesso! Enviamos um link de " +
-          "verificação para seu e-mail."
+            "verificação para seu e-mail.",
         );
       } catch (erroEmail) {
         console.error(
           "Não foi possível enviar o e-mail de verificação:",
-          erroEmail
+          erroEmail,
         );
 
         setMensagem(
           "Conta criada com sucesso! Porém, não foi possível " +
-          "enviar o e-mail de verificação neste momento."
+            "enviar o e-mail de verificação neste momento.",
         );
       }
 
@@ -517,16 +538,13 @@ export default function Cadastro() {
         try {
           await deleteUser(usuarioCriado);
         } catch (erroExclusao) {
-          console.error(
-            "Não foi possível desfazer o cadastro:",
-            erroExclusao
-          );
+          console.error("Não foi possível desfazer o cadastro:", erroExclusao);
 
           setTipoMensagem("danger");
           setMensagem(
             "A conta foi criada, mas não foi possível salvar " +
-            "os dados do perfil. Não tente criar outra conta " +
-            "com o mesmo e-mail. Entre em contato com o suporte."
+              "os dados do perfil. Não tente criar outra conta " +
+              "com o mesmo e-mail. Entre em contato com o suporte.",
           );
           return;
         }
@@ -541,9 +559,7 @@ export default function Cadastro() {
 
   // CLASSE VISUAL DOS CAMPOS
   function classeCampo(campo, tipo = "form-control") {
-    return `${tipo} ${
-      tentouEnviar && erros[campo] ? "is-invalid" : ""
-    }`;
+    return `${tipo} ${tentouEnviar && erros[campo] ? "is-invalid" : ""}`;
   }
 
   // MENSAGEM DE ERRO ABAIXO DO CAMPO
@@ -552,38 +568,24 @@ export default function Cadastro() {
       return null;
     }
 
-    return (
-      <div className="invalid-feedback d-block">
-        {erros[campo]}
-      </div>
-    );
+    return <div className="invalid-feedback d-block">{erros[campo]}</div>;
   }
 
   return (
-    <div
-      className="container py-5"
-      style={{ maxWidth: 1100 }}
-    >
-      <h2 className="fw-bold mb-2">
-        Criar conta no ProFlex
-      </h2>
+    <div className="container py-5" style={{ maxWidth: 1100 }}>
+      <h2 className="fw-bold mb-2">Criar conta no ProFlex</h2>
 
       <p className="text-muted mb-4">
-        Preencha seus dados para começar.
-        Os campos com * são obrigatórios.
+        Preencha seus dados para começar. Os campos com * são obrigatórios.
       </p>
 
       <form onSubmit={handleSubmit} noValidate>
         {/* DADOS PESSOAIS */}
-        <h5 className="fw-semibold mb-3">
-          Dados do responsável
-        </h5>
+        <h5 className="fw-semibold mb-3">Dados do responsável</h5>
 
         <div className="row g-3 mb-4">
           <div className="col-md-6">
-            <label className="form-label">
-              Nome completo *
-            </label>
+            <label className="form-label">Nome completo *</label>
 
             <input
               type="text"
@@ -599,9 +601,7 @@ export default function Cadastro() {
           </div>
 
           <div className="col-md-6">
-            <label className="form-label">
-              CPF do responsável *
-            </label>
+            <label className="form-label">CPF do responsável *</label>
 
             <input
               type="text"
@@ -617,9 +617,7 @@ export default function Cadastro() {
           </div>
 
           <div className="col-md-6">
-            <label className="form-label">
-              E-mail de login *
-            </label>
+            <label className="form-label">E-mail de login *</label>
 
             <input
               type="email"
@@ -638,9 +636,7 @@ export default function Cadastro() {
           </div>
 
           <div className="col-md-6">
-            <label className="form-label">
-              WhatsApp principal *
-            </label>
+            <label className="form-label">WhatsApp principal *</label>
 
             <input
               type="tel"
@@ -655,9 +651,7 @@ export default function Cadastro() {
 
           {/* SENHAS EM LINHAS SEPARADAS */}
           <div className="col-12">
-            <label className="form-label">
-              Senha *
-            </label>
+            <label className="form-label">Senha *</label>
 
             <input
               type="password"
@@ -672,18 +666,14 @@ export default function Cadastro() {
           </div>
 
           <div className="col-12">
-            <label className="form-label">
-              Confirmar senha *
-            </label>
+            <label className="form-label">Confirmar senha *</label>
 
             <input
               type="password"
               className={classeCampo("confirmarSenha")}
               placeholder="Digite a senha novamente"
               value={confirmarSenha}
-              onChange={(e) =>
-                setConfirmarSenha(e.target.value)
-              }
+              onChange={(e) => setConfirmarSenha(e.target.value)}
               autoComplete="new-password"
             />
 
@@ -712,8 +702,7 @@ export default function Cadastro() {
           </h5>
 
           <p className="text-muted mb-3">
-            Selecione o perfil que melhor representa
-            seu trabalho.
+            Selecione o perfil que melhor representa seu trabalho.
           </p>
 
           <div className="row g-3">
@@ -737,9 +726,7 @@ export default function Cadastro() {
                       border: selecionado
                         ? "2px solid #0D9488"
                         : "1px solid #E2E8F0",
-                      backgroundColor: selecionado
-                        ? "#F0FDFA"
-                        : "#FFFFFF",
+                      backgroundColor: selecionado ? "#F0FDFA" : "#FFFFFF",
                       boxShadow: selecionado
                         ? "0 8px 24px rgba(13,148,136,0.12)"
                         : "0 3px 12px rgba(0,0,0,0.04)",
@@ -751,12 +738,8 @@ export default function Cadastro() {
                         width: 56,
                         height: 56,
                         borderRadius: 16,
-                        backgroundColor: selecionado
-                          ? "#CCFBF1"
-                          : "#F1F5F9",
-                        color: selecionado
-                          ? "#0D9488"
-                          : "#475569",
+                        backgroundColor: selecionado ? "#CCFBF1" : "#F1F5F9",
+                        color: selecionado ? "#0D9488" : "#475569",
                       }}
                     >
                       <Icone size={28} strokeWidth={1.8} />
@@ -796,15 +779,11 @@ export default function Cadastro() {
 
         {/* ENDEREÇO */}
         <div className="mb-4">
-          <h5 className="fw-semibold mb-3">
-            Endereço do responsável
-          </h5>
+          <h5 className="fw-semibold mb-3">Endereço do responsável</h5>
 
           <div className="row g-3">
             <div className="col-md-4">
-              <label className="form-label">
-                CEP *
-              </label>
+              <label className="form-label">CEP *</label>
 
               <input
                 className={classeCampo("cep")}
@@ -822,93 +801,67 @@ export default function Cadastro() {
               {mensagemErro("cep")}
 
               {consultandoCEP && (
-                <div className="small text-muted mt-1">
-                  Consultando CEP...
-                </div>
+                <div className="small text-muted mt-1">Consultando CEP...</div>
               )}
 
               {erroCEP && (
-                <div className="small text-danger mt-1">
-                  {erroCEP}
-                </div>
+                <div className="small text-danger mt-1">{erroCEP}</div>
               )}
             </div>
 
             <div className="col-md-8">
-              <label className="form-label">
-                Rua *
-              </label>
+              <label className="form-label">Rua *</label>
 
               <input
                 className={classeCampo("rua")}
                 value={endereco.rua}
-                onChange={(e) =>
-                  atualizarEndereco("rua", e.target.value)
-                }
+                onChange={(e) => atualizarEndereco("rua", e.target.value)}
               />
 
               {mensagemErro("rua")}
             </div>
 
             <div className="col-md-4">
-              <label className="form-label">
-                Número *
-              </label>
+              <label className="form-label">Número *</label>
 
               <input
                 className={classeCampo("numero")}
                 value={endereco.numero}
-                onChange={(e) =>
-                  atualizarEndereco("numero", e.target.value)
-                }
+                onChange={(e) => atualizarEndereco("numero", e.target.value)}
               />
 
               {mensagemErro("numero")}
             </div>
 
             <div className="col-md-8">
-              <label className="form-label">
-                Complemento (opcional)
-              </label>
+              <label className="form-label">Complemento (opcional)</label>
 
               <input
                 className="form-control"
                 value={endereco.complemento}
                 onChange={(e) =>
-                  atualizarEndereco(
-                    "complemento",
-                    e.target.value
-                  )
+                  atualizarEndereco("complemento", e.target.value)
                 }
               />
             </div>
 
             <div className="col-md-6">
-              <label className="form-label">
-                Bairro *
-              </label>
+              <label className="form-label">Bairro *</label>
 
               <input
                 className={classeCampo("bairro")}
                 value={endereco.bairro}
-                onChange={(e) =>
-                  atualizarEndereco("bairro", e.target.value)
-                }
+                onChange={(e) => atualizarEndereco("bairro", e.target.value)}
               />
 
               {mensagemErro("bairro")}
             </div>
 
             <div className="col-md-6">
-              <label className="form-label">
-                Estado (UF) *
-              </label>
+              <label className="form-label">Estado (UF) *</label>
 
               <select
-                className={classeCampo(
-                  "estado",
-                  "form-select"
-                )}
+                className={classeCampo("estado", "form-select")}
                 value={endereco.estado}
                 onChange={(e) =>
                   setEndereco((anterior) => ({
@@ -918,9 +871,7 @@ export default function Cadastro() {
                   }))
                 }
               >
-                <option value="">
-                  Selecione o estado
-                </option>
+                <option value="">Selecione o estado</option>
 
                 {ESTADOS.map(([sigla, nomeEstado]) => (
                   <option key={sigla} value={sigla}>
@@ -933,9 +884,7 @@ export default function Cadastro() {
             </div>
 
             <div className="col-md-6">
-              <label className="form-label">
-                Cidade *
-              </label>
+              <label className="form-label">Cidade *</label>
 
               {erroCidades ? (
                 <>
@@ -944,34 +893,21 @@ export default function Cadastro() {
                     placeholder="Digite a cidade"
                     value={endereco.cidade}
                     onChange={(e) =>
-                      atualizarEndereco(
-                        "cidade",
-                        e.target.value
-                      )
+                      atualizarEndereco("cidade", e.target.value)
                     }
                   />
 
                   <div className="small text-warning mt-1">
-                    Não foi possível carregar as cidades
-                    do IBGE. Digite a cidade manualmente.
+                    Não foi possível carregar as cidades do IBGE. Digite a
+                    cidade manualmente.
                   </div>
                 </>
               ) : (
                 <select
-                  className={classeCampo(
-                    "cidade",
-                    "form-select"
-                  )}
+                  className={classeCampo("cidade", "form-select")}
                   value={endereco.cidade}
-                  disabled={
-                    !endereco.estado || carregandoCidades
-                  }
-                  onChange={(e) =>
-                    atualizarEndereco(
-                      "cidade",
-                      e.target.value
-                    )
-                  }
+                  disabled={!endereco.estado || carregandoCidades}
+                  onChange={(e) => atualizarEndereco("cidade", e.target.value)}
                 >
                   <option value="">
                     {carregandoCidades
@@ -981,19 +917,13 @@ export default function Cadastro() {
 
                   {endereco.cidade &&
                     !cidades.some(
-                      (cidade) =>
-                        cidade.nome === endereco.cidade
+                      (cidade) => cidade.nome === endereco.cidade,
                     ) && (
-                      <option value={endereco.cidade}>
-                        {endereco.cidade}
-                      </option>
+                      <option value={endereco.cidade}>{endereco.cidade}</option>
                     )}
 
                   {cidades.map((cidade) => (
-                    <option
-                      key={cidade.id}
-                      value={cidade.nome}
-                    >
+                    <option key={cidade.id} value={cidade.nome}>
                       {cidade.nome}
                     </option>
                   ))}
@@ -1006,61 +936,33 @@ export default function Cadastro() {
         </div>
 
         {/* DADOS PROFISSIONAIS */}
-        {(tipoPerfil === "autonomo" ||
-          tipoPerfil === "hibrido") && (
+        {(tipoPerfil === "autonomo" || tipoPerfil === "hibrido") && (
           <div className="mb-4">
-            <h5 className="fw-semibold mb-3">
-              Dados profissionais
-            </h5>
+            <h5 className="fw-semibold mb-3">Dados profissionais</h5>
 
             <div className="row g-3">
               <div className="col-md-6">
-                <label className="form-label">
-                  Profissão *
-                </label>
+                <label className="form-label">Profissão *</label>
 
                 <select
-                  className={classeCampo(
-                    "profissao",
-                    "form-select"
-                  )}
+                  className={classeCampo("profissao", "form-select")}
                   value={profissao}
                   onChange={(e) => {
                     setProfissao(e.target.value);
                     setRegistroProfissional("");
                   }}
                 >
-                  <option value="">
-                    Selecione sua profissão
-                  </option>
+                  <option value="">Selecione sua profissão</option>
 
-                  <option value="fisioterapeuta">
-                    Fisioterapeuta
-                  </option>
-                  <option value="medico">
-                    Médico
-                  </option>
-                  <option value="veterinario">
-                    Veterinário
-                  </option>
-                  <option value="nutricionista">
-                    Nutricionista
-                  </option>
-                  <option value="psicologo">
-                    Psicólogo
-                  </option>
-                  <option value="dentista">
-                    Dentista
-                  </option>
-                  <option value="enfermeiro">
-                    Enfermeiro
-                  </option>
-                  <option value="fonoaudiologo">
-                    Fonoaudiólogo
-                  </option>
-                  <option value="outro">
-                    Outro profissional
-                  </option>
+                  <option value="fisioterapeuta">Fisioterapeuta</option>
+                  <option value="medico">Médico</option>
+                  <option value="veterinario">Veterinário</option>
+                  <option value="nutricionista">Nutricionista</option>
+                  <option value="psicologo">Psicólogo</option>
+                  <option value="dentista">Dentista</option>
+                  <option value="enfermeiro">Enfermeiro</option>
+                  <option value="fonoaudiologo">Fonoaudiólogo</option>
+                  <option value="outro">Outro profissional</option>
                 </select>
 
                 {mensagemErro("profissao")}
@@ -1074,30 +976,21 @@ export default function Cadastro() {
 
                   <input
                     type="text"
-                    className={classeCampo(
-                      "registroProfissional"
-                    )}
+                    className={classeCampo("registroProfissional")}
                     placeholder={`Informe seu ${PROFISSOES[profissao]}`}
                     value={registroProfissional}
-                    onChange={(e) =>
-                      setRegistroProfissional(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setRegistroProfissional(e.target.value)}
                   />
 
-                  {mensagemErro(
-                    "registroProfissional"
-                  )}
+                  {mensagemErro("registroProfissional")}
                 </div>
               )}
             </div>
 
             {tipoPerfil === "hibrido" && (
               <p className="small text-muted mt-3">
-                Você poderá vincular clínicas à sua
-                conta depois que a funcionalidade
-                estiver disponível.
+                Você poderá vincular clínicas à sua conta depois que a
+                funcionalidade estiver disponível.
               </p>
             )}
           </div>
@@ -1106,41 +999,31 @@ export default function Cadastro() {
         {/* DADOS DA CLÍNICA */}
         {tipoPerfil === "clinica" && (
           <div className="mb-4">
-            <h5 className="fw-semibold mb-3">
-              Dados da clínica
-            </h5>
+            <h5 className="fw-semibold mb-3">Dados da clínica</h5>
 
             <div className="row g-3">
               <div className="col-md-6">
-                <label className="form-label">
-                  Nome da clínica *
-                </label>
+                <label className="form-label">Nome da clínica *</label>
 
                 <input
                   className={classeCampo("nomeClinica")}
                   placeholder="Nome da clínica"
                   value={nomeClinica}
-                  onChange={(e) =>
-                    setNomeClinica(e.target.value)
-                  }
+                  onChange={(e) => setNomeClinica(e.target.value)}
                 />
 
                 {mensagemErro("nomeClinica")}
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">
-                  CNPJ da clínica *
-                </label>
+                <label className="form-label">CNPJ da clínica *</label>
 
                 <input
                   type="text"
                   className={classeCampo("cnpj")}
                   placeholder="00.000.000/0000-00"
                   value={cnpj}
-                  onChange={(e) =>
-                    setCnpj(e.target.value)
-                  }
+                  onChange={(e) => setCnpj(e.target.value)}
                   maxLength={18}
                   inputMode="numeric"
                 />
@@ -1149,39 +1032,27 @@ export default function Cadastro() {
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">
-                  Endereço da clínica *
-                </label>
+                <label className="form-label">Endereço da clínica *</label>
 
                 <input
-                  className={classeCampo(
-                    "enderecoClinica"
-                  )}
+                  className={classeCampo("enderecoClinica")}
                   placeholder="Endereço completo"
                   value={enderecoClinica}
-                  onChange={(e) =>
-                    setEnderecoClinica(e.target.value)
-                  }
+                  onChange={(e) => setEnderecoClinica(e.target.value)}
                 />
 
                 {mensagemErro("enderecoClinica")}
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">
-                  WhatsApp da clínica *
-                </label>
+                <label className="form-label">WhatsApp da clínica *</label>
 
                 <input
                   type="tel"
-                  className={classeCampo(
-                    "whatsappClinica"
-                  )}
+                  className={classeCampo("whatsappClinica")}
                   placeholder="+55 48 99999-9999"
                   value={whatsappClinica}
-                  onChange={(e) =>
-                    setWhatsappClinica(e.target.value)
-                  }
+                  onChange={(e) => setWhatsappClinica(e.target.value)}
                 />
 
                 {mensagemErro("whatsappClinica")}
@@ -1205,22 +1076,18 @@ export default function Cadastro() {
             {salvando
               ? "Criando conta..."
               : cadastroConcluido
-              ? "Conta criada"
-              : "Criar conta"}
+                ? "Conta criada"
+                : "Criar conta"}
           </button>
 
           {mensagem && (
-            <div
-              className={`alert alert-${tipoMensagem} mt-3`}
-              role="status"
-            >
+            <div className={`alert alert-${tipoMensagem} mt-3`} role="status">
               {mensagem}
             </div>
           )}
 
           <p className="small text-muted mt-3">
-            Seus dados serão utilizados para criar
-            sua conta no ProFlex.
+            Seus dados serão utilizados para criar sua conta no ProFlex.
           </p>
         </div>
       </form>
