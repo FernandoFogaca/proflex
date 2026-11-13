@@ -603,19 +603,18 @@ export default function Agenda() {
     }
   }
 
-  function updateStatus(item, status) {
-    if (typeof setAppointments !== "function") {
-      alert("Não foi possível atualizar o status.");
-      return;
-    }
+  async function updateStatus(item, status) {
+    
 
-    setAppointments((previous) =>
-      previous.map((current) =>
-        String(current.id) === String(item.id)
-          ? { ...current, status }
-          : current
-      )
-    );
+   try {
+  await app.updateAppointment(item.id, { status });
+} catch (erro) {
+  console.error("Erro ao atualizar agendamento:", erro);
+  alert("Não foi possível atualizar o status.");
+  return;
+}
+      
+    
 
     setAppointmentModal(null);
   }

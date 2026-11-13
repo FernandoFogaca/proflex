@@ -171,28 +171,30 @@ export function AppProvider({ children }) {
   const [authCarregando, setAuthCarregando] = useState(true);
 
   useEffect(() => {
-  const cancelar = onAuthStateChanged(auth, async (usuario) => {
-    setUid(usuario?.uid ?? null);
-    setTipoPerfil(null);
+    const cancelar = onAuthStateChanged(auth, async (usuario) => {
+      setUid(usuario?.uid ?? null);
+      setTipoPerfil(null);
 
-    if (usuario) {
-      try {
-        const referencia = doc(db, "usuarios", usuario.uid);
-        const documento = await getDoc(referencia);
+      if (usuario) {
+        try {
+          const referencia = doc(db, "usuarios", usuario.uid);
+          const documento = await getDoc(referencia);
 
-        if (auth.currentUser?.uid === usuario.uid) {
-          setTipoPerfil(documento.exists() ? documento.data().tipoPerfil : null);
+          if (auth.currentUser?.uid === usuario.uid) {
+            setTipoPerfil(
+              documento.exists() ? documento.data().tipoPerfil : null,
+            );
+          }
+        } catch (erro) {
+          console.error("Erro ao buscar perfil:", erro);
         }
-      } catch (erro) {
-        console.error("Erro ao buscar perfil:", erro);
       }
-    }
 
-    setAuthCarregando(false);
-  });
+      setAuthCarregando(false);
+    });
 
-  return () => cancelar();
-}, []);
+    return () => cancelar();
+  }, []);
   // ------------------------ ESTADOS EXISTENTES
 
   const [clients, setClients] = useState(() => []);
@@ -224,7 +226,31 @@ export function AppProvider({ children }) {
   }, [uid]);
 
   const [appointments, setAppointments] = useState(() => []);
+  useEffect(() => {
+    if (!uid) {
+      setAppointments([]);
+      return;
+    }
 
+    const agendamentosRef = collection(db, "usuarios", uid, "agendamentos");
+
+    const cancelar = onSnapshot(
+      agendamentosRef,
+      (snapshot) => {
+        const agendamentos = snapshot.docs.map((documento) => ({
+          ...documento.data(),
+          id: documento.id,
+        }));
+
+        setAppointments(agendamentos);
+      },
+      (erro) => {
+        console.error("Erro ao carregar agendamentos:", erro);
+      },
+    );
+
+    return () => cancelar();
+  }, [uid]);
   // ------------------------ NOVO ESTADO: PROFISSIONAIS
 
   const [professionals, setProfessionals] = useState(() => {
@@ -421,7 +447,7 @@ export function AppProvider({ children }) {
 
   // ------------------------ AGENDAMENTOS
 
-  function addAppointment(appt) {
+  async function addAppointment(appt) {
     const registro = {
       id: novoId("apt"),
       createdAt: new Date().toISOString(),
@@ -429,15 +455,57 @@ export function AppProvider({ children }) {
       ...appt,
     };
 
-    setAppointments((lista) => [registro, ...lista]);
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    const agendamentoRef = doc(
+      db,
+      "usuarios",
+      usuario.uid,
+      "agendamentos",
+      registro.id,
+    );
+
+    await setDoc(agendamentoRef, registro);
 
     return registro;
+  }
+  async function updateAppointment(id, alteracoes) {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    const agendamentoRef = doc(db, "usuarios", usuario.uid, "agendamentos", id);
+
+    await updateDoc(agendamentoRef, alteracoes);
   }
   async function salvarConsultasNoFirebase(idCliente, consultas) {
     const usuario = auth.currentUser;
 
     if (!usuario) {
       throw new Error("Usuário não autenticado.");
+    }
+    async function deleteAppointment(id) {
+      const usuario = auth.currentUser;
+
+      if (!usuario) {
+        throw new Error("Usuário não autenticado.");
+      }
+
+      const agendamentoRef = doc(
+        db,
+        "usuarios",
+        usuario.uid,
+        "agendamentos",
+        id,
+      );
+
+      await deleteDoc(agendamentoRef);
     }
 
     const pacienteRef = doc(
@@ -458,93 +526,89 @@ export function AppProvider({ children }) {
   }
 
   async function addConsulta(
-  idCliente,
-  {
-    dataISO,
-    hora,
-    texto = "",
-    queixa = "",
-    avaliacao = "",
-    procedimentos = "",
-    evolucao = "",
-    conduta = "",
-  },
-) {
-  const cliente = clients.find((c) => c.id === idCliente);
+    idCliente,
+    {
+      dataISO,
+      hora,
+      texto = "",
+      queixa = "",
+      avaliacao = "",
+      procedimentos = "",
+      evolucao = "",
+      conduta = "",
+    },
+  ) {
+    const cliente = clients.find((c) => c.id === idCliente);
 
-  if (!cliente) {
-    throw new Error("Paciente não encontrado.");
-  }
+    if (!cliente) {
+      throw new Error("Paciente não encontrado.");
+    }
 
-  const nova = {
-    id: novoId("con"),
-    numero: proximoNumeroConsulta(cliente),
-    dataISO,
-    hora,
-    texto,
-    queixa,
-    avaliacao,
-    procedimentos,
-    evolucao,
-    conduta,
-    fotos: [],
-  };
+    const nova = {
+      id: novoId("con"),
+      numero: proximoNumeroConsulta(cliente),
+      dataISO,
+      hora,
+      texto,
+      queixa,
+      avaliacao,
+      procedimentos,
+      evolucao,
+      conduta,
+      fotos: [],
+    };
 
-  const consultasAtualizadas = [nova, ...(cliente.consultas || [])];
+    const consultasAtualizadas = [nova, ...(cliente.consultas || [])];
 
-  await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
+    await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
 
-  return nova;
-
-    
+    return nova;
   }
 
   async function updateConsulta(idCliente, idConsulta, alteracoes) {
-  const cliente = clients.find((c) => c.id === idCliente);
+    const cliente = clients.find((c) => c.id === idCliente);
 
-  if (!cliente) {
-    throw new Error("Paciente não encontrado.");
+    if (!cliente) {
+      throw new Error("Paciente não encontrado.");
+    }
+
+    const consultasAtualizadas = (cliente.consultas || []).map((consulta) =>
+      consulta.id === idConsulta ? { ...consulta, ...alteracoes } : consulta,
+    );
+
+    await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
   }
 
-  const consultasAtualizadas = (cliente.consultas || []).map((consulta) =>
-    consulta.id === idConsulta
-      ? { ...consulta, ...alteracoes }
-      : consulta
-  );
+  async function deleteConsultas(idCliente, idsConsultas) {
+    if (!idsConsultas?.length) return;
 
-  await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
-}
+    if (
+      !window.confirm(
+        "Tem certeza que deseja excluir as consultas selecionadas?",
+      )
+    ) {
+      return;
+    }
 
- async function deleteConsultas(idCliente, idsConsultas) {
-  if (!idsConsultas?.length) return;
+    const senha = prompt("Digite a senha de exclusão:");
 
-  if (
-    !window.confirm(
-      "Tem certeza que deseja excluir as consultas selecionadas?"
-    )
-  ) {
-    return;
+    if (senha !== SENHA_EXCLUIR) {
+      alert("Senha incorreta.");
+      return;
+    }
+
+    const cliente = clients.find((c) => c.id === idCliente);
+
+    if (!cliente) {
+      throw new Error("Paciente não encontrado.");
+    }
+
+    const consultasAtualizadas = (cliente.consultas || []).filter(
+      (consulta) => !idsConsultas.includes(consulta.id),
+    );
+
+    await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
   }
-
-  const senha = prompt("Digite a senha de exclusão:");
-
-  if (senha !== SENHA_EXCLUIR) {
-    alert("Senha incorreta.");
-    return;
-  }
-
-  const cliente = clients.find((c) => c.id === idCliente);
-
-  if (!cliente) {
-    throw new Error("Paciente não encontrado.");
-  }
-
-  const consultasAtualizadas = (cliente.consultas || []).filter(
-    (consulta) => !idsConsultas.includes(consulta.id)
-  );
-
-  await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
-}
 
   async function deleteClient(idCliente) {
     if (!window.confirm("Tem certeza que deseja excluir este paciente?")) {
@@ -564,21 +628,21 @@ export function AppProvider({ children }) {
 
     const cliente = clients.find((c) => c.id === idCliente);
 
-   const usuario = auth.currentUser;
+    const usuario = auth.currentUser;
 
-if (!usuario) {
-  throw new Error("Usuário não autenticado.");
-}
+    if (!usuario) {
+      throw new Error("Usuário não autenticado.");
+    }
 
-const pacienteRef = doc(
-  db,
-  "usuarios",
-  usuario.uid,
-  "pacientes",
-  idCliente
-);
+    const pacienteRef = doc(
+      db,
+      "usuarios",
+      usuario.uid,
+      "pacientes",
+      idCliente,
+    );
 
-await deleteDoc(pacienteRef);
+    await deleteDoc(pacienteRef);
 
     if (cliente?.email) {
       const subject = encodeURIComponent("Confirmação de exclusão de cadastro");
@@ -694,7 +758,7 @@ await deleteDoc(pacienteRef);
 
     const url = await salvarFotoTeste(arquivo);
 
-     await updateClient(idCliente, {
+    await updateClient(idCliente, {
       fotoPerfilUrl: url,
     });
 
@@ -736,7 +800,7 @@ await deleteDoc(pacienteRef);
 
   const valor = useMemo(
     () => ({
-       tipoPerfil,
+      tipoPerfil,
       // Pacientes
       clients,
       setClients,
@@ -749,6 +813,8 @@ await deleteDoc(pacienteRef);
       appointments,
       setAppointments,
       addAppointment,
+      updateAppointment,
+      deleteAppointment,
 
       // Profissionais (NOVO)
       professionals,
@@ -772,7 +838,7 @@ await deleteDoc(pacienteRef);
       gerarRelatorioPDF,
       COMORBIDADES,
     }),
-   [clients, appointments, professionals, tipoPerfil],
+    [clients, appointments, professionals, tipoPerfil],
   );
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
