@@ -2,83 +2,37 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext.jsx";
+import "./Clientes.css";
 
-const ESTADOS_BRASIL = [
-  "Acre",
-  "Alagoas",
-  "Amapá",
-  "Amazonas",
-  "Bahia",
-  "Ceará",
-  "Distrito Federal",
-  "Espírito Santo",
-  "Goiás",
-  "Maranhão",
-  "Mato Grosso",
-  "Mato Grosso do Sul",
-  "Minas Gerais",
-  "Pará",
-  "Paraíba",
-  "Paraná",
-  "Pernambuco",
-  "Piauí",
-  "Rio de Janeiro",
-  "Rio Grande do Norte",
-  "Rio Grande do Sul",
-  "Rondônia",
-  "Roraima",
-  "Santa Catarina",
-  "São Paulo",
-  "Sergipe",
-  "Tocantins",
+const BRAZIL_STATES = [
+  "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará",
+  "Distrito Federal", "Espírito Santo", "Goiás", "Maranhão",
+  "Mato Grosso", "Mato Grosso do Sul", "Minas Gerais", "Pará",
+  "Paraíba", "Paraná", "Pernambuco", "Piauí", "Rio de Janeiro",
+  "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia",
+  "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins",
 ];
 
-const PROVINCIAS_HOLANDA = [
-  "Drenthe",
-  "Flevoland",
-  "Friesland",
-  "Gelderland",
-  "Groningen",
-  "Limburg",
-  "Noord-Brabant",
-  "Noord-Holland",
-  "Overijssel",
-  "Utrecht",
-  "Zeeland",
-  "Zuid-Holland",
+const DUTCH_PROVINCES = [
+  "Drenthe", "Flevoland", "Friesland", "Gelderland", "Groningen",
+  "Limburg", "Noord-Brabant", "Noord-Holland", "Overijssel",
+  "Utrecht", "Zeeland", "Zuid-Holland",
 ];
 
-const SIGLAS_ESTADOS = {
-  AC: "Acre",
-  AL: "Alagoas",
-  AP: "Amapá",
-  AM: "Amazonas",
-  BA: "Bahia",
-  CE: "Ceará",
-  DF: "Distrito Federal",
-  ES: "Espírito Santo",
-  GO: "Goiás",
-  MA: "Maranhão",
-  MT: "Mato Grosso",
-  MS: "Mato Grosso do Sul",
-  MG: "Minas Gerais",
-  PA: "Pará",
-  PB: "Paraíba",
-  PR: "Paraná",
-  PE: "Pernambuco",
-  PI: "Piauí",
-  RJ: "Rio de Janeiro",
-  RN: "Rio Grande do Norte",
-  RS: "Rio Grande do Sul",
-  RO: "Rondônia",
-  RR: "Roraima",
-  SC: "Santa Catarina",
-  SP: "São Paulo",
-  SE: "Sergipe",
-  TO: "Tocantins",
+const STATE_ABBREVIATIONS = {
+  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas",
+  BA: "Bahia", CE: "Ceará", DF: "Distrito Federal",
+  ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão",
+  MT: "Mato Grosso", MS: "Mato Grosso do Sul",
+  MG: "Minas Gerais", PA: "Pará", PB: "Paraíba",
+  PR: "Paraná", PE: "Pernambuco", PI: "Piauí",
+  RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
+  RS: "Rio Grande do Sul", RO: "Rondônia",
+  RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo",
+  SE: "Sergipe", TO: "Tocantins",
 };
 
-const initialForm = {
+const INITIAL_FORM = {
   fotoPerfilUrl: "",
   nome: "",
   email: "",
@@ -99,87 +53,229 @@ const initialForm = {
   estado: "",
 };
 
-const smallButtonStyle = {
-  width: "auto",
-  minWidth: 0,
-  padding: "7px 12px",
-  fontSize: "13px",
-  borderRadius: "7px",
+const ICON_PATHS = {
+  users: (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </>
+  ),
+  plus: <path d="M12 5v14M5 12h14" />,
+  folder: (
+    <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  ),
+  arrow: <path d="M5 12h14m-6-6 6 6-6 6" />,
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M14 4h-4L8 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-4z" />
+      <circle cx="12" cy="13" r="3" />
+    </>
+  ),
+  upload: (
+    <>
+      <path d="M12 16V3m-5 5 5-5 5 5" />
+      <path d="M4 16v4h16v-4" />
+    </>
+  ),
+  clipboard: (
+    <>
+      <rect x="5" y="4" width="14" height="18" rx="2" />
+      <rect x="9" y="2" width="6" height="4" rx="1" />
+      <path d="M9 12h6m-6 4h6" />
+    </>
+  ),
+  location: (
+    <>
+      <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </>
+  ),
+  check: <path d="m5 12 4 4L19 6" />,
+  close: <path d="M18 6 6 18M6 6l12 12" />,
+  chevron: <path d="m6 9 6 6 6-6" />,
 };
 
-function somenteNumeros(valor) {
-  return String(valor || "").replace(/\D/g, "");
-}
-
-function cpfValido(valor) {
-  const cpf = somenteNumeros(valor);
-
-  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
-    return false;
-  }
-
-  const calcularDigito = (quantidade) => {
-    let soma = 0;
-
-    for (let i = 0; i < quantidade; i++) {
-      soma += Number(cpf[i]) * (quantidade + 1 - i);
-    }
-
-    const resto = (soma * 10) % 11;
-    return resto === 10 ? 0 : resto;
-  };
-
+function Icon({ name, size = 20, strokeWidth = 1.8 }) {
   return (
-    calcularDigito(9) === Number(cpf[9]) &&
-    calcularDigito(10) === Number(cpf[10])
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ flexShrink: 0 }}
+    >
+      {ICON_PATHS[name]}
+    </svg>
   );
 }
 
-function formatarCPF(valor) {
-  const numeros = somenteNumeros(valor).slice(0, 11);
-
-  return numeros
-    .replace(/^(\d{3})(\d)/, "$1.$2")
-    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1-$2");
+function onlyNumbers(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
-function normalizarBusca(valor) {
-  return String(valor || "")
+function normalizeSearch(value) {
+  return String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
 }
 
-export default function Clientes() {
-  const { clients, addClient, salvarFotoPerfil } = useApp();
-  const nav = useNavigate();
+function formatCPF(value) {
+  const numbers = onlyNumbers(value).slice(0, 11);
 
-  const [q, setQ] = useState("");
-  const [form, setForm] = useState(initialForm);
-  const [modoCadastro, setModoCadastro] = useState("rapido");
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [salvando, setSalvando] = useState(false);
-  const [cameraAberta, setCameraAberta] = useState(false);
-  const [fotoCapturada, setFotoCapturada] = useState(null);
+  return numbers
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
+
+function isValidCPF(value) {
+  const cpf = onlyNumbers(value);
+
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+    return false;
+  }
+
+  const digit = (length) => {
+    let sum = 0;
+
+    for (let i = 0; i < length; i++) {
+      sum += Number(cpf[i]) * (length + 1 - i);
+    }
+
+    const result = (sum * 10) % 11;
+    return result === 10 ? 0 : result;
+  };
+
+  return digit(9) === Number(cpf[9]) &&
+    digit(10) === Number(cpf[10]);
+}
+
+function FormField({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  required = false,
+  disabled = false,
+  autoComplete,
+  inputMode,
+  maxLength,
+  onBlur,
+}) {
+  return (
+    <label className="pf-field">
+      <span className="pf-field-label">
+        {label}
+        {required && <span className="pf-required"> *</span>}
+      </span>
+      <input
+        name={name}
+        type={type}
+        value={value ?? ""}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        autoComplete={autoComplete}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        onBlur={onBlur}
+        className="pf-input"
+      />
+    </label>
+  );
+}
+
+function CheckOption({ checked, onChange, children }) {
+  return (
+    <label className="pf-check">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+      />
+      <span>{children}</span>
+    </label>
+  );
+}
+
+function SectionTitle({ icon, title, subtitle, number }) {
+  return (
+    <div className="pf-section-heading">
+      <div className="pf-section-icon">
+        <Icon name={icon} size={21} />
+      </div>
+      <div className="pf-section-copy">
+        <div className="pf-section-title">
+          {number && <span>{number}.</span>}
+          <h3>{title}</h3>
+        </div>
+        <p>{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+
+
+export default function Clientes() {
+ const {
+  clients,
+  clientsLoading,
+  clientsError,
+  addClient,
+  salvarFotoPerfil,
+} = useApp();
+  const navigate = useNavigate();
+
+  const [search, setSearch] = useState("");
+  const [form, setForm] = useState({ ...INITIAL_FORM });
+  const [registrationMode, setRegistrationMode] = useState("rapido");
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const formularioRef = useRef(null);
+  const formRef = useRef(null);
 
-  const fotoPreviewUrl = useMemo(() => {
-    if (!fotoCapturada) return null;
-    return URL.createObjectURL(fotoCapturada);
-  }, [fotoCapturada]);
+  const patientList = Array.isArray(clients) ? clients : [];
+
+  const photoPreviewUrl = useMemo(() => {
+    if (!capturedPhoto) return null;
+    return URL.createObjectURL(capturedPhoto);
+  }, [capturedPhoto]);
 
   useEffect(() => {
     return () => {
-      if (fotoPreviewUrl) {
-        URL.revokeObjectURL(fotoPreviewUrl);
+      if (photoPreviewUrl) {
+        URL.revokeObjectURL(photoPreviewUrl);
       }
     };
-  }, [fotoPreviewUrl]);
+  }, [photoPreviewUrl]);
 
   useEffect(() => {
     return () => {
@@ -187,54 +283,54 @@ export default function Clientes() {
     };
   }, []);
 
-  const filtered = useMemo(() => {
-    const needle = normalizarBusca(q);
-    const numeros = somenteNumeros(q);
+  const filteredPatients = useMemo(() => {
+    const query = normalizeSearch(search);
+    const numbers = onlyNumbers(search);
 
-    if (!needle) return clients;
+    if (!query) return patientList;
 
-    return clients.filter((client) => {
-      const campos = [
-        client.nome,
-        client.email,
-        client.telefone,
-        client.documento,
-        client.endereco,
-        client.cidade,
-        client.bairro,
+    return patientList.filter((patient) => {
+      const fields = [
+        patient.nome,
+        patient.email,
+        patient.telefone,
+        patient.documento,
+        patient.endereco,
+        patient.cidade,
+        patient.bairro,
       ];
 
-      const texto = normalizarBusca(campos.filter(Boolean).join(" "));
+      const text = normalizeSearch(fields.filter(Boolean).join(" "));
 
-      const buscaPorNumero =
-        numeros.length >= 3 &&
-        [client.telefone, client.documento].some((valor) =>
-          somenteNumeros(valor).includes(numeros)
+      const numericMatch =
+        numbers.length >= 3 &&
+        [patient.telefone, patient.documento].some((value) =>
+          onlyNumbers(value).includes(numbers)
         );
 
-      return texto.includes(needle) || buscaPorNumero;
+      return text.includes(query) || numericMatch;
     });
-  }, [q, clients]);
+  }, [search, clients]);
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
+  function updateForm(event) {
+    const { name, value } = event.target;
 
     setForm((previous) => ({
       ...previous,
       [name]:
         name === "documento" && previous.tipoDocumento === "CPF"
-          ? formatarCPF(value)
+          ? formatCPF(value)
           : value,
     }));
-  };
+  }
 
-  const closeCamera = () => {
+  function closeCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
-    setCameraAberta(false);
-  };
+    setCameraOpen(false);
+  }
 
-  const openCamera = async () => {
+  async function openCamera() {
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         alert("A câmera não está disponível neste navegador.");
@@ -249,15 +345,15 @@ export default function Clientes() {
       });
 
       streamRef.current = stream;
-      setCameraAberta(true);
+      setCameraOpen(true);
     } catch (error) {
       console.error("Camera error:", error);
       alert("Não foi possível abrir a câmera. Verifique a permissão.");
     }
-  };
+  }
 
   useEffect(() => {
-    if (!cameraAberta || !videoRef.current || !streamRef.current) {
+    if (!cameraOpen || !videoRef.current || !streamRef.current) {
       return;
     }
 
@@ -267,9 +363,9 @@ export default function Clientes() {
     video.play().catch((error) => {
       console.error("Video playback error:", error);
     });
-  }, [cameraAberta]);
+  }, [cameraOpen]);
 
-  const capturePhoto = () => {
+  function capturePhoto() {
     const video = videoRef.current;
 
     if (!video || !video.videoWidth) {
@@ -278,7 +374,6 @@ export default function Clientes() {
     }
 
     const canvas = document.createElement("canvas");
-
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
@@ -302,16 +397,16 @@ export default function Clientes() {
           type: "image/jpeg",
         });
 
-        setFotoCapturada(file);
+        setCapturedPhoto(file);
         closeCamera();
       },
       "image/jpeg",
       0.85
     );
-  };
+  }
 
-  const choosePhoto = (e) => {
-    const file = e.target.files?.[0];
+  function choosePhoto(event) {
+    const file = event.target.files?.[0];
 
     if (!file) return;
 
@@ -320,81 +415,81 @@ export default function Clientes() {
       return;
     }
 
-    setFotoCapturada(file);
+    setCapturedPhoto(file);
     closeCamera();
-  };
+  }
 
-  const buscarCEP = async () => {
+  async function lookupPostalCode() {
     if (form.pais !== "Brasil") return;
 
-    const cep = somenteNumeros(form.cep);
+    const postalCode = onlyNumbers(form.cep);
 
-    if (cep.length !== 8) return;
+    if (postalCode.length !== 8) return;
 
     try {
       const response = await fetch(
-        `https://viacep.com.br/ws/${cep}/json/`
+        `https://viacep.com.br/ws/${postalCode}/json/`
       );
 
       if (!response.ok) {
         throw new Error("CEP não encontrado");
       }
 
-      const dados = await response.json();
+      const data = await response.json();
 
-      if (dados.erro) {
+      if (data.erro) {
         alert("CEP não encontrado.");
         return;
       }
 
       setForm((previous) => ({
         ...previous,
-        rua: dados.logradouro || "",
-        bairro: dados.bairro || "",
-        cidade: dados.localidade || "",
-        estado: SIGLAS_ESTADOS[dados.uf] || "",
+        rua: data.logradouro || "",
+        bairro: data.bairro || "",
+        cidade: data.localidade || "",
+        estado: STATE_ABBREVIATIONS[data.uf] || "",
       }));
     } catch (error) {
       console.error(error);
       alert("Não foi possível consultar o CEP.");
     }
-  };
+  }
 
-  const abrirFormulario = (modo = "rapido") => {
-    setModoCadastro(modo);
-    setMostrarFormulario(true);
+  function openRegistration(mode = "rapido") {
+    setRegistrationMode(mode);
+    setShowForm(true);
 
     setTimeout(() => {
-      formularioRef.current?.scrollIntoView({
+      formRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
     }, 50);
-  };
+  }
 
-  const cancelarCadastro = () => {
-    if (salvando) return;
+  function cancelRegistration() {
+    if (saving) return;
 
     closeCamera();
-    setFotoCapturada(null);
-    setForm({ ...initialForm });
-    setMostrarFormulario(false);
-    setModoCadastro("rapido");
-  };
+    setCapturedPhoto(null);
+    setForm({ ...INITIAL_FORM });
+    setShowForm(false);
+    setRegistrationMode("rapido");
+  }
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+  async function submitRegistration(event) {
+    event.preventDefault();
 
-    if (salvando) return;
+    if (saving) return;
 
     if (form.nome.trim().split(/\s+/).length < 2) {
       alert("Informe o nome e o sobrenome do paciente.");
       return;
     }
 
-    const telefoneNumeros = somenteNumeros(form.telefone);
+    const phoneNumbers = onlyNumbers(form.telefone);
 
-    if (telefoneNumeros.length < 9 || telefoneNumeros.length > 15) {
+    if (phoneNumbers.length < 9 || phoneNumbers.length > 15) {
       alert("Informe um telefone válido, com 9 a 15 dígitos.");
       return;
     }
@@ -403,13 +498,15 @@ export default function Clientes() {
       !form.semDocumento &&
       form.documento.trim() &&
       form.tipoDocumento === "CPF" &&
-      !cpfValido(form.documento)
+      !isValidCPF(form.documento)
     ) {
-      alert("Informe um CPF válido ou marque 'Paciente não informou documento'.");
+      alert(
+        "Informe um CPF válido ou marque 'Paciente não informou documento'."
+      );
       return;
     }
 
-    if (modoCadastro === "completo") {
+    if (registrationMode === "completo") {
       if (!form.cep.trim()) {
         alert("O CEP ou código postal é obrigatório.");
         return;
@@ -417,14 +514,14 @@ export default function Clientes() {
 
       if (
         form.pais === "Brasil" &&
-        !/^\d{8}$/.test(somenteNumeros(form.cep))
+        !/^\d{8}$/.test(onlyNumbers(form.cep))
       ) {
         alert("O CEP brasileiro deve conter 8 números.");
         return;
       }
     }
 
-    const enderecoCompleto = [
+    const fullAddress = [
       [form.rua, form.numero].filter(Boolean).join(", "),
       form.complemento,
       form.bairro,
@@ -436,38 +533,36 @@ export default function Clientes() {
       .filter(Boolean)
       .join(" - ");
 
-    const dadosPaciente = {
+    const patientData = {
       ...form,
       tipoDocumento: form.semDocumento ? "" : form.tipoDocumento,
       documento: form.semDocumento ? "" : form.documento.trim(),
-      endereco:
-        modoCadastro === "completo" ? enderecoCompleto : "",
+      endereco: registrationMode === "completo" ? fullAddress : "",
     };
 
-    setSalvando(true);
+    setSaving(true);
 
-    let novoPaciente;
+    let newPatient;
 
     try {
-      novoPaciente = await addClient(dadosPaciente);
-    } catch (erro) {
-      console.error("Erro ao cadastrar paciente:", erro);
+      newPatient = await addClient(patientData);
+    } catch (error) {
+      console.error("Erro ao cadastrar paciente:", error);
       alert("Não foi possível salvar o paciente no Firebase.");
-      setSalvando(false);
+      setSaving(false);
       return;
     }
 
-    if (!novoPaciente) {
-      setSalvando(false);
+    if (!newPatient) {
+      setSaving(false);
       return;
     }
 
-    if (fotoCapturada) {
+    if (capturedPhoto) {
       try {
-        await salvarFotoPerfil(novoPaciente.id, fotoCapturada);
+        await salvarFotoPerfil(newPatient.id, capturedPhoto);
       } catch (error) {
         console.error("Erro ao salvar foto:", error);
-
         alert(
           "O paciente foi cadastrado, mas a foto não foi salva. " +
           "O cadastro permanece salvo no Firebase."
@@ -475,768 +570,611 @@ export default function Clientes() {
       }
     }
 
-    setForm({ ...initialForm });
-    setFotoCapturada(null);
-    setQ("");
-    setSalvando(false);
-    setMostrarFormulario(false);
-    setModoCadastro("rapido");
+    closeCamera();
+    setForm({ ...INITIAL_FORM });
+    setCapturedPhoto(null);
+    setSearch("");
+    setSaving(false);
+    setShowForm(false);
+    setRegistrationMode("rapido");
 
     alert("Paciente cadastrado com sucesso!");
-  };
+  }
+
+  const addressFields = [
+    { name: "cep", label: "CEP / Código postal", required: true },
+    { name: "rua", label: "Rua" },
+    { name: "numero", label: "Número" },
+    { name: "complemento", label: "Complemento" },
+    { name: "bairro", label: "Bairro" },
+    { name: "cidade", label: "Cidade" },
+    { name: "estado", label: "Estado / Província" },
+  ];
 
   return (
-    <div className="container py-4">
+    <div className="pf-page">
+     
 
-      {/* CABEÇALHO */}
+     
 
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-          <h3 className="mb-1">Pacientes</h3>
-          <p className="text-muted mb-0">
-            Encontre pacientes, consulte prontuários ou faça um novo cadastro.
-          </p>
-        </div>
+      <div className="pf-toolbar">
+        <label className="pf-search">
+          <Icon name="search" size={21} />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar por nome, telefone, CPF..."
+            aria-label="Buscar pacientes"
+          />
+        </label>
 
         <button
           type="button"
-          className="proflex-button"
-          style={{
-            width: "auto",
-            minWidth: "150px",
-            padding: "10px 18px",
-            borderRadius: "8px",
-          }}
-          onClick={() => abrirFormulario("rapido")}
+          className="pf-button pf-button-primary"
+          onClick={() => openRegistration("rapido")}
         >
-          + Novo paciente
+          <Icon name="plus" size={19} />
+          Novo paciente
         </button>
       </div>
 
-      {/* PESQUISA NO TOPO */}
-
-      <div
-        className="card border-0 shadow-sm mb-4"
-        style={{ borderRadius: "12px" }}
-      >
-        <div className="card-body p-3 p-md-4">
-
-          <label htmlFor="pesquisaPacientes" className="form-label fw-semibold">
-            Pesquisar pacientes
-          </label>
-
-          <div className="input-group">
-            <span className="input-group-text" aria-hidden="true">
-              🔎
-            </span>
-
-            <input
-              id="pesquisaPacientes"
-              type="search"
-              className="form-control"
-              placeholder="Nome, CPF, telefone, e-mail ou endereço"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              aria-label="Pesquisar pacientes"
-            />
+      <section className="pf-panel">
+        <div className="pf-panel-heading">
+          <div>
+            <h2>Seus pacientes</h2>
+            <p>Selecione um paciente para abrir seu prontuário.</p>
           </div>
-
-          <small className="text-muted d-block mt-2">
-            Digite uma informação do paciente para encontrá-lo rapidamente.
-          </small>
-
-          <div className="mt-3 text-muted small">
-            {q.trim()
-              ? `${filtered.length} paciente(s) encontrado(s)`
-              : `${clients.length} paciente(s) cadastrado(s)`}
-          </div>
+          <span className="pf-count">
+            {filteredPatients.length}{" "}
+            {filteredPatients.length === 1 ? "paciente" : "pacientes"}
+          </span>
         </div>
-      </div>
 
-      {/* LISTA DE PACIENTES */}
+        <div className="pf-patient-list">
+          {clientsLoading && (
+  <div className="pf-empty" role="status">
+    <h3>Carregando pacientes...</h3>
+    <p>Aguarde enquanto buscamos os dados.</p>
+  </div>
+)}
 
-      <div
-        className="card border-0 shadow-sm mb-4"
-        style={{ borderRadius: "12px" }}
-      >
-        <div className="card-body p-3 p-md-4">
+{!clientsLoading && clientsError && (
+  <div className="pf-empty" role="alert">
+    <h3>Não foi possível carregar os pacientes.</h3>
+    <p>Verifique sua conexão e tente novamente.</p>
+  </div>
+)}
+          {filteredPatients.map((patient) => {
+            const initials = String(patient.nome || "P")
+              .trim()
+              .split(/\s+/)
+              .slice(0, 2)
+              .map((part) => part[0])
+              .join("")
+              .toUpperCase();
 
-          <h5 className="mb-3">Pacientes cadastrados</h5>
+            return (
+              <article className="pf-patient" key={patient.id}>
+                <div className="pf-avatar">
+                  {patient.fotoPerfilUrl ? (
+                    <img
+                      src={patient.fotoPerfilUrl}
+                      alt=""
+                    />
+                  ) : (
+                    initials
+                  )}
+                </div>
 
-          <div className="table-responsive">
-            <table className="table table-striped align-middle">
-              <thead>
-                <tr>
-                  <th scope="col">Nome</th>
-                  <th scope="col">Telefone</th>
-                  <th scope="col" className="d-none d-md-table-cell">
-                    E-mail
-                  </th>
-                  <th scope="col" className="d-none d-lg-table-cell">
-                    Documento
-                  </th>
-                  <th scope="col" className="text-end">
-                    Ação
-                  </th>
-                </tr>
-              </thead>
+                <div className="pf-patient-info">
+                  <div className="pf-patient-name">
+                    {patient.nome || "Paciente sem nome"}
+                  </div>
 
-              <tbody>
-                {filtered.map((client) => (
-                  <tr key={client.id}>
-                    <td>
-                      <strong>{client.nome}</strong>
+                  <div className="pf-patient-details">
+                    <span>{patient.telefone || "Sem telefone"}</span>
 
-                      {client.cidade && (
-                        <small className="d-block text-muted">
-                          {client.cidade}
-                        </small>
-                      )}
-                    </td>
+                    {patient.cidade && (
+                      <span>{patient.cidade}</span>
+                    )}
 
-                    <td>
-                      <span style={{ overflowWrap: "anywhere" }}>
-                        {client.telefone || "—"}
-                      </span>
-                    </td>
+                    {patient.email && (
+                      <span>{patient.email}</span>
+                    )}
+                  </div>
+                </div>
 
-                    <td className="d-none d-md-table-cell">
-                      {client.email || "Não informado"}
-                    </td>
+                <div className="pf-patient-action">
+                  <button
+                    type="button"
+                    className="pf-button pf-button-secondary"
+                    onClick={() =>
+                      navigate(
+                        `/prontuario?clienteId=${encodeURIComponent(patient.id)}`
+                      )
+                    }
+                    aria-label={`Abrir prontuário de ${patient.nome}`}
+                  >
+                    <Icon name="folder" size={18} />
+                    Prontuário
+                    <Icon name="arrow" size={17} />
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+{!clientsLoading && !clientsError && filteredPatients.length === 0 && (
+            <div className="pf-empty">
+              <div className="pf-empty-icon">
+                <Icon name="users" size={28} />
+              </div>
 
-                    <td className="d-none d-lg-table-cell">
-                      {client.documento
-                        ? `${client.tipoDocumento || "Documento"}: ${client.documento}`
-                        : "Não informado"}
-                    </td>
+              <h3>
+                {search.trim()
+                  ? "Nenhum paciente encontrado"
+                  : "Nenhum paciente cadastrado"}
+              </h3>
 
-                    <td className="text-end">
-                      <button
-                        type="button"
-                        className="proflex-button"
-                        style={{
-                          ...smallButtonStyle,
-                          whiteSpace: "normal",
-                        }}
-                        onClick={() =>
-                          nav(`/prontuario?clienteId=${client.id}`)
-                        }
-                        aria-label={`Abrir prontuário de ${client.nome}`}
-                      >
-                        Abrir prontuário
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-
-                {filtered.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-4 text-muted"
-                    >
-                      {q.trim()
-                        ? "Nenhum paciente encontrado. Tente outra informação."
-                        : "Nenhum paciente cadastrado. Clique em Novo paciente para começar."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              <p>
+                {search.trim()
+                  ? "Tente pesquisar por outro nome ou informação."
+                  : "Clique em Novo paciente para realizar o primeiro cadastro."}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
-      {/* FORMULÁRIO DE CADASTRO */}
-
-      {mostrarFormulario && (
-        <div ref={formularioRef}>
-
-          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      {showForm && (
+        <section className="pf-form-wrap" ref={formRef}>
+          <div className="pf-form-intro">
             <div>
-              <h4 className="mb-1">Cadastrar paciente</h4>
-              <p className="text-muted mb-0">
-                Escolha como deseja preencher o cadastro.
+              <h2>Novo paciente</h2>
+              <p>
+                Preencha os dados necessários para criar o cadastro.
               </p>
             </div>
 
             <button
               type="button"
-              className="btn btn-outline-secondary"
-              onClick={cancelarCadastro}
-              disabled={salvando}
+              className="pf-button pf-button-secondary"
+              onClick={cancelRegistration}
+              disabled={saving}
+              aria-label="Fechar cadastro"
             >
-              Fechar cadastro
+              <Icon name="close" size={19} />
             </button>
           </div>
 
-          {/* MODOS DE CADASTRO */}
-
           <div
-            className="card border-0 shadow-sm mb-3"
-            style={{ borderRadius: "12px" }}
+            className="pf-mode-switch"
+            role="group"
+            aria-label="Tipo de cadastro"
           >
-            <div className="card-body p-3 p-md-4">
+            <button
+              type="button"
+              className={
+                registrationMode === "rapido"
+                  ? "pf-mode active"
+                  : "pf-mode"
+              }
+              onClick={() => setRegistrationMode("rapido")}
+              aria-pressed={registrationMode === "rapido"}
+            >
+              <Icon name="user" size={18} />
+              Cadastro rápido
+            </button>
 
-              <div className="d-flex flex-wrap gap-2 mb-3">
-
-                <button
-                  type="button"
-                  className={
-                    modoCadastro === "rapido"
-                      ? "proflex-button"
-                      : "btn btn-outline-secondary"
-                  }
-                  style={
-                    modoCadastro === "rapido"
-                      ? smallButtonStyle
-                      : undefined
-                  }
-                  aria-pressed={modoCadastro === "rapido"}
-                  onClick={() => setModoCadastro("rapido")}
-                >
-                  Cadastro rápido
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    modoCadastro === "completo"
-                      ? "proflex-button"
-                      : "btn btn-outline-secondary"
-                  }
-                  style={
-                    modoCadastro === "completo"
-                      ? smallButtonStyle
-                      : undefined
-                  }
-                  aria-pressed={modoCadastro === "completo"}
-                  onClick={() => setModoCadastro("completo")}
-                >
-                  Cadastro completo
-                </button>
-
-              </div>
-
-              <p className="text-muted small mb-0">
-                {modoCadastro === "rapido"
-                  ? "Cadastro rápido: informe os dados principais. O endereço e outras informações poderão ser acrescentados depois no cadastro do paciente."
-                  : "Cadastro completo: preencha os dados pessoais e o endereço. As informações clínicas são registradas no prontuário."}
-              </p>
-
-            </div>
+            <button
+              type="button"
+              className={
+                registrationMode === "completo"
+                  ? "pf-mode active"
+                  : "pf-mode"
+              }
+              onClick={() => setRegistrationMode("completo")}
+              aria-pressed={registrationMode === "completo"}
+            >
+              <Icon name="clipboard" size={18} />
+              Cadastro completo
+            </button>
           </div>
 
-          <form onSubmit={onSubmit}>
+          <p className="pf-mode-description">
+            {registrationMode === "rapido"
+              ? "Ideal para cadastrar o paciente em poucos minutos. Os dados adicionais poderão ser preenchidos posteriormente."
+              : "Inclui identificação, contato e endereço. As informações clínicas permanecem no prontuário."}
+          </p>
 
-            {/* DADOS DO PACIENTE */}
+          <form onSubmit={submitRegistration}>
+            <div className="pf-panel pf-form-panel">
+              <SectionTitle
+                number="01"
+                icon="user"
+                title="Identificação"
+                subtitle="Dados pessoais e fotografia do paciente."
+              />
 
-            <div
-              className="card border-0 shadow-sm mb-3"
-              style={{ borderRadius: "12px" }}
-            >
-              <div className="card-body p-3 p-md-4">
-
-                <h5 className="mb-2">Dados do paciente</h5>
-
-                <p className="text-muted small mb-3">
-                  Preencha os campos obrigatórios para identificar e
-                  contactar o paciente.
-                </p>
-
-                <div className="row g-3 align-items-start">
-
-                  {/* FOTO E BOTÕES */}
-
-                  <div className="col-12 col-md-4 col-lg-3">
-                    <div className="d-flex flex-column align-items-start gap-2">
-
-                      <div
-                        style={{
-                          width: "90px",
-                          height: "120px",
-                          border: "1px solid #ccc",
-                          borderRadius: "8px",
-                          overflow: "hidden",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: "#f5f5f5",
-                        }}
-                      >
-                        {fotoPreviewUrl ? (
-                          <img
-                            src={fotoPreviewUrl}
-                            alt="Foto do paciente"
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <span style={{ fontSize: "32px" }}>👤</span>
-                        )}
-                      </div>
-
-                      <div className="d-flex flex-wrap align-items-center gap-2">
-
-                        <label
-                          className="proflex-button"
-                          style={{
-                            ...smallButtonStyle,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginBottom: 0,
-                          }}
-                        >
-                          Escolher foto
-
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: "none" }}
-                            onChange={choosePhoto}
-                          />
-                        </label>
-
-                        <button
-                          type="button"
-                          className="proflex-button"
-                          style={smallButtonStyle}
-                          onClick={openCamera}
-                        >
-                          📷 Tirar foto
-                        </button>
-
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* NOME, EMAIL E TELEFONE */}
-
-                  <div className="col-12 col-md-8 col-lg-9">
-                    <div className="row g-3">
-
-                      <div className="col-12">
-                        <label htmlFor="nomePaciente" className="form-label">
-                          Nome completo *
-                        </label>
-
-                        <input
-                          id="nomePaciente"
-                          className="form-control"
-                          name="nome"
-                          placeholder="Nome e sobrenome do paciente"
-                          value={form.nome}
-                          onChange={onChange}
-                          autoComplete="name"
-                          required
-                        />
-                      </div>
-
-                      <div className="col-12 col-lg-6">
-                        <label htmlFor="emailPaciente" className="form-label">
-                          E-mail
-                        </label>
-
-                        <input
-                          id="emailPaciente"
-                          type="email"
-                          className="form-control"
-                          name="email"
-                          placeholder="E-mail do paciente"
-                          value={form.email}
-                          onChange={onChange}
-                          disabled={form.semEmail}
-                          required={!form.semEmail}
-                          autoComplete="email"
-                        />
-
-                        <label className="form-check-label d-flex align-items-center gap-2 mt-2">
-                          <input
-                            type="checkbox"
-                            className="form-check-input mt-0"
-                            checked={form.semEmail}
-                            onChange={(e) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                semEmail: e.target.checked,
-                                email: e.target.checked
-                                  ? ""
-                                  : previous.email,
-                              }))
-                            }
-                          />
-
-                          <span>Não possui e-mail</span>
-                        </label>
-                      </div>
-
-                      <div className="col-12 col-lg-6">
-                        <label htmlFor="telefonePaciente" className="form-label">
-                          Telefone *
-                        </label>
-
-                        <input
-                          id="telefonePaciente"
-                          type="tel"
-                          className="form-control"
-                          name="telefone"
-                          placeholder="Telefone com DDD ou código do país"
-                          value={form.telefone}
-                          onChange={onChange}
-                          autoComplete="tel"
-                          required
-                        />
-
-                        <label className="form-check-label d-flex align-items-center gap-2 mt-2">
-                          <input
-                            type="checkbox"
-                            className="form-check-input mt-0"
-                            checked={form.temWhatsapp}
-                            onChange={(e) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                temWhatsapp: e.target.checked,
-                              }))
-                            }
-                          />
-
-                          <span>Este número também é WhatsApp</span>
-                        </label>
-                      </div>
-
-                      {/* DOCUMENTO */}
-
-                      <div className="col-12">
-                        <hr className="my-2" />
-
-                        <h6 className="mb-2">
-                          Documento de identificação
-                        </h6>
-
-                        <p className="text-muted small mb-2">
-                          O documento ajuda a identificar pacientes com
-                          nomes semelhantes. Não é obrigatório.
-                        </p>
-                      </div>
-
-                      <div className="col-12 col-sm-5">
-                        <label
-                          htmlFor="tipoDocumento"
-                          className="form-label"
-                        >
-                          Tipo de documento
-                        </label>
-
-                        <select
-                          id="tipoDocumento"
-                          className="form-select"
-                          name="tipoDocumento"
-                          value={form.tipoDocumento}
-                          disabled={form.semDocumento}
-                          onChange={(e) =>
-                            setForm((previous) => ({
-                              ...previous,
-                              tipoDocumento: e.target.value,
-                              documento: "",
-                            }))
-                          }
-                        >
-                          <option value="CPF">CPF</option>
-                          <option value="Passaporte">Passaporte</option>
-                          <option value="Outro">Outro documento</option>
-                        </select>
-                      </div>
-
-                      <div className="col-12 col-sm-7">
-                        <label
-                          htmlFor="documento"
-                          className="form-label"
-                        >
-                          Número do documento
-                        </label>
-
-                        <input
-                          id="documento"
-                          name="documento"
-                          className="form-control"
-                          value={form.documento}
-                          onChange={onChange}
-                          disabled={form.semDocumento}
-                          inputMode={
-                            form.tipoDocumento === "CPF"
-                              ? "numeric"
-                              : "text"
-                          }
-                          maxLength={
-                            form.tipoDocumento === "CPF"
-                              ? 14
-                              : 50
-                          }
-                          placeholder={
-                            form.tipoDocumento === "CPF"
-                              ? "000.000.000-00"
-                              : "Número do documento"
-                          }
-                        />
-                      </div>
-
-                      <div className="col-12">
-                        <label className="form-check-label d-flex align-items-center gap-2">
-                          <input
-                            type="checkbox"
-                            className="form-check-input mt-0"
-                            checked={form.semDocumento}
-                            onChange={(e) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                semDocumento: e.target.checked,
-                                documento: e.target.checked
-                                  ? ""
-                                  : previous.documento,
-                              }))
-                            }
-                          />
-
-                          <span>Paciente não informou documento</span>
-                        </label>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* CÂMERA */}
-
-                  {cameraAberta && (
-                    <div className="col-12">
-                      <div
-                        className="p-3 border rounded"
-                        style={{ maxWidth: "440px" }}
-                      >
-                        <video
-                          ref={videoRef}
-                          autoPlay
-                          playsInline
-                          muted
-                          style={{
-                            width: "100%",
-                            borderRadius: "8px",
-                            backgroundColor: "#111",
-                          }}
-                        />
-
-                        <div className="d-flex flex-wrap gap-2 mt-2">
-                          <button
-                            type="button"
-                            className="proflex-button"
-                            style={smallButtonStyle}
-                            onClick={capturePhoto}
-                          >
-                            📸 Capturar foto
-                          </button>
-
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={closeCamera}
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+              <div className="pf-photo-area">
+                <div className="pf-photo-preview">
+                  {photoPreviewUrl ? (
+                    <img
+                      src={photoPreviewUrl}
+                      alt="Prévia da foto do paciente"
+                    />
+                  ) : (
+                    <Icon name="user" size={34} />
                   )}
+                </div>
 
+                <div className="pf-photo-content">
+                  <strong>Fotografia do paciente</strong>
+                  <p>Opcional. Escolha uma foto ou use a câmera.</p>
+
+                  <div className="pf-photo-actions">
+                    <label
+                      className="pf-button pf-button-secondary"
+                      style={{ cursor: "pointer", margin: 0 }}
+                    >
+                      <Icon name="upload" size={16} />
+                      Escolher foto
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={choosePhoto}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      className="pf-button pf-button-secondary"
+                      onClick={openCamera}
+                    >
+                      <Icon name="camera" size={16} />
+                      Câmera
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {cameraOpen && (
+                <div className="pf-camera">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                  />
+
+                  <div className="pf-photo-actions" style={{ marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="pf-button pf-button-primary"
+                      onClick={capturePhoto}
+                    >
+                      <Icon name="camera" size={16} />
+                      Capturar foto
+                    </button>
+
+                    <button
+                      type="button"
+                      className="pf-button pf-button-secondary"
+                      onClick={closeCamera}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="pf-grid">
+                <div className="pf-full">
+                  <FormField
+                    label="Nome completo"
+                    name="nome"
+                    value={form.nome}
+                    onChange={updateForm}
+                    placeholder="Nome e sobrenome"
+                    autoComplete="name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pf-divider" />
+
+              <h4 className="pf-subheading">
+                Documento de identificação
+              </h4>
+              <p className="pf-helper">
+                Opcional. Ajuda a diferenciar pacientes com nomes semelhantes.
+              </p>
+
+              <div className="pf-grid">
+                <label className="pf-field">
+                  <span className="pf-field-label">
+                    Tipo de documento
+                  </span>
+
+                  <select
+                    className="pf-input"
+                    value={form.tipoDocumento}
+                    disabled={form.semDocumento}
+                    onChange={(event) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        tipoDocumento: event.target.value,
+                        documento: "",
+                      }))
+                    }
+                  >
+                    <option value="CPF">CPF</option>
+                    <option value="Passaporte">Passaporte</option>
+                    <option value="Outro">Outro documento</option>
+                  </select>
+                </label>
+
+                <FormField
+                  label="Número do documento"
+                  name="documento"
+                  value={form.documento}
+                  onChange={updateForm}
+                  placeholder={
+                    form.tipoDocumento === "CPF"
+                      ? "000.000.000-00"
+                      : "Número do documento"
+                  }
+                  disabled={form.semDocumento}
+                  inputMode={
+                    form.tipoDocumento === "CPF"
+                      ? "numeric"
+                      : "text"
+                  }
+                  maxLength={
+                    form.tipoDocumento === "CPF" ? 14 : 50
+                  }
+                />
+
+                <div className="pf-full">
+                  <CheckOption
+                    checked={form.semDocumento}
+                    onChange={(event) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        semDocumento: event.target.checked,
+                        documento: event.target.checked
+                          ? ""
+                          : previous.documento,
+                      }))
+                    }
+                  >
+                    Paciente não informou documento
+                  </CheckOption>
                 </div>
               </div>
             </div>
 
-            {/* ENDEREÇO - CADASTRO COMPLETO */}
+            <div className="pf-panel pf-form-panel">
+              <SectionTitle
+                number="02"
+                icon="users"
+                title="Contato"
+                subtitle="Informações para comunicação com o paciente."
+              />
 
-            {modoCadastro === "completo" && (
-              <div
-                className="card border-0 shadow-sm mb-3"
-                style={{ borderRadius: "12px" }}
-              >
-                <div className="card-body p-3 p-md-4">
+              <div className="pf-grid">
+                <div>
+                  <FormField
+                    label="Telefone"
+                    name="telefone"
+                    type="tel"
+                    value={form.telefone}
+                    onChange={updateForm}
+                    placeholder="DDD ou código do país + número"
+                    autoComplete="tel"
+                    required
+                  />
 
-                  <h5 className="mb-2">Endereço</h5>
+                  <div className="pf-field-note">
+                    <CheckOption
+                      checked={form.temWhatsapp}
+                      onChange={(event) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          temWhatsapp: event.target.checked,
+                        }))
+                      }
+                    >
+                      Este número também é WhatsApp
+                    </CheckOption>
+                  </div>
+                </div>
 
-                  <p className="text-muted small mb-3">
-                    Informe o endereço do paciente. Para endereços no Brasil,
-                    o CEP pode preencher automaticamente alguns campos.
-                  </p>
+                <div>
+                  <FormField
+                    label="E-mail"
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={updateForm}
+                    placeholder="email@exemplo.com"
+                    autoComplete="email"
+                    disabled={form.semEmail}
+                    required={!form.semEmail}
+                  />
 
-                  <div className="row g-3">
+                  <div className="pf-field-note">
+                    <CheckOption
+                      checked={form.semEmail}
+                      onChange={(event) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          semEmail: event.target.checked,
+                          email: event.target.checked
+                            ? ""
+                            : previous.email,
+                        }))
+                      }
+                    >
+                      Paciente não possui e-mail
+                    </CheckOption>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                    {/* PAÍS */}
+            {registrationMode === "completo" && (
+              <div className="pf-panel pf-form-panel">
+                <SectionTitle
+                  number="03"
+                  icon="location"
+                  title="Endereço"
+                  subtitle="Localização e informações de correspondência."
+                />
 
-                    <div className="col-12">
-                      <label className="form-check-label d-flex align-items-center gap-2">
-                        <input
-                          type="checkbox"
-                          className="form-check-input mt-0"
-                          checked={form.pais === "Brasil"}
-                          onChange={(e) =>
-                            setForm((previous) => ({
-                              ...previous,
-                              pais: e.target.checked ? "Brasil" : "",
-                              estado: "",
-                            }))
-                          }
-                        />
+                <div className="pf-grid">
+                  <div className="pf-full">
+                    <CheckOption
+                      checked={form.pais === "Brasil"}
+                      onChange={(event) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          pais: event.target.checked ? "Brasil" : "",
+                          estado: "",
+                        }))
+                      }
+                    >
+                      Endereço no Brasil
+                    </CheckOption>
+                  </div>
 
-                        <span>Brasil</span>
-                      </label>
+                  {form.pais !== "Brasil" && (
+                    <label className="pf-field pf-full">
+                      <span className="pf-field-label">
+                        País
+                      </span>
 
-                      {form.pais !== "Brasil" && (
-                        <select
-                          className="form-select form-select-sm mt-2"
-                          style={{ maxWidth: "260px" }}
-                          value={form.pais}
-                          onChange={(e) =>
-                            setForm((previous) => ({
-                              ...previous,
-                              pais: e.target.value,
-                              estado: "",
-                            }))
-                          }
-                        >
-                          <option value="">Selecione o país</option>
-                          <option value="Portugal">Portugal</option>
-                          <option value="Países Baixos">Países Baixos</option>
-                          <option value="Irlanda">Irlanda</option>
-                          <option value="Alemanha">Alemanha</option>
-                          <option value="Outro">Outro</option>
-                        </select>
-                      )}
-                    </div>
-
-                    {[
-                      ["cep", "CEP / Código postal"],
-                      ["rua", "Rua"],
-                      ["numero", "Número"],
-                      ["complemento", "Complemento"],
-                      ["bairro", "Bairro"],
-                      ["cidade", "Cidade"],
-                      ["estado", "Estado / Província"],
-                    ].map(([campo, titulo]) => (
-                      <div
-                        key={campo}
-                        className={
-                          campo === "rua"
-                            ? "col-12 col-md-6 col-lg-5"
-                            : campo === "cep"
-                            ? "col-12 col-sm-6 col-md-3 col-lg-2"
-                            : campo === "numero"
-                            ? "col-12 col-sm-6 col-md-3 col-lg-2"
-                            : campo === "complemento"
-                            ? "col-12 col-sm-6 col-md-6 col-lg-3"
-                            : "col-12 col-sm-6 col-lg-4"
+                      <select
+                        className="pf-input"
+                        value={form.pais}
+                        onChange={(event) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            pais: event.target.value,
+                            estado: "",
+                          }))
                         }
                       >
-                        <label
-                          htmlFor={`endereco-${campo}`}
-                          className="form-label"
-                        >
-                          {titulo}
-                          {campo === "cep" ? " *" : ""}
-                        </label>
+                        <option value="">Selecione o país</option>
+                        <option value="Portugal">Portugal</option>
+                        <option value="Países Baixos">
+                          Países Baixos
+                        </option>
+                        <option value="Irlanda">Irlanda</option>
+                        <option value="Alemanha">Alemanha</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </label>
+                  )}
 
-                        {campo === "estado" &&
-                        (form.pais === "Brasil" ||
-                          form.pais === "Países Baixos") ? (
+                  {addressFields.map((field) => (
+                    <div
+                      key={field.name}
+                      className={
+                        field.name === "rua" ||
+                        field.name === "complemento"
+                          ? "pf-full"
+                          : ""
+                      }
+                    >
+                      {field.name === "estado" &&
+                      (form.pais === "Brasil" ||
+                        form.pais === "Países Baixos") ? (
+                        <label className="pf-field">
+                          <span className="pf-field-label">
+                            {field.label}
+                          </span>
+
                           <select
-                            id={`endereco-${campo}`}
-                            className="form-select"
                             name="estado"
+                            className="pf-input"
                             value={form.estado}
-                            onChange={onChange}
+                            onChange={updateForm}
                           >
                             <option value="">
-                              Selecione o estado
+                              Selecione o estado ou província
                             </option>
 
                             {(form.pais === "Brasil"
-                              ? ESTADOS_BRASIL
-                              : PROVINCIAS_HOLANDA
-                            ).map((estado) => (
-                              <option key={estado} value={estado}>
-                                {estado}
+                              ? BRAZIL_STATES
+                              : DUTCH_PROVINCES
+                            ).map((state) => (
+                              <option key={state} value={state}>
+                                {state}
                               </option>
                             ))}
                           </select>
-                        ) : (
-                          <input
-                            id={`endereco-${campo}`}
-                            className="form-control"
-                            name={campo}
-                            value={form[campo]}
-                            onChange={onChange}
-                            onBlur={
-                              campo === "cep"
-                                ? buscarCEP
-                                : undefined
-                            }
-                            autoComplete={
-                              campo === "cep"
-                                ? "postal-code"
-                                : campo === "rua"
-                                ? "address-line1"
-                                : campo === "cidade"
-                                ? "address-level2"
-                                : undefined
-                            }
-                          />
-                        )}
-                      </div>
-                    ))}
-
-                  </div>
+                        </label>
+                      ) : (
+                        <FormField
+                          label={field.label}
+                          name={field.name}
+                          value={form[field.name]}
+                          onChange={updateForm}
+                          onBlur={
+                            field.name === "cep"
+                              ? lookupPostalCode
+                              : undefined
+                          }
+                          required={field.required}
+                          autoComplete={
+                            field.name === "cep"
+                              ? "postal-code"
+                              : field.name === "rua"
+                              ? "address-line1"
+                              : field.name === "cidade"
+                              ? "address-level2"
+                              : undefined
+                          }
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* BOTÕES DO CADASTRO */}
-
-            <div className="d-flex flex-wrap justify-content-end gap-2 mb-4">
-
+            <div className="pf-actions">
               <button
                 type="button"
-                className="btn btn-outline-secondary"
-                onClick={cancelarCadastro}
-                disabled={salvando}
+                className="pf-button pf-button-secondary"
+                onClick={cancelRegistration}
+                disabled={saving}
               >
                 Cancelar
               </button>
 
               <button
                 type="submit"
-                className="proflex-button"
-                disabled={salvando}
-                style={{
-                  width: "auto",
-                  minWidth: "160px",
-                  padding: "10px 20px",
-                  fontSize: "14px",
-                  borderRadius: "8px",
-                }}
+                className="pf-button pf-button-primary"
+                disabled={saving}
               >
-                {salvando
-                  ? "Salvando..."
-                  : "Salvar paciente"}
+                {saving ? (
+                  "Salvando..."
+                ) : (
+                  <>
+                    <Icon name="check" size={19} />
+                    Salvar paciente
+                  </>
+                )}
               </button>
-
             </div>
-
           </form>
-        </div>
+        </section>
       )}
-
     </div>
   );
 }

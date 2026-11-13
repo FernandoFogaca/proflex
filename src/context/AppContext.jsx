@@ -199,12 +199,20 @@ export function AppProvider({ children }) {
   // ------------------------ ESTADOS EXISTENTES
 
   const [clients, setClients] = useState(() => []);
+  const [clientsLoading, setClientsLoading] = useState(true);
+const [clientsError, setClientsError] = useState(false);
 
+  
   useEffect(() => {
     if (!uid) {
       setClients([]);
+      setClientsLoading(false);
+      setClientsError(false);
       return;
     }
+
+    setClientsLoading(true);
+    setClientsError(false);
 
     const pacientesRef = collection(db, "usuarios", uid, "pacientes");
 
@@ -217,10 +225,13 @@ export function AppProvider({ children }) {
         }));
 
         setClients(pacientes);
+        setClientsLoading(false);
+        setClientsError(false);
       },
       (erro) => {
         console.error("Erro ao carregar pacientes:", erro);
-        setClients([]);
+        setClientsLoading(false);
+        setClientsError(true);
       },
     );
 
@@ -811,12 +822,14 @@ export function AppProvider({ children }) {
       tipoPerfil,
 
       // Pacientes
-      clients,
-      setClients,
-      getClient,
-      addClient,
-      updateClient,
-      deleteClient,
+clients,
+clientsLoading,
+clientsError,
+setClients,
+getClient,
+addClient,
+updateClient,
+deleteClient,
 
       // Agenda
       appointments,
@@ -847,7 +860,7 @@ export function AppProvider({ children }) {
       gerarRelatorioPDF,
       COMORBIDADES,
     }),
-    [clients, appointments, professionals, tipoPerfil],
+   [clients, clientsLoading, clientsError, appointments, professionals, tipoPerfil],
   );
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;
