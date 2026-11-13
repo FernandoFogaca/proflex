@@ -6,7 +6,8 @@ import { jsPDF } from "jspdf";
 export default function Prontuario() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { clients, getClient, salvarFotoPerfil } = useApp();
+  const { clients, clientsLoading, clientsError, getClient, salvarFotoPerfil } =
+    useApp();
 
   const clienteId = params.get("clienteId");
   const paciente = clienteId ? getClient(clienteId) : null;
@@ -436,7 +437,7 @@ export default function Prontuario() {
   if (!paciente) {
     return (
       <div className="container py-4">
-               <div className="card">
+        <div className="card">
           <div className="card-body">
             <label className="form-label fw-semibold">Buscar paciente</label>
             <p> Localize um paciente para acessar o prontuário clínico.</p>
@@ -449,6 +450,17 @@ export default function Prontuario() {
             />
 
             <div className="list-group">
+              {clientsLoading && (
+                <div className="list-group-item text-muted" role="status">
+                  Carregando pacientes...
+                </div>
+              )}
+
+              {!clientsLoading && clientsError && (
+                <div className="list-group-item text-danger" role="alert">
+                  Não foi possível carregar os pacientes.
+                </div>
+              )}
               {pacientesFiltrados.map((item) => (
                 <button
                   key={item.id}
@@ -467,11 +479,13 @@ export default function Prontuario() {
                 </button>
               ))}
 
-              {pacientesFiltrados.length === 0 && (
-                <div className="list-group-item text-muted">
-                  Nenhum paciente encontrado.
-                </div>
-              )}
+              {!clientsLoading &&
+                !clientsError &&
+                pacientesFiltrados.length === 0 && (
+                  <div className="list-group-item text-muted">
+                    Nenhum paciente encontrado.
+                  </div>
+                )}
             </div>
           </div>
         </div>
@@ -548,7 +562,7 @@ export default function Prontuario() {
           <button
             type="button"
             className="btn btn-sm btn-primary"
-            sstyle={{
+            style={{
               padding: "2px 10px",
               fontSize: "12px",
               lineHeight: "1.2",
