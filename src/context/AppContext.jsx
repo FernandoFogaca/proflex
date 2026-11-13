@@ -195,9 +195,11 @@ export function AppProvider({ children }) {
 
     return () => cancelar();
   }, []);
+
   // ------------------------ ESTADOS EXISTENTES
 
   const [clients, setClients] = useState(() => []);
+
   useEffect(() => {
     if (!uid) {
       setClients([]);
@@ -226,6 +228,7 @@ export function AppProvider({ children }) {
   }, [uid]);
 
   const [appointments, setAppointments] = useState(() => []);
+
   useEffect(() => {
     if (!uid) {
       setAppointments([]);
@@ -251,6 +254,7 @@ export function AppProvider({ children }) {
 
     return () => cancelar();
   }, [uid]);
+
   // ------------------------ NOVO ESTADO: PROFISSIONAIS
 
   const [professionals, setProfessionals] = useState(() => {
@@ -473,6 +477,7 @@ export function AppProvider({ children }) {
 
     return registro;
   }
+
   async function updateAppointment(id, alteracoes) {
     const usuario = auth.currentUser;
 
@@ -484,28 +489,30 @@ export function AppProvider({ children }) {
 
     await updateDoc(agendamentoRef, alteracoes);
   }
-  async function salvarConsultasNoFirebase(idCliente, consultas) {
+
+  async function deleteAppointment(id) {
     const usuario = auth.currentUser;
 
     if (!usuario) {
       throw new Error("Usuário não autenticado.");
     }
-    async function deleteAppointment(id) {
-      const usuario = auth.currentUser;
 
-      if (!usuario) {
-        throw new Error("Usuário não autenticado.");
-      }
+    const agendamentoRef = doc(
+      db,
+      "usuarios",
+      usuario.uid,
+      "agendamentos",
+      id,
+    );
 
-      const agendamentoRef = doc(
-        db,
-        "usuarios",
-        usuario.uid,
-        "agendamentos",
-        id,
-      );
+    await deleteDoc(agendamentoRef);
+  }
 
-      await deleteDoc(agendamentoRef);
+  async function salvarConsultasNoFirebase(idCliente, consultas) {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      throw new Error("Usuário não autenticado.");
     }
 
     const pacienteRef = doc(
@@ -518,6 +525,7 @@ export function AppProvider({ children }) {
 
     await updateDoc(pacienteRef, { consultas });
   }
+
   // ------------------------ CONSULTAS (PRONTUÁRIO)
 
   function proximoNumeroConsulta(cliente) {
@@ -801,6 +809,7 @@ export function AppProvider({ children }) {
   const valor = useMemo(
     () => ({
       tipoPerfil,
+
       // Pacientes
       clients,
       setClients,
