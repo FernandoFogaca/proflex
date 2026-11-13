@@ -618,3 +618,197 @@ a:not(.btn):hover {
     margin-top: 1.1rem !important;
   }
 }
+/* PROFLEX — PRONTUÁRIO PREMIUM */
+
+.pf-record-page .card {
+  background: #ffffff;
+  border: 1px solid #e2ebee;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(16, 36, 59, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.pf-record-page .card:hover {
+  box-shadow: 0 8px 24px rgba(16, 36, 59, 0.09);
+}
+
+.pf-record-page .card-body {
+  padding: 24px;
+}
+
+.pf-record-page h2,
+.pf-record-page h4,
+.pf-record-page h5 {
+  color: #10243b;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+@media (max-width: 767px) {
+  .pf-record-page .card-body {
+    padding: 18px;
+  }
+}
+
+/* PRONTUÁRIO — LISTA DE PACIENTES */
+
+.pf-record-page .list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pf-record-page .list-group-item-action {
+  background: #ffffff;
+  border: 1px solid #e2ebee;
+  border-radius: 16px !important;
+  padding: 24px;
+  color: #10243b;
+  box-shadow: 0 4px 18px rgba(16, 36, 59, 0.04);
+  transition: all 0.2s ease;
+}
+
+.pf-record-page .list-group-item-action:hover {
+  background: #f0faf8;
+  border-color: #14b8a6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 36, 59, 0.08);
+}
+
+.pf-record-page .list-group-item-action .fw-semibold {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.pf-record-page .list-group-item-action small {
+  font-size: 0.95rem;
+  color: #718096 !important;
+}
+
+/* PROFLEX — PACIENTES NO PRONTUÁRIO */
+
+.pf-record-page .pf-record-patient {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e2ebee;
+  border-radius: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.pf-record-page .pf-record-patient:hover {
+  background: #f7fcfb;
+  border-color: #14b8a6;
+}
+
+.pf-record-page .pf-record-patient-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.pf-record-page .pf-record-avatar {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f5f1, #d5ebf1);
+  color: #0d9488;
+  border-radius: 20px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.pf-record-page .pf-record-patient-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pf-record-page .pf-record-patient-details strong {
+  color: #10243b;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.pf-record-page .pf-record-patient-details span {
+  color: #718096;
+  font-size: 16px;
+}
+
+.pf-record-page .pf-record-patient-action {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border: 1px solid #d8e5eb;
+  border-radius: 12px;
+  color: #29455a;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+@media (max-width: 575px) {
+  .pf-record-page .pf-record-patient {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .pf-record-page .pf-record-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 19px;
+  }
+
+  .pf-record-page .pf-record-patient-details strong {
+    font-size: 16px;
+  }
+
+  .pf-record-page .pf-record-patient-details span {
+    font-size: 13px;
+  }
+
+  .pf-record-page .pf-record-patient-action {
+    padding: 10px;
+    font-size: 13px;
+  }
+}
+
+/* PRONTUÁRIO — MESMAS PROPORÇÕES DE PACIENTES */
+
+.pf-record-page .pf-record-patient {
+  padding: 14px 16px;
+  min-height: 92px;
+}
+
+.pf-record-page .pf-record-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 15px;
+  font-size: 20px;
+}
+
+.pf-record-page .pf-record-patient-details strong {
+  font-size: 16px;
+}
+
+.pf-record-page .pf-record-patient-details span {
+  font-size: 14px;
+}
+
+.pf-record-page .pf-record-patient-action {
+  padding: 10px 14px;
+  font-size: 15px;
+  gap: 12px;
+}

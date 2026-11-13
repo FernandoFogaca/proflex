@@ -625,10 +625,13 @@ export default function Clientes() {
             <h2>Seus pacientes</h2>
             <p>Selecione um paciente para abrir seu prontuário.</p>
           </div>
-          <span className="pf-count">
-            {filteredPatients.length}{" "}
-            {filteredPatients.length === 1 ? "paciente" : "pacientes"}
-          </span>
+         <span className="pf-count">
+  {clientsLoading
+    ? "Carregando..."
+    : `${filteredPatients.length} ${
+        filteredPatients.length === 1 ? "paciente" : "pacientes"
+      }`}
+</span>
         </div>
 
         <div className="pf-patient-list">
