@@ -15,6 +15,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -166,16 +167,32 @@ function configurarProfissional(dados = {}, anterior = null) {
 
 export function AppProvider({ children }) {
   const [uid, setUid] = useState(null);
+  const [tipoPerfil, setTipoPerfil] = useState(null);
   const [authCarregando, setAuthCarregando] = useState(true);
 
   useEffect(() => {
-    const cancelar = onAuthStateChanged(auth, (usuario) => {
-      setUid(usuario?.uid ?? null);
-      setAuthCarregando(false);
-    });
+  const cancelar = onAuthStateChanged(auth, async (usuario) => {
+    setUid(usuario?.uid ?? null);
+    setTipoPerfil(null);
 
-    return () => cancelar();
-  }, []);
+    if (usuario) {
+      try {
+        const referencia = doc(db, "usuarios", usuario.uid);
+        const documento = await getDoc(referencia);
+
+        if (auth.currentUser?.uid === usuario.uid) {
+          setTipoPerfil(documento.exists() ? documento.data().tipoPerfil : null);
+        }
+      } catch (erro) {
+        console.error("Erro ao buscar perfil:", erro);
+      }
+    }
+
+    setAuthCarregando(false);
+  });
+
+  return () => cancelar();
+}, []);
   // ------------------------ ESTADOS EXISTENTES
 
   const [clients, setClients] = useState(() => []);
@@ -719,6 +736,7 @@ await deleteDoc(pacienteRef);
 
   const valor = useMemo(
     () => ({
+       tipoPerfil,
       // Pacientes
       clients,
       setClients,
@@ -754,7 +772,7 @@ await deleteDoc(pacienteRef);
       gerarRelatorioPDF,
       COMORBIDADES,
     }),
-    [clients, appointments, professionals],
+   [clients, appointments, professionals, tipoPerfil],
   );
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;

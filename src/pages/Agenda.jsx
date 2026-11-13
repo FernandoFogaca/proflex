@@ -229,6 +229,8 @@ function Metric({ icon: Icon, number, label, background, color }) {
 export default function Agenda() {
   const navigate = useNavigate();
   const app = useApp();
+  const tipoPerfil = app.tipoPerfil;
+
 
   const clients = app.clients || [];
   const appointments = app.appointments || [];
