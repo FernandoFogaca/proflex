@@ -1,22 +1,36 @@
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { useApp } from "../context/AppContext.jsx";
 
+// =====================================================
+// FUNÇÕES AUXILIARES
+// =====================================================
+
 function calcIdade(yyyy_mm_dd) {
   if (!yyyy_mm_dd) return "";
+
   const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
   const nasc = new Date(y, (m || 1) - 1, d || 1);
   const hoje = new Date();
+
   let idade = hoje.getFullYear() - nasc.getFullYear();
+
   const antes =
     hoje.getMonth() < nasc.getMonth() ||
-    (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate());
+    (hoje.getMonth() === nasc.getMonth() &&
+      hoje.getDate() < nasc.getDate());
+
   if (antes) idade--;
+
   return idade >= 0 ? idade : "";
 }
 
-// lista extra de doenças (além das COMORBIDADES do contexto)
+// =====================================================
+// LISTAS CLÍNICAS
+// =====================================================
+
 const DOENCAS_MUSCULOESQUELETICAS = [
   "Artrite",
   "Artrose",
@@ -53,7 +67,6 @@ const DOENCAS_NEUROLOGICAS = [
   "Síndrome",
 ];
 
-// grupos de áreas do corpo e subpartes
 const AREAS = {
   "Membros inferiores": [
     "Pés",
@@ -100,6 +113,10 @@ const AREAS = {
   ],
 };
 
+// =====================================================
+// ARMAZENAMENTO LOCAL
+// =====================================================
+
 const loadLS = (k, fb) => {
   try {
     const s = localStorage.getItem(k);
@@ -108,11 +125,530 @@ const loadLS = (k, fb) => {
     return fb;
   }
 };
+
 const saveLS = (k, v) => {
   try {
     localStorage.setItem(k, JSON.stringify(v));
   } catch {}
 };
+
+// =====================================================
+// ESTILOS DA AVALIAÇÃO PREMIUM
+// =====================================================
+
+const premiumStyles = `
+.pf-premium {
+  --bg: #eef6f8;
+  --surface: #ffffff;
+  --ink: #102a43;
+  --muted: #64788b;
+  --line: #d8e6eb;
+  --soft: #f4f9fa;
+  --teal: #0b8d86;
+  --accent: #12b7aa;
+  --gold: #c9a15a;
+
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 26px 18px 60px;
+}
+
+.pf-premium.pf-dark {
+  --bg: #071b2d;
+  --surface: #102b3c;
+  --ink: #f0f8fc;
+  --muted: #a9c2d0;
+  --line: #315363;
+  --soft: #0a2333;
+  --teal: #087a79;
+  --accent: #43d6c8;
+  --gold: #e7bb70;
+}
+
+.pf-premium * {
+  box-sizing: border-box;
+}
+
+.pf-premium .pf-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.pf-premium .pf-topbar,
+.pf-premium .pf-brand,
+.pf-premium .pf-top-actions,
+.pf-premium .pf-patientbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pf-premium .pf-topbar {
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.pf-premium .pf-brand-icon {
+  font-size: 32px;
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  padding: 3px 10px;
+}
+
+.pf-premium h1 {
+  font-size: 27px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--ink);
+}
+
+.pf-premium .pf-brand p,
+.pf-premium .pf-stage-head p {
+  color: var(--muted);
+  margin: 3px 0 0;
+}
+
+.pf-premium .pf-draft {
+  background: rgba(18, 183, 170, 0.12);
+  color: var(--accent);
+  border-radius: 30px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pf-premium .pf-theme {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 25px;
+  padding: 10px 16px;
+  font-weight: 700;
+}
+
+.pf-premium .pf-patientbar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 17px 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 24px rgba(6, 34, 47, 0.06);
+  flex-wrap: wrap;
+}
+
+.pf-premium .pf-patient-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a716e, #20b9b1);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 25px;
+  font-weight: 800;
+  flex: none;
+}
+
+.pf-premium .pf-patient-identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  flex: 1;
+}
+
+.pf-premium .pf-patient-identity strong {
+  font-size: 18px;
+}
+
+.pf-premium .pf-patient-identity span,
+.pf-premium .pf-patient-date small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pf-premium .pf-patient-date {
+  display: flex;
+  flex-direction: column;
+  padding-left: 17px;
+  border-left: 1px solid var(--line);
+}
+
+.pf-premium .pf-type-select {
+  border: 1px solid var(--line);
+  background: var(--soft);
+  color: var(--ink);
+  border-radius: 24px;
+  padding: 10px 12px;
+  max-width: 190px;
+}
+
+.pf-premium .pf-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.pf-premium .pf-step-button {
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.pf-premium .pf-step-button span {
+  flex: none;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.pf-premium .pf-step-button b {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pf-premium .pf-step-button.active {
+  background: linear-gradient(110deg, #0b6e72, #079e95);
+  color: white;
+  border-color: #0b8e87;
+}
+
+.pf-premium .pf-step-button.active span {
+  color: #0a716e;
+  background: white;
+}
+
+.pf-premium .pf-step-button.done {
+  color: var(--teal);
+  background: rgba(18, 183, 170, 0.1);
+}
+
+.pf-premium .pf-workspace {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 16px 22px 24px;
+  box-shadow: 0 15px 38px rgba(7, 40, 55, 0.06);
+  min-width: 0;
+}
+
+.pf-premium .pf-stage-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: linear-gradient(105deg, #0a686e, #13b0a5);
+  color: white;
+}
+
+.pf-premium .pf-stage-head h2 {
+  margin: 0;
+  color: white;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.pf-premium .pf-stage-head p {
+  color: #d6f6f3;
+}
+
+.pf-premium .pf-stage-icon {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  min-width: 55px;
+  height: 55px;
+  display: grid;
+  place-items: center;
+  font-size: 29px;
+}
+
+.pf-premium .pf-form {
+  margin: 0;
+}
+
+.pf-premium .form-control,
+.pf-premium .form-select {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 43px;
+  max-width: 100%;
+}
+
+
+/* PLACEHOLDERS NO MODO CLARO */
+.pf-premium .form-control::placeholder,
+.pf-premium textarea::placeholder,
+.pf-premium input::placeholder {
+  color: #718096;
+  opacity: 1;
+}
+
+/* PLACEHOLDERS NO MODO ESCURO */
+.pf-premium.pf-dark .form-control::placeholder,
+.pf-premium.pf-dark textarea::placeholder,
+.pf-premium.pf-dark input::placeholder {
+  color: #c4d5df !important;
+  opacity: 1;
+}
+
+/* CAMPOS DESABILITADOS NO MODO ESCURO */
+.pf-premium.pf-dark .form-control:disabled,
+.pf-premium.pf-dark .form-select:disabled {
+  background-color: #1b3949;
+  color: #c4d5df;
+  opacity: 1;
+}
+
+/* OPÇÕES DOS SELECTS NO MODO ESCURO */
+.pf-premium.pf-dark .form-select option {
+  background-color: #102b3c;
+  color: #f0f8fc;
+}
+
+
+.pf-premium textarea.form-control {
+  min-height: 95px;
+}
+
+.pf-premium .form-label,
+.pf-premium .form-check-label {
+  color: var(--ink);
+}
+
+.pf-premium .form-label {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.pf-premium .text-muted {
+  color: var(--muted) !important;
+}
+
+.pf-premium .proflex-section-header {
+  background: var(--soft);
+  border-left: 4px solid var(--gold);
+  color: var(--ink);
+  border-radius: 10px;
+}
+
+.pf-premium .proflex-section-header h5 {
+  font-weight: 800;
+}
+
+.pf-premium .proflex-clinical-option {
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 9px !important;
+  padding: 9px 12px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--soft);
+  color: var(--ink);
+  border-radius: 9px !important;
+  max-width: 100%;
+}
+
+.pf-premium .proflex-clinical-option .form-check-input {
+  position: static !important;
+  float: none !important;
+  margin: 0 !important;
+  flex: none;
+}
+
+.pf-premium .proflex-clinical-option:has(input:checked) {
+  background: rgba(18, 183, 170, 0.14);
+  border-color: var(--accent) !important;
+}
+
+.pf-premium .pf-wizard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 25px;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.pf-premium .pf-save-note {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.pf-premium .pf-next {
+  background: linear-gradient(105deg, #12b7aa, #087b78);
+  color: white;
+  font-weight: 800;
+  padding: 11px 23px;
+  border-radius: 12px;
+}
+
+.pf-premium .pf-next:hover {
+  color: white;
+  filter: brightness(1.06);
+}
+
+.pf-premium .pf-review h3 {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.pf-premium .pf-review p {
+  color: var(--muted);
+}
+
+.pf-premium .pf-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pf-premium .pf-review-grid > div {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pf-premium .pf-review-grid small {
+  color: var(--muted);
+}
+
+.pf-premium .pf-review-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.pf-premium .list-group-item,
+.pf-premium .card {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.pf-premium .proflex-history-toolbar {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pf-premium .proflex-history-actions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .pf-premium {
+    padding: 12px 8px 40px;
+  }
+
+  .pf-premium .pf-workspace {
+    padding: 12px;
+  }
+
+  .pf-premium .pf-topbar {
+    align-items: flex-start;
+  }
+
+  .pf-premium h1 {
+    font-size: 22px;
+  }
+
+  .pf-premium .pf-draft {
+    display: none;
+  }
+
+  .pf-premium .pf-patientbar {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .pf-premium .pf-patient-date {
+    padding-left: 0;
+    border: 0;
+  }
+
+  .pf-premium .pf-steps {
+    gap: 4px;
+  }
+
+  .pf-premium .pf-step-button {
+    padding: 9px 3px;
+  }
+
+  .pf-premium .pf-step-button b {
+    display: none;
+  }
+
+  .pf-premium .pf-stage-head {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .pf-premium .pf-stage-head h2 {
+    font-size: 17px;
+  }
+
+  .pf-premium .pf-stage-icon {
+    min-width: 42px;
+    height: 42px;
+    font-size: 23px;
+  }
+
+  .pf-premium .pf-review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-premium .pf-save-note {
+    display: none;
+  }
+
+  .pf-premium .pf-wizard-footer .btn {
+    flex: 1;
+  }
+
+  .pf-premium .proflex-history-actions {
+    width: 100%;
+  }
+
+  .pf-premium .proflex-history-actions .btn {
+    flex: 1 1 140px;
+  }
+}
+`;
+
+// =====================================================
+// CABEÇALHO DAS SEÇÕES
+// =====================================================
 
 function SectionHeader({ number, title, subtitle }) {
   return (
@@ -121,12 +657,71 @@ function SectionHeader({ number, title, subtitle }) {
         {number}. {title}
       </h5>
 
-      {subtitle && <small style={{ opacity: 0.9 }}>{subtitle}</small>}
+      {subtitle && (
+        <small style={{ opacity: 0.9 }}>
+          {subtitle}
+        </small>
+      )}
     </div>
   );
 }
 
+// =====================================================
+// COMPONENTE PRINCIPAL
+// =====================================================
+
 export default function NovoAgendamento() {
+  const [etapa, setEtapa] = useState(1);
+
+  
+const [tema, setTema] = useState(() => {
+  try {
+    return localStorage.getItem("proflex-tema") === "dark"
+      ? "dark"
+      : "light";
+  } catch {
+    return "light";
+  }
+});
+
+// Escuta as alterações realizadas pelo botão
+// Dark/Light do PageHeader.jsx.
+useEffect(() => {
+  const sincronizarTema = (event) => {
+    const novoTema = event.detail?.tema;
+
+    if (novoTema === "dark" || novoTema === "light") {
+      setTema(novoTema);
+    }
+  };
+
+  window.addEventListener(
+    "proflex-theme-change",
+    sincronizarTema
+  );
+
+  return () => {
+    window.removeEventListener(
+      "proflex-theme-change",
+      sincronizarTema
+    );
+  };
+}, []);
+
+
+  const etapas = [
+    "Dados pessoais",
+    "Informações clínicas",
+    "Avaliação",
+    "Atendimento",
+    "Revisão",
+  ];
+
+  const irEtapa = (n) => {
+    setEtapa(Math.max(1, Math.min(5, n)));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -147,37 +742,50 @@ export default function NovoAgendamento() {
     COMORBIDADES,
   } = useApp();
 
-  // ----- Query params -----
+  // Parâmetros recebidos pela URL
   const clienteIdParam = params.get("clienteId") || "";
+
   const dataInicial =
-    params.get("data") || new Date().toISOString().split("T")[0];
+    params.get("data") ||
+    new Date().toISOString().split("T")[0];
+
   const horaInicial = params.get("hora") || "09:00";
-  const tipoQuery = params.get("tipo"); // opcional
-  const editandoPeloProntuario = params.get("origem") === "prontuario";
+  const tipoQuery = params.get("tipo");
 
-  const clienteExistente = clienteIdParam ? getClient(clienteIdParam) : null;
+  const editandoPeloProntuario =
+    params.get("origem") === "prontuario";
 
-  // ----- Estado do formulário (paciente) -----
+  const clienteExistente = clienteIdParam
+    ? getClient(clienteIdParam)
+    : null;
+
+  // Estados iniciais do formulário
   const [tipo, setTipo] = useState(
-    tipoQuery || (clienteExistente ? "completo" : "rapido"),
+    tipoQuery || (clienteExistente ? "completo" : "rapido")
   );
+
   const [data, setData] = useState(dataInicial);
   const [hora, setHora] = useState(horaInicial);
 
-  // Profissional responsável pelo agendamento
   const [professionalId, setProfessionalId] = useState(
-    params.get("professionalId") || "",
+    params.get("professionalId") || ""
   );
 
-  // Duração da consulta em minutos
+  // CONTINUA NA PARTE 2/3
+
+  // =====================================================
+  // PROFISSIONAL E HORÁRIO
+  // =====================================================
+
   const [duracao, setDuracao] = useState(60);
 
   const profissionaisAtivos = (professionals || []).filter(
-    (profissional) => profissional.ativo !== false,
+    (profissional) => profissional.ativo !== false
   );
 
   const profissionalSelecionado = (professionals || []).find(
-    (profissional) => String(profissional.id) === String(professionalId),
+    (profissional) =>
+      String(profissional.id) === String(professionalId)
   );
 
   useEffect(() => {
@@ -188,24 +796,38 @@ export default function NovoAgendamento() {
 
   useEffect(() => {
     if (profissionalSelecionado) {
-      setDuracao(Number(profissionalSelecionado.duracaoConsulta) || 60);
+      setDuracao(
+        Number(profissionalSelecionado.duracaoConsulta) || 60
+      );
     }
-  }, [profissionalSelecionado?.id, profissionalSelecionado?.duracaoConsulta]);
+  }, [
+    profissionalSelecionado?.id,
+    profissionalSelecionado?.duracaoConsulta,
+  ]);
 
   const validarHorario = () => {
     if (editandoPeloProntuario) return true;
 
-    const inicio = hora.split(":").map(Number);
-    const inicioMin = inicio[0] * 60 + inicio[1];
-    const duracaoMin = Number(duracao);
-    const fimMin = inicioMin + duracaoMin;
-
-    if (!data || !hora || !Number.isFinite(inicioMin)) {
+    if (!data || !hora) {
       alert("Informe uma data e um horário válidos.");
       return false;
     }
 
-    if (!Number.isFinite(duracaoMin) || duracaoMin < 5 || duracaoMin > 480) {
+    const [h, m] = hora.split(":").map(Number);
+    const inicioMin = h * 60 + m;
+    const duracaoMin = Number(duracao);
+    const fimMin = inicioMin + duracaoMin;
+
+    if (!Number.isFinite(inicioMin)) {
+      alert("Informe um horário válido.");
+      return false;
+    }
+
+    if (
+      !Number.isFinite(duracaoMin) ||
+      duracaoMin < 5 ||
+      duracaoMin > 480
+    ) {
       alert("Informe uma duração entre 5 e 480 minutos.");
       return false;
     }
@@ -215,46 +837,73 @@ export default function NovoAgendamento() {
       return false;
     }
 
-    if (profissionaisAtivos.length > 0 && !profissionalSelecionado) {
+    if (
+      profissionaisAtivos.length > 0 &&
+      !profissionalSelecionado
+    ) {
       alert("Selecione um profissional.");
       return false;
     }
 
-    const conflito = (appointments || []).some((agendamento) => {
-      if (agendamento.data !== data) return false;
+    const conflito = (appointments || []).some(
+      (agendamento) => {
+        if (agendamento.data !== data) return false;
 
-      if (
-        String(agendamento.professionalId || "") !==
-        String(professionalId || "")
-      ) {
-        return false;
+        if (
+          String(agendamento.professionalId || "") !==
+          String(professionalId || "")
+        ) {
+          return false;
+        }
+
+        if (
+          ["cancelado", "cancelada"].includes(
+            agendamento.status
+          )
+        ) {
+          return false;
+        }
+
+        const [outraHora, outroMinuto] = String(
+          agendamento.hora || ""
+        )
+          .split(":")
+          .map(Number);
+
+        if (
+          !Number.isFinite(outraHora) ||
+          !Number.isFinite(outroMinuto)
+        ) {
+          return false;
+        }
+
+        const outroInicio =
+          outraHora * 60 + outroMinuto;
+
+        const outroFim =
+          outroInicio +
+          (Number(agendamento.duracaoMin) || 60);
+
+        return (
+          inicioMin < outroFim &&
+          fimMin > outroInicio
+        );
       }
-
-      if (["cancelado", "cancelada"].includes(agendamento.status)) {
-        return false;
-      }
-
-      const [h, m] = String(agendamento.hora || "")
-        .split(":")
-        .map(Number);
-
-      if (!Number.isFinite(h) || !Number.isFinite(m)) {
-        return false;
-      }
-
-      const outroInicio = h * 60 + m;
-      const outroFim = outroInicio + (Number(agendamento.duracaoMin) || 60);
-
-      return inicioMin < outroFim && fimMin > outroInicio;
-    });
+    );
 
     if (conflito) {
-      alert("Este profissional já possui uma consulta nesse horário.");
+      alert(
+        "Este profissional já possui uma consulta nesse horário."
+      );
       return false;
     }
 
     return true;
   };
+
+  // =====================================================
+  // DADOS PESSOAIS
+  // =====================================================
 
   const [buscaPaciente, setBuscaPaciente] = useState("");
   const [nome, setNome] = useState("");
@@ -286,40 +935,88 @@ export default function NovoAgendamento() {
       .slice(0, 5);
   }, [buscaPaciente, clients]);
 
+  // =====================================================
+  // INFORMAÇÕES CLÍNICAS
+  // =====================================================
+
   const [nascimento, setNascimento] = useState("");
   const [peso, setPeso] = useState("");
   const [altura, setAltura] = useState("");
   const [genero, setGenero] = useState("");
 
-  const [comorb, setComorb] = useState([]); // do contexto
-  const [doencasExtras, setDoencasExtras] = useState([]); // lista extra
-  const [doencasNeurologicas, setDoencasNeurologicas] = useState([]);
-  const [sindromeDescricao, setSindromeDescricao] = useState("");
+  const [comorb, setComorb] = useState([]);
+  const [doencasExtras, setDoencasExtras] = useState([]);
+  const [
+    doencasNeurologicas,
+    setDoencasNeurologicas,
+  ] = useState([]);
 
-  const [outrosDiagnosticos, setOutrosDiagnosticos] = useState("");
+  const [
+    sindromeDescricao,
+    setSindromeDescricao,
+  ] = useState("");
+
+  const [
+    outrosDiagnosticos,
+    setOutrosDiagnosticos,
+  ] = useState("");
+
   const [remedios, setRemedios] = useState("");
 
-  const [anotacoesPaciente, setAnotacoesPaciente] = useState(""); // campo geral de notas
+  const [
+    anotacoesPaciente,
+    setAnotacoesPaciente,
+  ] = useState("");
 
-  // Áreas do corpo: { [grupo]: { parts: string[], note: string } }
   const [areas, setAreas] = useState(() =>
     Object.fromEntries(
-      Object.keys(AREAS).map((k) => [k, { parts: [], note: "" }]),
-    ),
+      Object.keys(AREAS).map((grupo) => [
+        grupo,
+        { parts: [], note: "" },
+      ])
+    )
   );
 
-  // Consulta atual
-  const [observacoes, setObservacoes] = useState(""); // observações gerais p/ agendamento
+  // =====================================================
+  // AVALIAÇÃO E ATENDIMENTO
+  // =====================================================
 
-  const [queixaAtual, setQueixaAtual] = useState("");
-  const [avaliacaoAtual, setAvaliacaoAtual] = useState("");
-  const [procedimentosAtual, setProcedimentosAtual] = useState("");
-  const [evolucaoAtual, setEvolucaoAtual] = useState("");
-  const [condutaAtual, setCondutaAtual] = useState("");
+  const [
+    observacoes,
+    setObservacoes,
+  ] = useState("");
+
+  const [
+    queixaAtual,
+    setQueixaAtual,
+  ] = useState("");
+
+  const [
+    avaliacaoAtual,
+    setAvaliacaoAtual,
+  ] = useState("");
+
+  const [
+    procedimentosAtual,
+    setProcedimentosAtual,
+  ] = useState("");
+
+  const [
+    evolucaoAtual,
+    setEvolucaoAtual,
+  ] = useState("");
+
+  const [
+    condutaAtual,
+    setCondutaAtual,
+  ] = useState("");
 
   const [carimbo, setCarimbo] = useState("");
 
-  // Dados do profissional (no localStorage, sem mexer no contexto)
+  // =====================================================
+  // DADOS DO PROFISSIONAL
+  // =====================================================
+
   const [prof, setProf] = useState(() =>
     loadLS("profissional", {
       nome: "",
@@ -327,97 +1024,181 @@ export default function NovoAgendamento() {
       email: "",
       telefone: "",
       endereco: "",
-    }),
+    })
   );
 
-  // preencher estados se edição
+  // =====================================================
+  // PREENCHIMENTO DE PACIENTE EXISTENTE
+  // =====================================================
+
   useEffect(() => {
     if (clienteExistente) {
       setNome(clienteExistente.nome || "");
       setTelefone(clienteExistente.telefone || "");
-      setTemWhatsapp(clienteExistente.temWhatsapp || false);
+      setTemWhatsapp(
+        clienteExistente.temWhatsapp || false
+      );
+
       setEmail(clienteExistente.email || "");
+      setSemEmail(!clienteExistente.email);
       setEndereco(clienteExistente.endereco || "");
 
-      setNascimento(clienteExistente.nascimento || "");
+      setNascimento(
+        clienteExistente.nascimento || ""
+      );
+
       setPeso(clienteExistente.peso || "");
       setAltura(clienteExistente.altura || "");
       setGenero(clienteExistente.genero || "");
+
       setComorb(
         Array.isArray(clienteExistente.comorbidades)
           ? clienteExistente.comorbidades
-          : [],
+          : []
       );
+
       setDoencasExtras(
         Array.isArray(clienteExistente.doencasExtras)
           ? clienteExistente.doencasExtras
-          : [],
+          : []
       );
+
       setDoencasNeurologicas(
-        Array.isArray(clienteExistente.doencasNeurologicas)
+        Array.isArray(
+          clienteExistente.doencasNeurologicas
+        )
           ? clienteExistente.doencasNeurologicas
-          : [],
+          : []
       );
 
-      setSindromeDescricao(clienteExistente.sindromeDescricao || "");
-      setOutrosDiagnosticos(clienteExistente.outrosDiagnosticos || "");
-      setRemedios(clienteExistente.remedios || "");
-      setAnotacoesPaciente(clienteExistente.anotacoesPaciente || "");
+      setSindromeDescricao(
+        clienteExistente.sindromeDescricao || ""
+      );
 
-      // áreas salvas anteriormente (se houver)
+      setOutrosDiagnosticos(
+        clienteExistente.outrosDiagnosticos || ""
+      );
+
+      setRemedios(
+        clienteExistente.remedios || ""
+      );
+
+      setAnotacoesPaciente(
+        clienteExistente.anotacoesPaciente || ""
+      );
+
       if (clienteExistente.areas) {
         setAreas((prev) => {
           const base = { ...prev };
-          for (const k of Object.keys(AREAS)) {
-            base[k] = clienteExistente.areas[k] || { parts: [], note: "" };
+
+          for (const grupo of Object.keys(AREAS)) {
+            base[grupo] =
+              clienteExistente.areas[grupo] || {
+                parts: [],
+                note: "",
+              };
           }
+
           return base;
         });
       }
+
       setTipo(tipoQuery || "completo");
     }
-    setCarimbo(new Date().toLocaleString("pt-BR"));
+
+    setCarimbo(
+      new Date().toLocaleString("pt-BR")
+    );
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clienteIdParam]);
 
+  // =====================================================
+  // HISTÓRICO DE CONSULTAS
+  // =====================================================
+
   const consultas = useMemo(
     () => clienteExistente?.consultas || [],
-    [clienteExistente?.consultas],
+    [clienteExistente?.consultas]
   );
-  const [sel, setSel] = useState([]); // consultas selecionadas (relatório/exclusão)
 
-  const toggle = (arr, val, set) =>
-    set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
-  const toggleComorb = (nome) =>
+  const [sel, setSel] = useState([]);
+
+  const toggleComorb = (valor) => {
     setComorb((prev) =>
-      prev.includes(nome) ? prev.filter((x) => x !== nome) : [...prev, nome],
+      prev.includes(valor)
+        ? prev.filter((item) => item !== valor)
+        : [...prev, valor]
     );
-  const toggleDoenca = (nome) =>
-    setDoencasExtras((prev) =>
-      prev.includes(nome) ? prev.filter((x) => x !== nome) : [...prev, nome],
-    );
+  };
 
-  const toggleAreaPart = (grupo, part) => {
+  const toggleDoenca = (valor) => {
+    setDoencasExtras((prev) =>
+      prev.includes(valor)
+        ? prev.filter((item) => item !== valor)
+        : [...prev, valor]
+    );
+  };
+
+  const toggleNeurologica = (valor) => {
+    setDoencasNeurologicas((prev) =>
+      prev.includes(valor)
+        ? prev.filter((item) => item !== valor)
+        : [...prev, valor]
+    );
+  };
+
+  const toggleAreaPart = (grupo, parte) => {
     setAreas((prev) => {
-      const g = prev[grupo] || { parts: [], note: "" };
-      const parts = g.parts.includes(part)
-        ? g.parts.filter((x) => x !== part)
-        : [...g.parts, part];
-      return { ...prev, [grupo]: { ...g, parts } };
+      const atual = prev[grupo] || {
+        parts: [],
+        note: "",
+      };
+
+      const parts = atual.parts.includes(parte)
+        ? atual.parts.filter(
+            (item) => item !== parte
+          )
+        : [...atual.parts, parte];
+
+      return {
+        ...prev,
+        [grupo]: {
+          ...atual,
+          parts,
+        },
+      };
     });
   };
-  const setAreaNote = (grupo, note) =>
-    setAreas((prev) => ({ ...prev, [grupo]: { ...prev[grupo], note } }));
 
-  const selecionarTudo = (marcar) =>
-    setSel(marcar ? consultas.map((c) => c.id) : []);
+  const setAreaNote = (grupo, note) => {
+    setAreas((prev) => ({
+      ...prev,
+      [grupo]: {
+        ...prev[grupo],
+        note,
+      },
+    }));
+  };
+
+  const selecionarTudo = (marcar) => {
+    setSel(
+      marcar
+        ? consultas.map((consulta) => consulta.id)
+        : []
+    );
+  };
 
   const novaConsulta = () => {
     if (!clienteExistente) {
-      alert("Salve o paciente primeiro para criar consultas sequenciais.");
+      alert(
+        "Salve o paciente primeiro para criar consultas sequenciais."
+      );
       return;
     }
+
     const agora = new Date();
+
     addConsulta(clienteExistente.id, {
       dataISO: agora.toISOString().slice(0, 10),
       hora: agora.toTimeString().slice(0, 5),
@@ -427,30 +1208,55 @@ export default function NovoAgendamento() {
 
   const setTextoConsulta = (cid, texto) => {
     if (!clienteExistente) return;
-    updateConsulta(clienteExistente.id, cid, { texto });
+
+    updateConsulta(
+      clienteExistente.id,
+      cid,
+      { texto }
+    );
   };
 
   const gerarPDFSelecionadas = () => {
     if (!clienteExistente) return;
+
     const selecionadas = consultas
-      .filter((c) => sel.includes(c.id))
-      .sort((a, b) => a.numero.localeCompare(b.numero));
+      .filter((consulta) =>
+        sel.includes(consulta.id)
+      )
+      .sort((a, b) =>
+        String(a.numero).localeCompare(
+          String(b.numero)
+        )
+      );
+
     if (!selecionadas.length) {
       alert("Selecione ao menos uma consulta.");
       return;
     }
-    gerarRelatorioPDF(clienteExistente, selecionadas);
+
+    gerarRelatorioPDF(
+      clienteExistente,
+      selecionadas
+    );
   };
 
   const excluirSelecionadas = () => {
     if (!clienteExistente) return;
-    deleteConsultas(clienteExistente.id, sel);
+
+    deleteConsultas(
+      clienteExistente.id,
+      sel
+    );
+
     setSel([]);
   };
 
   const idade = calcIdade(nascimento);
 
-  // ----- salvar/atualizar paciente + agendamento + consulta 01 (com extras) -----
+  // =====================================================
+  // SALVAR CADASTRO / AVALIAÇÃO / AGENDAMENTO
+  // =====================================================
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -458,22 +1264,42 @@ export default function NovoAgendamento() {
 
     const partesNome = nome.trim().split(/\s+/);
 
-    if (partesNome.length < 2 || partesNome.some((parte) => parte.length < 2)) {
-      alert("Informe o nome e sobrenome do paciente.");
-      return;
-    }
-
-    const numeroTelefone = telefone.replace(/\D/g, "");
-
-    if (numeroTelefone.length < 7 || numeroTelefone.length > 15) {
-      alert("Informe um telefone válido, com 7 a 15 dígitos.");
-      return;
-    }
-
-    if (!/^\+?[\d\s()-]+$/.test(telefone.trim())) {
+    if (
+      partesNome.length < 2 ||
+      partesNome.some(
+        (parte) => parte.length < 2
+      )
+    ) {
       alert(
-        "Telefone inválido. Use números e, se necessário, o código internacional com +.",
+        "Informe o nome e sobrenome do paciente."
       );
+      irEtapa(1);
+      return;
+    }
+
+    const numeroTelefone =
+      telefone.replace(/\D/g, "");
+
+    if (
+      numeroTelefone.length < 7 ||
+      numeroTelefone.length > 15
+    ) {
+      alert(
+        "Informe um telefone válido, com 7 a 15 dígitos."
+      );
+      irEtapa(1);
+      return;
+    }
+
+    if (
+      !/^\+?[\d\s()-]+$/.test(
+        telefone.trim()
+      )
+    ) {
+      alert(
+        "Telefone inválido. Use números e, se necessário, o código internacional com +."
+      );
+      irEtapa(1);
       return;
     }
 
@@ -485,6 +1311,7 @@ export default function NovoAgendamento() {
       endereco,
       anotacoesPaciente,
     };
+
     const extras =
       tipo === "completo"
         ? {
@@ -505,7 +1332,10 @@ export default function NovoAgendamento() {
     let cliente = clienteExistente;
 
     if (cliente) {
-      updateClient(cliente.id, { ...baseCliente, ...extras });
+      updateClient(cliente.id, {
+        ...baseCliente,
+        ...extras,
+      });
     } else {
       cliente = addClient({
         ...baseCliente,
@@ -515,24 +1345,44 @@ export default function NovoAgendamento() {
         atestados: [],
       });
 
-      if (!cliente) {
-        return;
-      }
+      if (!cliente) return;
     }
-    // injeta um sumário das áreas e doenças no texto da consulta atual, para constar no relatório
+
+    // Resumo clínico para o relatório
     const resumoExtras = (() => {
       const linhas = [];
-      if (doencasExtras.length)
-        linhas.push(`Doenças adicionais: ${doencasExtras.join(", ")}`);
-      const blocos = Object.entries(areas)
-        .filter(([_, v]) => v.parts.length || v.note)
-        .map(
-          ([g, v]) =>
-            `${g}: ${v.parts.join(", ")}${v.note ? ` — Obs: ${v.note}` : ""}`,
+
+      if (doencasExtras.length) {
+        linhas.push(
+          `Doenças adicionais: ${doencasExtras.join(", ")}`
         );
-      if (blocos.length) linhas.push(`Áreas afetadas: ${blocos.join(" | ")}`);
-      return linhas.length ? linhas.join("\n") + "\n\n" : "";
+      }
+
+      const blocos = Object.entries(areas)
+        .filter(
+          ([, valor]) =>
+            valor.parts.length || valor.note
+        )
+        .map(
+          ([grupo, valor]) =>
+            `${grupo}: ${valor.parts.join(", ")}${
+              valor.note
+                ? ` — Obs: ${valor.note}`
+                : ""
+            }`
+        );
+
+      if (blocos.length) {
+        linhas.push(
+          `Áreas afetadas: ${blocos.join(" | ")}`
+        );
+      }
+
+      return linhas.length
+        ? linhas.join("\n") + "\n\n"
+        : "";
     })();
+
     const temDadosConsulta =
       queixaAtual.trim() ||
       avaliacaoAtual.trim() ||
@@ -541,8 +1391,13 @@ export default function NovoAgendamento() {
       condutaAtual.trim();
 
     if (temDadosConsulta) {
-      const dataISO = data || new Date().toISOString().slice(0, 10);
-      const horaOK = hora || new Date().toTimeString().slice(0, 5);
+      const dataISO =
+        data ||
+        new Date().toISOString().slice(0, 10);
+
+      const horaOK =
+        hora ||
+        new Date().toTimeString().slice(0, 5);
 
       addConsulta(cliente.id, {
         dataISO,
@@ -550,14 +1405,18 @@ export default function NovoAgendamento() {
         texto: resumoExtras,
         queixa: queixaAtual.trim(),
         avaliacao: avaliacaoAtual.trim(),
-        procedimentos: procedimentosAtual.trim(),
+        procedimentos:
+          procedimentosAtual.trim(),
         evolucao: evolucaoAtual.trim(),
         conduta: condutaAtual.trim(),
       });
     }
 
-    // Salvar o agendamento para pacientes novos ou existentes
-    if (data && hora && !editandoPeloProntuario) {
+    if (
+      data &&
+      hora &&
+      !editandoPeloProntuario
+    ) {
       addAppointment({
         data,
         hora,
@@ -565,8 +1424,10 @@ export default function NovoAgendamento() {
         clienteNome: cliente.nome,
         observacoes,
         tipo,
-        professionalId: professionalId || null,
-        profissionalNome: profissionalSelecionado?.nome || "",
+        professionalId:
+          professionalId || null,
+        profissionalNome:
+          profissionalSelecionado?.nome || "",
         duracaoMin: Number(duracao),
         status: "agendado",
       });
@@ -575,19 +1436,29 @@ export default function NovoAgendamento() {
     alert("✅ Cadastro salvo!");
 
     if (editandoPeloProntuario) {
-      navigate(`/prontuario?clienteId=${cliente.id}`);
+      navigate(
+        `/prontuario?clienteId=${cliente.id}`
+      );
     } else {
       navigate("/agenda");
     }
   };
 
-  // ----- Profissional: salvar no localStorage -----
+  // CONTINUA NA PARTE 3/3
+
+  // =====================================================
+  // DADOS DO PROFISSIONAL
+  // =====================================================
+
   const salvarProf = () => {
     saveLS("profissional", prof);
     alert("✅ Dados do profissional salvos.");
   };
 
-  // ----- PDF Receita / Atestado (sem mexer no contexto) -----
+  // =====================================================
+  // DOCUMENTOS PDF
+  // =====================================================
+
   const pdfHeader = (doc, titulo) => {
     doc.setFontSize(18);
     doc.text(titulo, 40, 40);
@@ -598,98 +1469,135 @@ export default function NovoAgendamento() {
 
   const pdfFooterProf = (doc, y) => {
     y += 16;
+
+    if (y > 770) {
+      doc.addPage();
+      y = 60;
+    }
+
     doc.line(40, y, 555, y);
     y += 18;
-    doc.text(`${prof.nome || ""}  |  Registro: ${prof.registro || "-"}`, 40, y);
-    y += 16;
+
     doc.text(
-      `${prof.email || ""}  |  Tel: ${prof.telefone || ""}  |  End.: ${prof.endereco || ""}`,
+      `${prof.nome || ""} | Registro: ${prof.registro || "-"}`,
       40,
-      y,
+      y
+    );
+
+    y += 16;
+
+    doc.text(
+      `${prof.email || ""} | Tel: ${prof.telefone || ""}`,
+      40,
+      y
     );
   };
 
-  const imprimirReceita = (cliente, texto) => {
+  const imprimirDocumento = (
+    cliente,
+    titulo,
+    texto,
+    destinatario = ""
+  ) => {
     if (!cliente) {
       alert("Salve o paciente primeiro.");
-      return;
+      return false;
     }
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    pdfHeader(doc, "RECEITA");
-    let y = 70;
-    doc.text(
-      `Paciente: ${cliente.nome}   Nasc.: ${cliente.nascimento || "-"}   Idade: ${calcIdade(cliente.nascimento) || "-"}`,
-      40,
-      y,
-    );
-    y += 18;
-    doc.text(
-      `Data: ${new Date().toLocaleDateString("pt-BR")}   Hora: ${new Date().toLocaleTimeString("pt-BR")}`,
-      40,
-      y,
-    );
-    y += 24;
 
-    // texto da receita (quebra simples)
-    const lines = doc.splitTextToSize(texto || "", 515);
-    lines.forEach((ln) => {
-      doc.text(ln, 40, y);
-      y += 14;
-      if (y > 740) {
-        doc.addPage();
-        y = 60;
-      }
+    const doc = new jsPDF({
+      unit: "pt",
+      format: "a4",
     });
 
-    pdfFooterProf(doc, Math.min(y, 740));
-    doc.save(`receita_${cliente.nome.replace(/\s+/g, "_")}.pdf`);
+    pdfHeader(doc, titulo);
 
-    // guarda no histórico do paciente
+    let y = 70;
+
+    const escreverLinhas = (conteudo) => {
+      const linhas = doc.splitTextToSize(
+        String(conteudo || ""),
+        515
+      );
+
+      linhas.forEach((linha) => {
+        if (y > 740) {
+          doc.addPage();
+          y = 60;
+        }
+
+        doc.text(linha, 40, y);
+        y += 16;
+      });
+    };
+
+    escreverLinhas(`Paciente: ${cliente.nome}`);
+    escreverLinhas(
+      `Nascimento: ${cliente.nascimento || "-"}`
+    );
+
+    if (destinatario) {
+      escreverLinhas(
+        `Destinatário: ${destinatario}`
+      );
+    }
+
+    escreverLinhas(
+      `Data: ${new Date().toLocaleDateString("pt-BR")}`
+    );
+
+    y += 16;
+    escreverLinhas(texto);
+
+    pdfFooterProf(doc, y);
+
+    const nomeArquivo = String(cliente.nome || "paciente")
+      .replace(/\s+/g, "_");
+
+    doc.save(
+      `${titulo.toLowerCase()}_${nomeArquivo}.pdf`
+    );
+
+    return true;
+  };
+
+  const imprimirReceita = (cliente, texto) => {
+    if (
+      !imprimirDocumento(
+        cliente,
+        "RECEITA",
+        texto
+      )
+    ) {
+      return;
+    }
+
     updateClient(cliente.id, {
       receitas: [
         ...(cliente.receitas || []),
-        { id: `rec_${Date.now()}`, createdAt: new Date().toISOString(), texto },
+        {
+          id: `rec_${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          texto,
+        },
       ],
     });
   };
 
-  const imprimirAtestado = (cliente, para, texto) => {
-    if (!cliente) {
-      alert("Salve o paciente primeiro.");
+  const imprimirAtestado = (
+    cliente,
+    para,
+    texto
+  ) => {
+    if (
+      !imprimirDocumento(
+        cliente,
+        "ATESTADO",
+        texto,
+        para
+      )
+    ) {
       return;
     }
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    pdfHeader(doc, "ATESTADO");
-    let y = 70;
-    doc.text(
-      `Paciente: ${cliente.nome}   Nasc.: ${cliente.nascimento || "-"}   Idade: ${calcIdade(cliente.nascimento) || "-"}`,
-      40,
-      y,
-    );
-    y += 18;
-    if (para) {
-      doc.text(`Destinatário: ${para}`, 40, y);
-      y += 18;
-    }
-    doc.text(
-      `Data: ${new Date().toLocaleDateString("pt-BR")}   Hora: ${new Date().toLocaleTimeString("pt-BR")}`,
-      40,
-      y,
-    );
-    y += 24;
-
-    const lines = doc.splitTextToSize(texto || "", 515);
-    lines.forEach((ln) => {
-      doc.text(ln, 40, y);
-      y += 14;
-      if (y > 740) {
-        doc.addPage();
-        y = 60;
-      }
-    });
-
-    pdfFooterProf(doc, Math.min(y, 740));
-    doc.save(`atestado_${cliente.nome.replace(/\s+/g, "_")}.pdf`);
 
     updateClient(cliente.id, {
       atestados: [
@@ -704,875 +1612,1244 @@ export default function NovoAgendamento() {
     });
   };
 
+  // =====================================================
+  // EXCLUSÃO DE PACIENTE
+  // =====================================================
+
   const apagarPaciente = () => {
     if (!clienteExistente) return;
+
     deleteClient(clienteExistente.id);
     navigate("/clientes");
   };
 
-  // estados locais para os textos da Receita/Atestado
+  // =====================================================
+  // ESTADOS DOS DOCUMENTOS
+  // =====================================================
+
   const [receitaTexto, setReceitaTexto] = useState("");
   const [atestadoPara, setAtestadoPara] = useState("");
   const [atestadoTexto, setAtestadoTexto] = useState("");
 
-  return (
-    <div className="container py-4 proflex-appointment-page">
-      <h4 className="mb-3">
-        Cadastro {clienteExistente ? "do Paciente" : "de Agendamento"}
-      </h4>
+  // =====================================================
+  // COMPONENTES AUXILIARES DA INTERFACE
+  // =====================================================
 
-      {/* Dados da agenda */}
-      <div className="mb-2">
-        <strong>Data selecionada:</strong> {data} &nbsp;|&nbsp;
-        <strong>Hora:</strong> {hora} &nbsp;|&nbsp;
-        <strong>Cadastro iniciado em:</strong> {carimbo}
-      </div>
+  const tituloEtapa = etapas[etapa - 1];
 
-      
-      {/* Tipo */}
-<div
-  className="card border-0 shadow-sm mb-3"
-  style={{ borderRadius: "12px" }}
->
-  <div className="card-body p-3 p-md-4">
-  <div className="d-flex flex-wrap gap-2 mb-3">
-    <button
-      type="button"
-      className={tipo === "rapido" ? "proflex-button" : "btn btn-outline-secondary"}
-      onClick={() => setTipo("rapido")}
-    >
-      Cadastro rápido
-    </button>
+  const subtitulos = [
+    "Identificação e informações de contato",
+    "Histórico e condições de saúde",
+    "Queixa principal e avaliação clínica",
+    "Procedimentos, evolução e conduta",
+    "Confira as informações antes de salvar",
+  ];
 
-    <button
-  type="button"
-  className={
-    tipo === "completo"
-      ? "proflex-button"
-      : "btn btn-outline-secondary"
-  }
-  style={
-    tipo === "completo"
-      ? {
-  padding: "8px 14px",
-  fontSize: "14px",
-  fontWeight: 600,
-  borderRadius: "8px",
-}
-      : undefined
-  }
-  onClick={() => setTipo("completo")}
->
-  Cadastro completo
-</button>
-  </div>
+  const iconesEtapas = [
+    "👤",
+    "🩺",
+    "📋",
+    "💙",
+    "✓",
+  ];
 
-  <p className="text-muted mb-0">
-    {tipo === "rapido"
-      ? "Cadastro rápido: informe os dados principais. O endereço e outras informações poderão ser acrescentados depois no cadastro do paciente."
-      : "Cadastro completo: preencha os dados pessoais e o endereço. As informações clínicas são registradas no prontuário."}
-  </p>
-  </div>
-</div>
-      {/* FORM PRINCIPAL */}
-      <form className="row g-3" onSubmit={handleSubmit}>
-        {/* Botão de salvar sempre acessível */}
-        <div
-          className="col-12 d-flex justify-content-end sticky-top py-2"
-          style={{
-            top: "85px",
-            zIndex: 1020,
-            backgroundColor: "#ffffff",
-          }}
-        >
-          <button type="submit" className="btn btn-primary">
-            💾 {clienteExistente ? "Salvar alterações" : "Salvar cadastro"}
-          </button>
-        </div>
+  const Campo = ({
+    titulo,
+    valor,
+    alterar,
+    tipoCampo = "text",
+    obrigatorio = false,
+    placeholder = "",
+  }) => (
+    <div className="col-md-6">
+      <label className="form-label">
+        {titulo}
+      </label>
 
-        {/* data/hora */}
-        <div className="col-md-3">
-          <label className="form-label">Data</label>
-          <input
-            className="form-control"
-            type="date"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-          />
-        </div>
-        <div className="col-md-3">
-          <label className="form-label">Hora</label>
-          <input
-            className="form-control"
-            type="time"
-            step="300"
-            value={hora}
-            onChange={(e) => setHora(e.target.value)}
-          />
-        </div>
+      <input
+        className="form-control"
+        type={tipoCampo}
+        value={valor}
+        onChange={(e) => alterar(e.target.value)}
+        required={obrigatorio && etapa === 5}
+        placeholder={placeholder}
+      />
+    </div>
+  );
 
-        {!editandoPeloProntuario && (
-          <>
-            <div className="col-md-6">
-              <label className="form-label">Profissional responsável</label>
+  const TextoLongo = ({
+    titulo,
+    valor,
+    alterar,
+    placeholder = "",
+  }) => (
+    <div className="col-12">
+      <label className="form-label">
+        {titulo}
+      </label>
 
-              <select
-                className="form-select"
-                value={professionalId}
-                onChange={(e) => setProfessionalId(e.target.value)}
-                required={profissionaisAtivos.length > 0}
-              >
-                <option value="">Selecione um profissional</option>
+      <textarea
+        className="form-control"
+        rows={4}
+        value={valor}
+        onChange={(e) => alterar(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
 
-                {profissionaisAtivos.map((profissional) => (
-                  <option key={profissional.id} value={profissional.id}>
-                    {profissional.nome}
-                    {profissional.especialidade
-                      ? ` — ${profissional.especialidade}`
-                      : ""}
-                  </option>
-                ))}
-              </select>
+  const GrupoOpcoes = ({
+    titulo,
+    opcoes,
+    selecionadas,
+    alterar,
+  }) => (
+    <div className="col-12">
+      <label className="form-label d-block">
+        {titulo}
+      </label>
 
-              {profissionaisAtivos.length === 0 && (
-                <small className="text-muted">
-                  Nenhum profissional ativo cadastrado.
-                </small>
-              )}
-            </div>
-
-            <div className="col-md-3">
-              <label className="form-label">
-                Duração da consulta (minutos)
-              </label>
-
-              <input
-                type="number"
-                className="form-control"
-                min="5"
-                max="480"
-                step="5"
-                value={duracao}
-                onChange={(e) => setDuracao(Number(e.target.value))}
-                required
-              />
-            </div>
-          </>
-        )}
-
-        <SectionHeader
-          number="1"
-          title="Dados do paciente"
-          subtitle="Informações pessoais e de contato"
-        />
-        {tipo === "rapido" && !clienteExistente && (
-          <div className="col-12">
-            <label className="form-label fw-semibold">
-              Buscar paciente existente
-            </label>
-
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Digite nome, telefone, e-mail ou CPF..."
-              value={buscaPaciente}
-              onChange={(e) => setBuscaPaciente(e.target.value)}
-            />
-
-            {buscaPaciente.trim().length >= 2 && (
-              <div className="list-group mt-2">
-                {pacientesEncontrados.map((paciente) => (
-                  <button
-                    key={paciente.id}
-                    type="button"
-                    className="list-group-item list-group-item-action"
-                    onClick={() =>
-                      navigate(
-                        `/agendar?${new URLSearchParams({
-                          data,
-                          hora,
-                          clienteId: paciente.id,
-                          tipo: "rapido",
-                          ...(professionalId ? { professionalId } : {}),
-                        }).toString()}`,
-                      )
-                    }
-                  >
-                    <div className="fw-semibold">{paciente.nome}</div>
-
-                    <small className="text-muted">
-                      {paciente.telefone || "Sem telefone"}
-                      {paciente.email ? ` • ${paciente.email}` : ""}
-                    </small>
-                  </button>
-                ))}
-
-                {pacientesEncontrados.length === 0 && (
-                  <div className="list-group-item text-muted">
-                    Nenhum paciente encontrado. Preencha os dados abaixo para
-                    cadastrar um novo paciente.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-        {/* dados básicos */}
-        <div className="col-md-6">
-          <label className="form-label">Nome do paciente</label>
-          <input
-            className="form-control"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            required
-          />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Telefone</label>
-          <input
-            className="form-control"
-            value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
-          />
-          <div className="col-12">
-            <label className="form-check-label">
-              <input
-                type="checkbox"
-                className="form-check-input me-2"
-                checked={temWhatsapp}
-                onChange={(e) => setTemWhatsapp(e.target.checked)}
-              />
-              Este número também é WhatsApp
-            </label>
-          </div>
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Email</label>
-          <input
-            type="email"
-            className="form-control"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={semEmail}
-            required={!semEmail}
-          />
-
-          <label className="form-check-label mt-2">
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+        }}
+      >
+        {opcoes.map((opcao) => (
+          <label
+            key={opcao}
+            className="proflex-clinical-option"
+          >
             <input
               type="checkbox"
-              className="form-check-input me-2"
-              checked={semEmail}
-              onChange={(e) => {
-                setSemEmail(e.target.checked);
-                if (e.target.checked) setEmail("");
-              }}
+              className="form-check-input"
+              checked={selecionadas.includes(opcao)}
+              onChange={() => alterar(opcao)}
             />
-            Não possui e-mail
+
+            <span>{opcao}</span>
           </label>
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Endereço</label>
-          <input
-            className="form-control"
-            value={endereco}
-            onChange={(e) => setEndereco(e.target.value)}
-          />
+        ))}
+      </div>
+    </div>
+  );
+
+  // =====================================================
+  // INTERFACE PRINCIPAL
+  // =====================================================
+
+  return (
+    <div
+      className={`pf-premium ${
+        tema === "dark" ? "pf-dark" : ""
+      }`}
+    >
+      <style>{premiumStyles}</style>
+
+      <div className="pf-shell">
+
+        {/* CABEÇALHO */}
+
+
+
+        {/* PACIENTE */}
+
+        <div className="pf-patientbar">
+          <div className="pf-patient-avatar">
+            {nome.trim()
+              ? nome.trim().charAt(0).toUpperCase()
+              : "P"}
+          </div>
+
+          <div className="pf-patient-identity">
+            <strong>
+              {nome.trim() || "Novo paciente"}
+            </strong>
+
+            <span>
+              {clienteExistente
+                ? "Paciente cadastrado"
+                : "Novo cadastro"}
+            </span>
+          </div>
+
+          <div className="pf-patient-date">
+            <small>Data</small>
+            <strong>{data || "Não definida"}</strong>
+          </div>
+
+          <div className="pf-patient-date">
+            <small>Horário</small>
+            <strong>{hora || "--:--"}</strong>
+          </div>
+
+          <select
+            className="pf-type-select"
+            value={tipo}
+            onChange={(e) => {
+              setTipo(e.target.value);
+
+              if (e.target.value === "rapido") {
+                irEtapa(1);
+              }
+            }}
+          >
+            <option value="rapido">
+              Cadastro rápido
+            </option>
+
+            <option value="completo">
+              Cadastro completo
+            </option>
+          </select>
         </div>
 
-        {/* COMPLETO */}
-        {tipo === "completo" && (
-          <>
-            <SectionHeader
-              number="2"
-              title="Informações clínicas"
-              subtitle="Condições, histórico e avaliação do paciente"
-            />
-            <div className="col-md-3">
-              <label className="form-label">Nascimento</label>
-              <input
-                type="date"
-                className="form-control"
-                value={nascimento}
-                onChange={(e) => setNascimento(e.target.value)}
-              />
-              <small className="text-muted">Idade: {idade || "-"}</small>
-            </div>
-            <div className="col-md-2">
-              <label className="form-label">Peso (kg)</label>
-              <input
-                className="form-control"
-                value={peso}
-                onChange={(e) => setPeso(e.target.value)}
-              />
-            </div>
-            <div className="col-md-2">
-              <label className="form-label">Altura (cm)</label>
-              <input
-                className="form-control"
-                value={altura}
-                onChange={(e) => setAltura(e.target.value)}
-              />
-            </div>
-            <div className="col-md-2">
-              <label className="form-label">Gênero</label>
-              <select
-                className="form-select"
-                value={genero}
-                onChange={(e) => setGenero(e.target.value)}
+        {/* NAVEGAÇÃO DAS CINCO ETAPAS */}
+
+        <nav
+          className="pf-steps"
+          aria-label="Etapas da avaliação"
+        >
+          {etapas.map((item, index) => {
+            const numero = index + 1;
+
+            return (
+              <button
+                key={item}
+                type="button"
+                className={`pf-step-button ${
+                  etapa === numero
+                    ? "active"
+                    : etapa > numero
+                    ? "done"
+                    : ""
+                }`}
+                onClick={() => irEtapa(numero)}
+                aria-current={
+                  etapa === numero
+                    ? "step"
+                    : undefined
+                }
               >
-                <option value="">-</option>
-                <option>Masculino</option>
-                <option>Feminino</option>
-                <option>Outro</option>
-              </select>
+                <span>
+                  {etapa > numero ? "✓" : numero}
+                </span>
+
+                <b>{item}</b>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* ÁREA DE TRABALHO */}
+
+        <div className="pf-workspace">
+          <div className="pf-stage-head">
+            <div className="pf-stage-icon">
+              {iconesEtapas[etapa - 1]}
             </div>
 
-            {/* Comorbidades */}
-            <div className="col-12">
-              <label className="form-label">Comorbidades</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {COMORBIDADES.map((nome) => (
-                  <label
-                    key={nome}
-                    className="form-check"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      border: "1px solid #eee",
-                      borderRadius: 8,
-                      padding: "6px 10px",
-                    }}
-                  >
+            <div>
+              <h2>{tituloEtapa}</h2>
+              <p>{subtitulos[etapa - 1]}</p>
+            </div>
+          </div>
+
+          <form
+            className="pf-form"
+            onSubmit={handleSubmit}
+          >
+            <div className="row g-3">
+
+              {/* ETAPA 1 — DADOS PESSOAIS */}
+
+              {etapa === 1 && (
+                <>
+                  <div className="col-md-3">
+                    <label className="form-label">
+                      Data
+                    </label>
+
                     <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={comorb.includes(nome)}
-                      onChange={() => toggleComorb(nome)}
+                      type="date"
+                      className="form-control"
+                      value={data}
+                      onChange={(e) =>
+                        setData(e.target.value)
+                      }
                     />
-                    <span>{nome}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+                  </div>
 
-            {/* Doenças adicionais */}
-            <div className="col-12">
-              <label className="form-label">
-                Condições musculoesqueléticas
-              </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {DOENCAS_MUSCULOESQUELETICAS.map((nome) => (
-                  <label
-                    key={nome}
-                    className="form-check"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      border: "1px solid #eee",
-                      borderRadius: 8,
-                      padding: "6px 10px",
-                    }}
-                  >
+                  <div className="col-md-3">
+                    <label className="form-label">
+                      Hora
+                    </label>
+
                     <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={doencasExtras.includes(nome)}
-                      onChange={() => toggleDoenca(nome)}
+                      type="time"
+                      step="300"
+                      className="form-control"
+                      value={hora}
+                      onChange={(e) =>
+                        setHora(e.target.value)
+                      }
                     />
-                    <span>{nome}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            {/* Condições neurológicas */}
-            <div className="col-12">
-              <label className="form-label">Condições neurológicas</label>
+                  </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {DOENCAS_NEUROLOGICAS.map((nome) => (
-                  <label
-                    key={nome}
-                    className="form-check"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      border: "1px solid #eee",
-                      borderRadius: 8,
-                      padding: "6px 10px",
-                    }}
-                  >
+                  {!editandoPeloProntuario && (
+                    <>
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          Profissional responsável
+                        </label>
+
+                        <select
+                          className="form-select"
+                          value={professionalId}
+                          onChange={(e) =>
+                            setProfessionalId(
+                              e.target.value
+                            )
+                          }
+                        >
+                          <option value="">
+                            Selecione
+                          </option>
+
+                          {profissionaisAtivos.map(
+                            (profissional) => (
+                              <option
+                                key={profissional.id}
+                                value={profissional.id}
+                              >
+                                {profissional.nome}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+
+                      <div className="col-md-2">
+                        <label className="form-label">
+                          Duração (min)
+                        </label>
+
+                        <input
+                          type="number"
+                          min="5"
+                          max="480"
+                          step="5"
+                          className="form-control"
+                          value={duracao}
+                          onChange={(e) =>
+                            setDuracao(
+                              Number(e.target.value)
+                            )
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <SectionHeader
+                    number="1"
+                    title="Dados do paciente"
+                    subtitle="Identificação e contato"
+                  />
+
+                  {tipo === "rapido" &&
+                    !clienteExistente && (
+                      <div className="col-12">
+                        <label className="form-label">
+                          Buscar paciente existente
+                        </label>
+
+                        <input
+                          className="form-control"
+                          value={buscaPaciente}
+                          onChange={(e) =>
+                            setBuscaPaciente(
+                              e.target.value
+                            )
+                          }
+                          placeholder="Nome, telefone, e-mail ou CPF"
+                        />
+
+                        {buscaPaciente.trim().length >=
+                          2 && (
+                          <div className="list-group mt-2">
+                            {pacientesEncontrados.map(
+                              (paciente) => (
+                                <button
+                                  key={paciente.id}
+                                  type="button"
+                                  className="list-group-item list-group-item-action"
+                                  onClick={() =>
+                                    navigate(
+                                      `/agendar?${new URLSearchParams(
+                                        {
+                                          data,
+                                          hora,
+                                          clienteId:
+                                            paciente.id,
+                                          tipo: "rapido",
+                                          ...(professionalId
+                                            ? {
+                                                professionalId,
+                                              }
+                                            : {}),
+                                        }
+                                      ).toString()}`
+                                    )
+                                  }
+                                >
+                                  {paciente.nome}
+                                </button>
+                              )
+                            )}
+
+                            {pacientesEncontrados.length ===
+                              0 && (
+                              <div className="list-group-item">
+                                Nenhum paciente encontrado.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  <Campo
+                    titulo="Nome completo"
+                    valor={nome}
+                    alterar={setNome}
+                  />
+
+                  <div className="col-md-6">
+                    <label className="form-label">
+                      Telefone
+                    </label>
+
                     <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={doencasNeurologicas.includes(nome)}
-                      onChange={() =>
-                        setDoencasNeurologicas((prev) =>
-                          prev.includes(nome)
-                            ? prev.filter((item) => item !== nome)
-                            : [...prev, nome],
-                        )
+                      className="form-control"
+                      value={telefone}
+                      onChange={(e) =>
+                        setTelefone(e.target.value)
                       }
                     />
 
-                    <span>{nome}</span>
-                  </label>
-                ))}
-              </div>
+                    <label className="d-flex align-items-center gap-2 mt-2">
+                      <input
+                        type="checkbox"
+                        checked={temWhatsapp}
+                        onChange={(e) =>
+                          setTemWhatsapp(
+                            e.target.checked
+                          )
+                        }
+                      />
 
-              {doencasNeurologicas.includes("Síndrome") && (
-                <input
-                  className="form-control mt-2"
-                  placeholder="Especifique a síndrome"
-                  value={sindromeDescricao}
-                  onChange={(e) => setSindromeDescricao(e.target.value)}
-                />
+                      Este número também é WhatsApp
+                    </label>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">
+                      E-mail
+                    </label>
+
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={email}
+                      disabled={semEmail}
+                      onChange={(e) =>
+                        setEmail(e.target.value)
+                      }
+                    />
+
+                    <label className="d-flex align-items-center gap-2 mt-2">
+                      <input
+                        type="checkbox"
+                        checked={semEmail}
+                        onChange={(e) => {
+                          setSemEmail(
+                            e.target.checked
+                          );
+
+                          if (e.target.checked) {
+                            setEmail("");
+                          }
+                        }}
+                      />
+
+                      Não possui e-mail
+                    </label>
+                  </div>
+
+                  <Campo
+                    titulo="Endereço"
+                    valor={endereco}
+                    alterar={setEndereco}
+                  />
+
+                  <TextoLongo
+                    titulo="Anotações do paciente"
+                    valor={anotacoesPaciente}
+                    alterar={setAnotacoesPaciente}
+                  />
+                </>
+              )}
+
+              {/* CONTINUA NA PARTE 3B */}
+
+              {/* ETAPA 2 — INFORMAÇÕES CLÍNICAS */}
+
+              {etapa === 2 && (
+                <>
+                  {tipo === "rapido" ? (
+                    <div className="col-12">
+                      <p className="text-muted">
+                        O cadastro rápido utiliza os dados
+                        principais do paciente. Para registrar
+                        informações clínicas, selecione
+                        Cadastro completo no cabeçalho.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <SectionHeader
+                        number="2"
+                        title="Informações clínicas"
+                        subtitle="Histórico e condições de saúde"
+                      />
+
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          Nascimento
+                        </label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={nascimento}
+                          onChange={(e) =>
+                            setNascimento(e.target.value)
+                          }
+                        />
+                        <small className="text-muted">
+                          Idade: {idade || "-"}
+                        </small>
+                      </div>
+
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          Peso (kg)
+                        </label>
+                        <input
+                          className="form-control"
+                          value={peso}
+                          onChange={(e) =>
+                            setPeso(e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          Altura (cm)
+                        </label>
+                        <input
+                          className="form-control"
+                          value={altura}
+                          onChange={(e) =>
+                            setAltura(e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          Gênero
+                        </label>
+                        <select
+                          className="form-select"
+                          value={genero}
+                          onChange={(e) =>
+                            setGenero(e.target.value)
+                          }
+                        >
+                          <option value="">Selecione</option>
+                          <option value="Masculino">
+                            Masculino
+                          </option>
+                          <option value="Feminino">
+                            Feminino
+                          </option>
+                          <option value="Outro">
+                            Outro
+                          </option>
+                        </select>
+                      </div>
+
+                      <GrupoOpcoes
+                        titulo="Comorbidades"
+                        opcoes={COMORBIDADES || []}
+                        selecionadas={comorb}
+                        alterar={toggleComorb}
+                      />
+
+                      <GrupoOpcoes
+                        titulo="Condições musculoesqueléticas"
+                        opcoes={DOENCAS_MUSCULOESQUELETICAS}
+                        selecionadas={doencasExtras}
+                        alterar={toggleDoenca}
+                      />
+
+                      <GrupoOpcoes
+                        titulo="Condições neurológicas"
+                        opcoes={DOENCAS_NEUROLOGICAS}
+                        selecionadas={doencasNeurologicas}
+                        alterar={toggleNeurologica}
+                      />
+
+                      {doencasNeurologicas.includes(
+                        "Síndrome"
+                      ) && (
+                        <div className="col-12">
+                          <label className="form-label">
+                            Especifique a síndrome
+                          </label>
+                          <input
+                            className="form-control"
+                            value={sindromeDescricao}
+                            onChange={(e) =>
+                              setSindromeDescricao(
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                      )}
+
+                      <SectionHeader
+                        number="3"
+                        title="Áreas do corpo afetadas"
+                        subtitle="Selecione as regiões e registre observações"
+                      />
+
+                      {Object.entries(AREAS).map(
+                        ([grupo, partes]) => (
+                          <div
+                            key={grupo}
+                            className="col-12"
+                          >
+                            <div
+                              className="p-3 rounded"
+                              style={{
+                                border:
+                                  "1px solid var(--line)",
+                                background:
+                                  "var(--soft)",
+                              }}
+                            >
+                              <strong>{grupo}</strong>
+
+                              <div
+                                className="mt-3"
+                                style={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 8,
+                                }}
+                              >
+                                {partes.map((parte) => (
+                                  <label
+                                    key={parte}
+                                    className="proflex-clinical-option"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="form-check-input"
+                                      checked={Boolean(
+                                        areas[
+                                          grupo
+                                        ]?.parts?.includes(
+                                          parte
+                                        )
+                                      )}
+                                      onChange={() =>
+                                        toggleAreaPart(
+                                          grupo,
+                                          parte
+                                        )
+                                      }
+                                    />
+                                    <span>{parte}</span>
+                                  </label>
+                                ))}
+                              </div>
+
+                              <textarea
+                                className="form-control mt-3"
+                                rows={2}
+                                placeholder={`Observações sobre ${grupo.toLowerCase()}`}
+                                value={
+                                  areas[grupo]?.note ||
+                                  ""
+                                }
+                                onChange={(e) =>
+                                  setAreaNote(
+                                    grupo,
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        )
+                      )}
+
+                      <TextoLongo
+                        titulo="Outros diagnósticos"
+                        valor={outrosDiagnosticos}
+                        alterar={setOutrosDiagnosticos}
+                      />
+
+                      <TextoLongo
+                        titulo="Medicamentos em uso"
+                        valor={remedios}
+                        alterar={setRemedios}
+                      />
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* ETAPA 3 — AVALIAÇÃO */}
+
+              {etapa === 3 && (
+                <>
+                  <SectionHeader
+                    number="4"
+                    title="Avaliação clínica"
+                    subtitle="Registro da queixa e dos achados da avaliação"
+                  />
+
+                  <TextoLongo
+                    titulo="Queixa principal"
+                    valor={queixaAtual}
+                    alterar={setQueixaAtual}
+                    placeholder="Descreva a queixa apresentada pelo paciente"
+                  />
+
+                  <TextoLongo
+                    titulo="Avaliação"
+                    valor={avaliacaoAtual}
+                    alterar={setAvaliacaoAtual}
+                    placeholder="Registre os achados da avaliação clínica"
+                  />
+
+                  <div className="col-12">
+                    <p className="text-muted mb-0">
+                      As informações desta etapa serão
+                      incluídas no registro da consulta
+                      quando o cadastro for salvo.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* ETAPA 4 — ATENDIMENTO */}
+
+              {etapa === 4 && (
+                <>
+                  <SectionHeader
+                    number="5"
+                    title="Atendimento"
+                    subtitle="Procedimentos, evolução e conduta"
+                  />
+
+                  <TextoLongo
+                    titulo="Procedimentos realizados"
+                    valor={procedimentosAtual}
+                    alterar={setProcedimentosAtual}
+                    placeholder="Descreva os procedimentos realizados"
+                  />
+
+                  <TextoLongo
+                    titulo="Evolução do paciente"
+                    valor={evolucaoAtual}
+                    alterar={setEvolucaoAtual}
+                    placeholder="Registre a evolução observada"
+                  />
+
+                  <TextoLongo
+                    titulo="Conduta"
+                    valor={condutaAtual}
+                    alterar={setCondutaAtual}
+                    placeholder="Descreva a conduta e as orientações"
+                  />
+
+                  <TextoLongo
+                    titulo="Observações do agendamento"
+                    valor={observacoes}
+                    alterar={setObservacoes}
+                  />
+                </>
+              )}
+
+              {/* ETAPA 5 — REVISÃO E FINALIZAÇÃO */}
+
+              {etapa === 5 && (
+                <>
+                  <div className="col-12 pf-review">
+                    <h3>Revisão do cadastro</h3>
+                    <p>
+                      Confira as informações antes de
+                      finalizar. Para corrigir algum dado,
+                      retorne à etapa correspondente.
+                    </p>
+
+                    <div className="pf-review-grid">
+                      <div>
+                        <small>Paciente</small>
+                        <strong>
+                          {nome || "Não informado"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <small>Telefone</small>
+                        <strong>
+                          {telefone || "Não informado"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <small>E-mail</small>
+                        <strong>
+                          {email ||
+                            (semEmail
+                              ? "Não possui"
+                              : "Não informado")}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <small>Endereço</small>
+                        <strong>
+                          {endereco || "Não informado"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <small>Data</small>
+                        <strong>
+                          {data || "Não informada"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <small>Horário</small>
+                        <strong>
+                          {hora || "Não informado"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <small>Tipo de cadastro</small>
+                        <strong>
+                          {tipo === "completo"
+                            ? "Completo"
+                            : "Rápido"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <small>Profissional</small>
+                        <strong>
+                          {profissionalSelecionado?.nome ||
+                            "Não selecionado"}
+                        </strong>
+                      </div>
+
+                      {tipo === "completo" && (
+                        <>
+                          <div>
+                            <small>Nascimento</small>
+                            <strong>
+                              {nascimento ||
+                                "Não informado"}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <small>Idade</small>
+                            <strong>
+                              {idade || "-"}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <small>Comorbidades</small>
+                            <strong>
+                              {comorb.join(", ") ||
+                                "Nenhuma informada"}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <small>
+                              Condições neurológicas
+                            </small>
+                            <strong>
+                              {doencasNeurologicas.join(
+                                ", "
+                              ) || "Nenhuma informada"}
+                            </strong>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {clienteExistente &&
+                    consultas.length > 0 && (
+                      <div className="col-12 mt-4">
+                        <SectionHeader
+                          number="6"
+                          title="Histórico de consultas"
+                          subtitle="Consultas anteriores do paciente"
+                        />
+
+                        <div className="proflex-history-toolbar mb-3">
+                          <h5>
+                            Consultas (
+                            {consultas.length})
+                          </h5>
+
+                          <div className="proflex-history-actions">
+                            <label className="d-flex align-items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  consultas.length > 0 &&
+                                  consultas.every(
+                                    (consulta) =>
+                                      sel.includes(
+                                        consulta.id
+                                      )
+                                  )
+                                }
+                                onChange={(e) =>
+                                  selecionarTudo(
+                                    e.target.checked
+                                  )
+                                }
+                              />
+                              Selecionar tudo
+                            </label>
+
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary"
+                              onClick={
+                                gerarPDFSelecionadas
+                              }
+                            >
+                              Relatório (PDF)
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger"
+                              onClick={
+                                excluirSelecionadas
+                              }
+                            >
+                              Excluir selecionadas
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={novaConsulta}
+                            >
+                              Nova consulta
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="list-group">
+                          {consultas.map(
+                            (consulta) => (
+                              <div
+                                className="list-group-item"
+                                key={consulta.id}
+                              >
+                                <div className="d-flex align-items-center gap-2 mb-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={sel.includes(
+                                      consulta.id
+                                    )}
+                                    onChange={(e) =>
+                                      setSel(
+                                        (prev) =>
+                                          e.target
+                                            .checked
+                                            ? [
+                                                ...prev,
+                                                consulta.id,
+                                              ]
+                                            : prev.filter(
+                                                (id) =>
+                                                  id !==
+                                                  consulta.id
+                                              )
+                                      )
+                                    }
+                                  />
+
+                                  <strong>
+                                    Consulta{" "}
+                                    {consulta.numero ||
+                                      ""}
+                                  </strong>
+
+                                  <small className="text-muted">
+                                    {consulta.dataISO ||
+                                      ""}{" "}
+                                    {consulta.hora ||
+                                      ""}
+                                  </small>
+                                </div>
+
+                                <textarea
+                                  className="form-control"
+                                  rows={3}
+                                  value={
+                                    consulta.texto ||
+                                    ""
+                                  }
+                                  onChange={(e) =>
+                                    setTextoConsulta(
+                                      consulta.id,
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  {clienteExistente &&
+                    consultas.length === 0 && (
+                      <div className="col-12">
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary"
+                          onClick={novaConsulta}
+                        >
+                          + Nova consulta
+                        </button>
+                      </div>
+                    )}
+
+                  {clienteExistente && (
+                    <>
+                      <SectionHeader
+                        number="7"
+                        title="Documentos"
+                        subtitle="Receita e atestado"
+                      />
+
+                      <div className="col-12">
+                        <label className="form-label">
+                          Receita
+                        </label>
+                        <textarea
+                          className="form-control"
+                          rows={4}
+                          value={receitaTexto}
+                          onChange={(e) =>
+                            setReceitaTexto(
+                              e.target.value
+                            )
+                          }
+                        />
+
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary mt-2"
+                          onClick={() =>
+                            imprimirReceita(
+                              clienteExistente,
+                              receitaTexto
+                            )
+                          }
+                        >
+                          Gerar receita (PDF)
+                        </button>
+                      </div>
+
+                      <div className="col-12">
+                        <label className="form-label">
+                          Destinatário do atestado
+                        </label>
+                        <input
+                          className="form-control"
+                          value={atestadoPara}
+                          onChange={(e) =>
+                            setAtestadoPara(
+                              e.target.value
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="col-12">
+                        <label className="form-label">
+                          Texto do atestado
+                        </label>
+                        <textarea
+                          className="form-control"
+                          rows={4}
+                          value={atestadoTexto}
+                          onChange={(e) =>
+                            setAtestadoTexto(
+                              e.target.value
+                            )
+                          }
+                        />
+
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary mt-2"
+                          onClick={() =>
+                            imprimirAtestado(
+                              clienteExistente,
+                              atestadoPara,
+                              atestadoTexto
+                            )
+                          }
+                        >
+                          Gerar atestado (PDF)
+                        </button>
+                      </div>
+
+                      <SectionHeader
+                        number="8"
+                        title="Dados do profissional"
+                        subtitle="Informações utilizadas nos documentos"
+                      />
+
+                      {[
+                        ["Nome", "nome"],
+                        ["Registro", "registro"],
+                        ["E-mail", "email"],
+                        ["Telefone", "telefone"],
+                        ["Endereço", "endereco"],
+                      ].map(([rotulo, chave]) => (
+                        <div
+                          className="col-md-6"
+                          key={chave}
+                        >
+                          <label className="form-label">
+                            {rotulo}
+                          </label>
+                          <input
+                            className="form-control"
+                            value={
+                              prof[chave] || ""
+                            }
+                            onChange={(e) =>
+                              setProf(
+                                (prev) => ({
+                                  ...prev,
+                                  [chave]:
+                                    e.target.value,
+                                })
+                              )
+                            }
+                          />
+                        </div>
+                      ))}
+
+                      <div className="col-12">
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          onClick={salvarProf}
+                        >
+                          Salvar dados do profissional
+                        </button>
+                      </div>
+
+                      <div className="col-12 mt-4">
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger"
+                          onClick={apagarPaciente}
+                        >
+                          Excluir paciente
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+            </div>
+
+            {/* NAVEGAÇÃO INFERIOR */}
+
+            <div className="pf-wizard-footer">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                disabled={etapa === 1}
+                onClick={() =>
+                  irEtapa(etapa - 1)
+                }
+              >
+                ← Voltar
+              </button>
+
+              <span className="pf-save-note">
+                Etapa {etapa} de 5
+              </span>
+
+              {etapa < 5 ? (
+                <button
+                  type="button"
+                  className="btn pf-next"
+                  onClick={() =>
+                    irEtapa(etapa + 1)
+                  }
+                >
+                  Continuar →
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="btn pf-next"
+                >
+                  💾{" "}
+                  {clienteExistente
+                    ? "Salvar alterações"
+                    : "Salvar cadastro"}
+                </button>
               )}
             </div>
 
-            {/* Áreas do corpo */}
-            <div className="col-12">
-              <label className="form-label">Áreas do corpo afetadas</label>
-              {Object.entries(AREAS).map(([grupo, parts]) => (
-                <div key={grupo} className="mb-2 p-2 border rounded">
-                  <strong>{grupo}</strong>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "8px",
-                      marginTop: 8,
-                    }}
-                  >
-                    {parts.map((p) => (
-                      <label
-                        key={p}
-                        className="form-check"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          border: "1px solid #eee",
-                          borderRadius: 8,
-                          padding: "4px 8px",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={areas[grupo].parts.includes(p)}
-                          onChange={() => toggleAreaPart(grupo, p)}
-                        />
-                        <span>{p}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {areas[grupo].parts.length > 0 && (
-                    <div className="mt-2">
-                      <input
-                        className="form-control"
-                        placeholder={`Observações específicas para ${grupo} (opcional)`}
-                        value={areas[grupo].note}
-                        onChange={(e) => setAreaNote(grupo, e.target.value)}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Campos livres */}
-            <div className="col-md-6">
-              <label className="form-label">
-                Outras doenças/diagnósticos (texto livre)
-              </label>
-              <textarea
-                className="form-control"
-                rows="3"
-                value={outrosDiagnosticos}
-                onChange={(e) => setOutrosDiagnosticos(e.target.value)}
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Remédios (anotações gerais)</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                value={remedios}
-                onChange={(e) => setRemedios(e.target.value)}
-              />
-            </div>
-          </>
-        )}
-
-        <div className="col-12">
-          <label className="form-label">
-            Anotações do paciente (histórico geral)
-          </label>
-          <textarea
-            className="form-control"
-            rows="3"
-            placeholder="Informe histórico relevante, cirurgias anteriores, limitações ou outras informações importantes..."
-            value={anotacoesPaciente}
-            onChange={(e) => setAnotacoesPaciente(e.target.value)}
-          />
+          </form>
         </div>
-
-        {/* Observações e Consulta atual */}
-        <div className="col-12">
-          <label className="form-label">
-            Observações gerais do agendamento
-          </label>
-          <textarea
-            className="form-control"
-            rows="3"
-            placeholder="Informe observações sobre este agendamento, como retorno, encaixe ou orientações..."
-            value={observacoes}
-            onChange={(e) => setObservacoes(e.target.value)}
-          />
-        </div>
-        {tipo === "completo" && (
-          <>
-            <SectionHeader
-              number="3"
-              title="Prontuário da consulta"
-              subtitle="Registro clínico e evolução desta sessão"
-            />
-
-            <div className="col-md-6">
-              <label className="form-label">Queixa principal</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                placeholder="Ex.: dor no joelho ao caminhar..."
-                value={queixaAtual}
-                onChange={(e) => setQueixaAtual(e.target.value)}
-              />
-            </div>
-
-            <div className="col-md-6">
-              <label className="form-label">Avaliação</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                placeholder="Registre os achados da avaliação..."
-                value={avaliacaoAtual}
-                onChange={(e) => setAvaliacaoAtual(e.target.value)}
-              />
-            </div>
-
-            <div className="col-md-6">
-              <label className="form-label">Procedimentos realizados</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                placeholder="Ex.: exercícios, mobilização, técnicas aplicadas..."
-                value={procedimentosAtual}
-                onChange={(e) => setProcedimentosAtual(e.target.value)}
-              />
-            </div>
-
-            <div className="col-md-6">
-              <label className="form-label">Evolução do paciente</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                placeholder="Descreva a resposta e evolução do paciente..."
-                value={evolucaoAtual}
-                onChange={(e) => setEvolucaoAtual(e.target.value)}
-              />
-            </div>
-
-            <div className="col-12">
-              <label className="form-label">Conduta / Plano</label>
-              <textarea
-                className="form-control"
-                rows="3"
-                placeholder="Informe a conduta e o plano para as próximas sessões..."
-                value={condutaAtual}
-                onChange={(e) => setCondutaAtual(e.target.value)}
-              />
-            </div>
-          </>
-        )}
-        <div className="col-12 d-flex justify-content-between mt-2">
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={() => navigate("/agenda")}
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-
-      {/* Consultas anteriores (se já é paciente) */}
-      {clienteExistente && (
-        <>
-          <SectionHeader
-            number="4"
-            title="Histórico de consultas"
-            subtitle="Consultas anteriores e evolução do paciente"
-          />
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <h5 className="m-0">Consultas ({consultas.length})</h5>
-            <div className="d-flex gap-2">
-              <div className="form-check me-3">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="selAll"
-                  checked={
-                    sel.length === consultas.length && consultas.length > 0
-                  }
-                  onChange={(e) => selecionarTudo(e.target.checked)}
-                />
-                <label className="form-check-label" htmlFor="selAll">
-                  Selecionar tudo
-                </label>
-              </div>
-              <button
-                className="btn btn-outline-secondary"
-                onClick={gerarPDFSelecionadas}
-              >
-                Relatório (PDF)
-              </button>
-              <button
-                className="btn btn-outline-danger"
-                onClick={excluirSelecionadas}
-              >
-                Excluir selecionadas
-              </button>
-              <button className="btn btn-primary" onClick={novaConsulta}>
-                Nova consulta
-              </button>
-            </div>
-          </div>
-
-          <div className="list-group mb-4">
-            {consultas.map((c) => (
-              <div key={c.id} className="list-group-item">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>Consulta {c.numero}</strong> — {c.dataISO}{" "}
-                    {c.hora || ""}
-                  </div>
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={sel.includes(c.id)}
-                    onChange={() =>
-                      setSel((prev) =>
-                        prev.includes(c.id)
-                          ? prev.filter((x) => x !== c.id)
-                          : [...prev, c.id],
-                      )
-                    }
-                  />
-                </div>
-                <div className="mt-3">
-                  <label className="form-label fw-bold">Queixa principal</label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    value={c.queixa || ""}
-                    onChange={(e) =>
-                      updateConsulta(clienteExistente.id, c.id, {
-                        queixa: e.target.value,
-                      })
-                    }
-                  />
-
-                  <label className="form-label fw-bold mt-3">Avaliação</label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    value={c.avaliacao || ""}
-                    onChange={(e) =>
-                      updateConsulta(clienteExistente.id, c.id, {
-                        avaliacao: e.target.value,
-                      })
-                    }
-                  />
-
-                  <label className="form-label fw-bold mt-3">
-                    Procedimentos realizados
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    value={c.procedimentos || ""}
-                    onChange={(e) =>
-                      updateConsulta(clienteExistente.id, c.id, {
-                        procedimentos: e.target.value,
-                      })
-                    }
-                  />
-
-                  <label className="form-label fw-bold mt-3">
-                    Evolução do paciente
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    value={c.evolucao || ""}
-                    onChange={(e) =>
-                      updateConsulta(clienteExistente.id, c.id, {
-                        evolucao: e.target.value,
-                      })
-                    }
-                  />
-
-                  <label className="form-label fw-bold mt-3">
-                    Conduta / Plano
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    value={c.conduta || ""}
-                    onChange={(e) =>
-                      updateConsulta(clienteExistente.id, c.id, {
-                        conduta: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            ))}
-            {consultas.length === 0 && (
-              <div className="list-group-item text-muted">
-                Sem consultas ainda.
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {tipo === "completo" && (
-        <>
-          {/* RECEITA e ATESTADO */}
-          <SectionHeader
-            number="5"
-            title="Documentos"
-            subtitle="Receitas, atestados e documentos do paciente"
-          />
-
-          {/* Dados do profissional */}
-          <div className="row g-2 mb-3">
-            <div className="col-md-3">
-              <input
-                className="form-control"
-                placeholder="Nome do profissional"
-                value={prof.nome}
-                onChange={(e) => setProf({ ...prof, nome: e.target.value })}
-              />
-            </div>
-            <div className="col-md-2">
-              <input
-                className="form-control"
-                placeholder="Registro (CRM/CRP/…)"
-                value={prof.registro}
-                onChange={(e) => setProf({ ...prof, registro: e.target.value })}
-              />
-            </div>
-            <div className="col-md-3">
-              <input
-                className="form-control"
-                placeholder="Email"
-                value={prof.email}
-                onChange={(e) => setProf({ ...prof, email: e.target.value })}
-              />
-            </div>
-            <div className="col-md-2">
-              <input
-                className="form-control"
-                placeholder="Telefone"
-                value={prof.telefone}
-                onChange={(e) => setProf({ ...prof, telefone: e.target.value })}
-              />
-            </div>
-            <div className="col-md-2">
-              <input
-                className="form-control"
-                placeholder="Endereço"
-                value={prof.endereco}
-                onChange={(e) => setProf({ ...prof, endereco: e.target.value })}
-              />
-            </div>
-            <div className="col-12 text-end">
-              <button
-                className="btn btn-outline-secondary"
-                onClick={salvarProf}
-              >
-                Salvar dados do profissional
-              </button>
-            </div>
-          </div>
-
-          {/* Receita */}
-          <div className="mb-3 p-3 border rounded">
-            <h6>Receita</h6>
-            <textarea
-              className="form-control"
-              rows={6}
-              placeholder={`Escreva a medicação, doses, frequência (diária/semanal/horas) e duração...\n(essas "linhas" não aparecem na impressão)`}
-              value={receitaTexto}
-              onChange={(e) => setReceitaTexto(e.target.value)}
-            />
-            <div className="text-end mt-2">
-              <button
-                className="btn btn-dark"
-                onClick={() => imprimirReceita(clienteExistente, receitaTexto)}
-              >
-                Imprimir Receita (PDF)
-              </button>
-            </div>
-          </div>
-
-          {/* Atestado */}
-          <div className="mb-4 p-3 border rounded">
-            <h6>Atestado</h6>
-            <input
-              className="form-control mb-2"
-              placeholder="Destinatário (Pessoa/Empresa)"
-              value={atestadoPara}
-              onChange={(e) => setAtestadoPara(e.target.value)}
-            />
-            <textarea
-              className="form-control"
-              rows={6}
-              placeholder={`Escreva as informações do atestado, período, recomendações...\n(essas "linhas" não aparecem na impressão)`}
-              value={atestadoTexto}
-              onChange={(e) => setAtestadoTexto(e.target.value)}
-            />
-            <div className="text-end mt-2">
-              <button
-                className="btn btn-dark"
-                onClick={() =>
-                  imprimirAtestado(
-                    clienteExistente,
-                    atestadoPara,
-                    atestadoTexto,
-                  )
-                }
-              >
-                Imprimir Atestado (PDF)
-              </button>
-            </div>
-          </div>
-
-          {/* Danger zone */}
-          {clienteExistente && (
-            <div className="d-flex justify-content-end">
-              <button className="btn btn-danger" onClick={apagarPaciente}>
-                Excluir paciente
-              </button>
-            </div>
-          )}
-        </>
-      )}
+      </div>
     </div>
   );
 }

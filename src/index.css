@@ -812,3 +812,94 @@ a:not(.btn):hover {
   font-size: 15px;
   gap: 12px;
 }
+
+/* Evita o deslocamento horizontal da página no celular */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Alinhamento dos checkboxes da avaliação clínica */
+.proflex-clinical-option {
+  margin: 0 !important;
+  padding-left: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: 100%;
+}
+
+.proflex-clinical-option .form-check-input {
+  float: none !important;
+  margin: 0 !important;
+  flex: 0 0 auto;
+}
+
+.proflex-clinical-option span {
+  overflow-wrap: anywhere;
+}
+
+/* Histórico de consultas - layout responsivo */
+
+.proflex-history-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.proflex-history-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.proflex-history-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.proflex-history-select-all .form-check-input {
+  float: none;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 650px) {
+  .proflex-history-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+.proflex-history-actions .btn:last-child {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+  .proflex-history-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .proflex-history-select-all {
+    grid-column: 1 / -1;
+    padding: 10px 0;
+  }
+
+  .proflex-history-actions .btn {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    padding: 10px 8px;
+  }
+}

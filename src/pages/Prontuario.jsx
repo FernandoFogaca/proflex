@@ -669,20 +669,36 @@ export default function Prontuario() {
   const [observacoesAtestado, setObservacoesAtestado] = useState("");
 
   const [tema, setTema] = useState(() => {
-    try {
-      return localStorage.getItem("proflex-prontuario-theme") || "light";
-    } catch {
-      return "light";
-    }
-  });
+  try {
+    return localStorage.getItem("proflex-tema") === "dark"
+      ? "dark"
+      : "light";
+  } catch {
+    return "light";
+  }
+});
 
   useEffect(() => {
-    try {
-      localStorage.setItem("proflex-prontuario-theme", tema);
-    } catch {
-      // A preferência visual continua funcionando nesta sessão.
+  const sincronizarTema = (event) => {
+    const novoTema = event.detail?.tema;
+
+    if (novoTema === "dark" || novoTema === "light") {
+      setTema(novoTema);
     }
-  }, [tema]);
+  };
+
+  window.addEventListener(
+    "proflex-theme-change",
+    sincronizarTema
+  );
+
+  return () => {
+    window.removeEventListener(
+      "proflex-theme-change",
+      sincronizarTema
+    );
+  };
+}, []);
 
   useEffect(() => {
     setBusca("");
@@ -1226,35 +1242,6 @@ export default function Prontuario() {
     >
       <style>{premiumCSS}</style>
 
-      {/* CABEÇALHO PREMIUM */}
-      <header className="pfp-header">
-        <div className="pfp-title">
-          <div className="pfp-title-icon">
-            <Icon name="clipboard" size={27} />
-          </div>
-
-          <div>
-            <h1>Prontuário clínico</h1>
-            <p className="pfp-subtitle">
-              ProFlex Premium · Gestão clínica
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="pfp-theme"
-          onClick={() =>
-            setTema((atual) =>
-              atual === "light" ? "dark" : "light"
-            )
-          }
-          title="Alternar tema claro e escuro"
-        >
-          <Icon name={tema === "light" ? "moon" : "sun"} size={18} />
-          {tema === "light" ? "Dark" : "Light"}
-        </button>
-      </header>
 
       {/* BUSCA PERMANENTE DE PACIENTES */}
       {buscarPaciente}
