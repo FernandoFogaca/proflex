@@ -687,8 +687,8 @@ const [tema, setTema] = useState(() => {
 // Escuta as alterações realizadas pelo botão
 // Dark/Light do PageHeader.jsx.
 useEffect(() => {
-  const sincronizarTema = (event) => {
-    const novoTema = event.detail?.tema;
+  const atualizarTema = (evento) => {
+    const novoTema = evento.detail?.tema;
 
     if (novoTema === "dark" || novoTema === "light") {
       setTema(novoTema);
@@ -697,16 +697,20 @@ useEffect(() => {
 
   window.addEventListener(
     "proflex-theme-change",
-    sincronizarTema
+    atualizarTema
   );
 
   return () => {
     window.removeEventListener(
       "proflex-theme-change",
-      sincronizarTema
+
+      atualizarTema
     );
   };
 }, []);
+
+
+
 
 
   const etapas = [

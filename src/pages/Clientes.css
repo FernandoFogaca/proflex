@@ -686,3 +686,81 @@
       width: 100%;
     }
   }
+/* =====================================
+   PROFLEX — CLIENTES DARK MODE
+   ===================================== */
+
+:root[data-proflex-theme="dark"] .pf-page {
+  --pf-ink: #edf5fa;
+  --pf-muted: #b3c6d4;
+  --pf-border: #355166;
+  --pf-surface: #192c3d;
+  --pf-background: #101b28;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-panel,
+:root[data-proflex-theme="dark"] .pf-page .pf-patient {
+  background: var(--pf-surface);
+  color: var(--pf-ink);
+  border-color: var(--pf-border);
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-patient:hover {
+  background: #22394a;
+  border-color: #24a99d;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-search,
+:root[data-proflex-theme="dark"] .pf-page .pf-input {
+  background: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-search input {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .pf-page input::placeholder {
+  color: #a9bfcd;
+  opacity: 1;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-button-secondary {
+  background: #243d50;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-button-secondary:hover {
+  background: #305064;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-field-label,
+:root[data-proflex-theme="dark"] .pf-page .pf-check,
+:root[data-proflex-theme="dark"] .pf-page .pf-section-title h3 {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-mode-switch {
+  background: #142635;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-mode {
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-mode.active {
+  background: #284657;
+  color: #7ce6da;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-photo-area {
+  background: #203747;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-divider {
+  background: #355166;
+}

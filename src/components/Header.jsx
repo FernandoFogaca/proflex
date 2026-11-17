@@ -1,7 +1,12 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Activity, CircleUserRound, ChevronDown } from "lucide-react";
+import {
+  Activity,
+  CircleUserRound,
+  ChevronDown,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../services/firebase";
 import { logged, logout } from "../authentication/session.jsx";
@@ -16,6 +21,24 @@ const navigationLinks = [
 
 export default function Header() {
   const navigate = useNavigate();
+
+  const [tema, setTema] = useState(() => {
+    return localStorage.getItem("proflex-tema") === "dark" ? "dark" : "light";
+  });
+  const alternarTema = () => {
+    setTema((anterior) => (anterior === "dark" ? "light" : "dark"));
+  };
+  useEffect(() => {
+    localStorage.setItem("proflex-tema", tema);
+
+    document.documentElement.dataset.proflexTheme = tema;
+
+    window.dispatchEvent(
+      new CustomEvent("proflex-theme-change", {
+        detail: { tema },
+      }),
+    );
+  }, [tema]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -33,10 +56,7 @@ export default function Header() {
 
   useEffect(() => {
     function handleOutsideClick(event) {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target)
-      ) {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
       }
     }
@@ -101,9 +121,7 @@ export default function Header() {
         >
           <strong>{profileName}</strong>
 
-          <p className="mb-2 small text-muted">
-            Perfil atualmente conectado
-          </p>
+          <p className="mb-2 small text-muted">Perfil atualmente conectado</p>
 
           <div className="border-top pt-2 small text-muted">
             Troca rápida de funcionários em desenvolvimento
@@ -130,6 +148,17 @@ export default function Header() {
         onClick={handleLogout}
       >
         Sair
+      </button>
+      <button 
+        type="button"
+      className="btn btn-sm btn-outline-light d-flex align-items-center gap-2"
+        onClick={alternarTema}
+        aria-label={
+          tema === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
+        }
+      >
+        {tema === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        {tema === "dark" ? "Light" : "Dark"}
       </button>
     </>
   );

@@ -903,3 +903,225 @@ body,
     padding: 10px 8px;
   }
 }
+
+/* TEMA GLOBAL PROFLEX */
+
+:root {
+  --app-bg: #f8f9fa;
+  --app-text: #10243b;
+}
+
+:root[data-proflex-theme="dark"] {
+  --app-bg: #101b28;
+  --app-text: #e8f0f5;
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ==========================================
+   PROFLEX — CONSULTA DARK MODE
+   ========================================== */
+
+/* Cartão principal */
+
+:root[data-proflex-theme="dark"] .proflex-consulta .card {
+  background-color: #192c3d;
+  color: #edf5fa;
+  border-color: #355166;
+}
+
+/* Nome do paciente */
+
+:root[data-proflex-theme="dark"] .proflex-consulta .text-muted {
+  color: #b3c6d4 !important;
+}
+
+/* Títulos e etiquetas */
+
+:root[data-proflex-theme="dark"] .proflex-consulta h2,
+:root[data-proflex-theme="dark"] .proflex-consulta .form-label {
+  color: #edf5fa;
+}
+
+/* Campos de texto */
+
+:root[data-proflex-theme="dark"] .proflex-consulta .form-control {
+  background-color: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+/* Textos de exemplo dentro dos campos */
+
+:root[data-proflex-theme="dark"] .proflex-consulta .form-control::placeholder {
+  color: #b3c6d4;
+  opacity: 1;
+}
+
+/* Campo selecionado */
+
+:root[data-proflex-theme="dark"] .proflex-consulta .form-control:focus {
+  background-color: #22394a;
+  color: #ffffff;
+  border-color: #25b5a8;
+  box-shadow: 0 0 0 3px rgba(37, 181, 168, 0.15);
+}
+
+/* Botões secundários */
+
+:root[data-proflex-theme="dark"] .proflex-consulta .btn-outline-secondary {
+  color: #d4e3eb;
+  border-color: #668091;
+}
+
+:root[data-proflex-theme="dark"] .proflex-consulta .btn-outline-secondary:hover {
+  background-color: #305064;
+  color: #ffffff;
+}
+
+
+/* =========================================
+   PROFLEX — AGENDA DARK MODE
+   ========================================= */
+
+:root[data-proflex-theme="dark"] .pf-page {
+  background: #101e2b;
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-card,
+:root[data-proflex-theme="dark"] .pf-page .pf-modal,
+:root[data-proflex-theme="dark"] .pf-page .pf-search-results,
+:root[data-proflex-theme="dark"] .pf-page .pf-floating-menu {
+  background: #192c3d;
+  color: #edf5fa;
+  border-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-tab,
+:root[data-proflex-theme="dark"] .pf-page .pf-search input,
+:root[data-proflex-theme="dark"] .pf-page .pf-calendar-day,
+:root[data-proflex-theme="dark"] .pf-page .pf-available,
+:root[data-proflex-theme="dark"] .pf-page .pf-choice,
+:root[data-proflex-theme="dark"] .pf-page .pf-time-more,
+:root[data-proflex-theme="dark"] .pf-page .pf-reminder {
+  background: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-metric {
+  background: #22394a !important;
+  color: #edf5fa;
+  border: 1px solid #355166;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-metric-label,
+:root[data-proflex-theme="dark"] .pf-page .pf-time-label,
+:root[data-proflex-theme="dark"] .pf-page .pf-appointment small,
+:root[data-proflex-theme="dark"] .pf-page .text-muted {
+  color: #b3c6d4 !important;
+}
+
+:root[data-proflex-theme="dark"] .pf-page .pf-tab.active,
+:root[data-proflex-theme="dark"] .pf-page .pf-calendar-day.selected {
+  background: #0f766e;
+  color: white;
+  border-color: #14b8a6;
+}
+
+:root[data-proflex-theme="dark"] .pf-page input,
+:root[data-proflex-theme="dark"] .pf-page select,
+:root[data-proflex-theme="dark"] .pf-page textarea {
+  background-color: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .pf-page input::placeholder {
+  color: #a8bfce;
+}
+
+:root[data-proflex-theme="dark"] .pf-page h5,
+:root[data-proflex-theme="dark"] .pf-page h6,
+:root[data-proflex-theme="dark"] .pf-page .pf-metric-number {
+  color: #edf5fa;
+}
+
+
+
+/* ==========================================
+   PROFLEX — LOGIN LIGHT / DARK MODE
+   ========================================== */
+
+/* Light Mode */
+.proflex-login {
+  background-color: #f6f9fb;
+  color: #142d3a;
+}
+
+.proflex-login h2,
+.proflex-login .form-label {
+  color: #142d3a;
+}
+
+.proflex-login-card {
+  background-color: #ffffff;
+  color: #142d3a;
+  border: 1px solid #e5edf1;
+}
+
+.proflex-login .form-control {
+  background-color: #ffffff;
+  color: #142d3a;
+  border-color: #d9e3ed;
+}
+
+.proflex-login .form-control::placeholder {
+  color: #64748b;
+}
+
+/* Dark Mode */
+:root[data-proflex-theme="dark"] .proflex-login {
+  background-color: #101b28;
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .proflex-login h2,
+:root[data-proflex-theme="dark"] .proflex-login .form-label {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .proflex-login-card {
+  background-color: #192c3d;
+  color: #edf5fa;
+  border-color: #355166;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2) !important;
+}
+
+:root[data-proflex-theme="dark"] .proflex-login .form-control {
+  background-color: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"]
+.proflex-login .form-control::placeholder {
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"]
+.proflex-login .form-control:focus {
+  background-color: #22394a;
+  color: #ffffff;
+  border-color: #25b5a8;
+  box-shadow: 0 0 0 3px rgba(37, 181, 168, 0.15);
+}
+
+:root[data-proflex-theme="dark"] .proflex-login .btn-link {
+  color: #5eead4;
+}

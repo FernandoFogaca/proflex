@@ -91,11 +91,11 @@ export default function Login() {
   }
 
   return (
-    <div className="container min-vh-100 d-flex flex-column justify-content-center align-items-center bg-light px-3">
+   <div className="proflex-login container min-vh-100 d-flex flex-column justify-content-center align-items-center px-3">
       <h2 className="mb-4 text-center">Login</h2>
 
       <form
-        className="bg-white p-4 rounded shadow w-100"
+      className="proflex-login-card p-4 rounded shadow w-100"
         style={{ maxWidth: 400 }}
         onSubmit={handleSubmit}
       >

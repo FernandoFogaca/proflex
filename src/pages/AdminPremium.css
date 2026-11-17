@@ -178,3 +178,109 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================
+   PROFLEX PREMIUM — DARK MODE
+   ========================================== */
+
+:root[data-proflex-theme="dark"] .admin-premium {
+  background: #101b28;
+  color: #edf5fa;
+}
+
+/* Menu lateral */
+:root[data-proflex-theme="dark"] .admin-premium-sidebar {
+  background: #0b1724;
+  border-right: 1px solid #294257;
+}
+
+/* Conteúdo principal */
+:root[data-proflex-theme="dark"] .admin-premium-content {
+  background: #101b28;
+  color: #edf5fa;
+}
+
+/* Cabeçalho */
+:root[data-proflex-theme="dark"] .admin-premium-heading h1 {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .admin-premium-heading p {
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"] .admin-premium-heading small {
+  color: #5eead4;
+}
+
+/* Cartões e painéis */
+:root[data-proflex-theme="dark"] .admin-premium-grid article,
+:root[data-proflex-theme="dark"] .admin-premium-panel {
+  background: #192c3d;
+  color: #edf5fa;
+  border-color: #355166;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Títulos */
+:root[data-proflex-theme="dark"] .admin-premium-grid h3,
+:root[data-proflex-theme="dark"] .admin-premium-panel h2 {
+  color: #edf5fa;
+}
+
+/* Descrições */
+:root[data-proflex-theme="dark"] .admin-premium-grid p,
+:root[data-proflex-theme="dark"] .admin-premium-panel p {
+  color: #b3c6d4;
+}
+
+/* Ícones */
+:root[data-proflex-theme="dark"] .admin-premium-grid article > svg {
+  color: #5eead4;
+}
+
+/* Botões dos cartões */
+:root[data-proflex-theme="dark"] .admin-premium-grid button {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+:root[data-proflex-theme="dark"] .admin-premium-grid button:hover {
+  background: #115e59;
+}
+
+/* ==========================================
+   PROFLEX PREMIUM — EQUIPE DARK MODE
+   ========================================== */
+
+/* Títulos e textos da equipe */
+:root[data-proflex-theme="dark"] .admin-premium-content h2,
+:root[data-proflex-theme="dark"] .admin-premium-content h3 {
+  color: #edf5fa;
+}
+
+/* Cartões, painéis e tabelas da equipe */
+:root[data-proflex-theme="dark"] .admin-premium-content .card,
+:root[data-proflex-theme="dark"] .admin-premium-content .table {
+  background-color: #192c3d;
+  color: #edf5fa;
+  border-color: #355166;
+}
+
+/* Células de tabelas Bootstrap */
+:root[data-proflex-theme="dark"] .admin-premium-content .table {
+  --bs-table-bg: #192c3d;
+  --bs-table-color: #edf5fa;
+  --bs-table-border-color: #355166;
+}
+
+/* Campos de pesquisa */
+:root[data-proflex-theme="dark"] .admin-premium-content input {
+  background-color: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .admin-premium-content input::placeholder {
+  color: #b3c6d4;
+}

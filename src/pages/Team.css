@@ -372,3 +372,156 @@
     white-space: nowrap;
   }
 }
+
+/* ==========================================
+   PROFLEX — TEAM DARK MODE
+   ========================================== */
+
+:root[data-proflex-theme="dark"] .team-page {
+  color: #edf5fa;
+}
+
+/* Cabeçalho */
+:root[data-proflex-theme="dark"] .team-page-heading h2,
+:root[data-proflex-theme="dark"] .team-panel-header h3 {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .team-page-heading p,
+:root[data-proflex-theme="dark"] .team-panel-header p {
+  color: #b3c6d4;
+}
+
+/* Indicadores */
+:root[data-proflex-theme="dark"] .team-summary article {
+  background: #192c3d;
+  border-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .team-summary span {
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"] .team-summary strong {
+  color: #edf5fa;
+}
+
+/* Painel de profissionais */
+:root[data-proflex-theme="dark"] .team-panel {
+  background: #192c3d;
+  color: #edf5fa;
+  border-color: #355166;
+}
+
+/* Tabela */
+:root[data-proflex-theme="dark"] .team-table {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .team-table th,
+:root[data-proflex-theme="dark"] .team-table td {
+  color: #edf5fa;
+  border-bottom-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .team-table th,
+:root[data-proflex-theme="dark"] .team-table td small {
+  color: #b3c6d4;
+}
+
+/* Pesquisa */
+:root[data-proflex-theme="dark"] .team-panel-header input {
+  background: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"]
+.team-panel-header input::placeholder {
+  color: #b3c6d4;
+}
+
+/* Botão editar */
+:root[data-proflex-theme="dark"] .team-edit {
+  background: #244b50;
+  color: #a5f3e6;
+  border-color: #357b78;
+}
+
+:root[data-proflex-theme="dark"] .team-edit:hover {
+  background: #30646a;
+}
+
+/* Situação dos profissionais */
+:root[data-proflex-theme="dark"] .team-status {
+  background: #164e3b;
+  color: #a7f3d0;
+}
+
+:root[data-proflex-theme="dark"] .team-status.inactive {
+  background: #374151;
+  color: #d1d5db;
+}
+
+/* Aviso de demonstração */
+:root[data-proflex-theme="dark"] .team-demo-note {
+  color: #b3c6d4;
+}
+
+/* Modal de cadastro e edição */
+:root[data-proflex-theme="dark"] .team-modal {
+  background: #192c3d;
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .team-modal-header h2,
+:root[data-proflex-theme="dark"] .team-form-grid label {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .team-modal-header p {
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"] .team-modal-tabs {
+  border-bottom-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .team-modal-tabs button {
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"]
+.team-modal-tabs button.selected {
+  color: #5eead4;
+  border-bottom-color: #5eead4;
+}
+
+:root[data-proflex-theme="dark"] .team-form-grid input,
+:root[data-proflex-theme="dark"] .team-form-grid select {
+  background: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .team-modal-notice {
+  background: #22394a;
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"] .team-modal-footer {
+  background: #192c3d;
+  border-top-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .team-modal-cancel,
+:root[data-proflex-theme="dark"] .team-modal-close {
+  background: #305064;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .team-form-error {
+  background: #572b34;
+  color: #fecaca;
+}

@@ -1211,6 +1211,74 @@ export default function Dashboard() {
               transform: none;
             }
           }
+
+
+
+/* PROFLEX — DASHBOARD DARK MODE */
+
+:root[data-proflex-theme="dark"] .pf-dashboard {
+  --pf-border: #355166;
+  --pf-text: #edf5fa;
+  --pf-muted: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-card,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-metric {
+  background: #192c3d;
+  color: #edf5fa;
+  border-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-metric-value,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-metric-title,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-section-title,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-time-title,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-candidate-name,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-field-label {
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-metric-description,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-section-subtitle,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-time-subtitle,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-candidate-detail,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-legend-item {
+  color: #b3c6d4;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-mini-stat,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-campaign-header {
+  background: #22394a;
+  border-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-input,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-tab,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-button-outline {
+  background: #22394a;
+  color: #edf5fa;
+  border-color: #426071;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-tab.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-button-light {
+  background: #305064;
+  color: #edf5fa;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-time-row,
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-candidate {
+  border-color: #355166;
+}
+
+:root[data-proflex-theme="dark"] .pf-dashboard .pf-candidate-list {
+  border-color: #355166;
+}
+
         `}
       </style>
 
@@ -2042,13 +2110,12 @@ export default function Dashboard() {
             {/* FINAL CONFIRMATION */}
 
             <label
-              className="d-flex align-items-start gap-2 mt-4"
-              style={{
-                fontSize: 13,
-                color: "#334155",
-                cursor: "pointer",
-              }}
-            >
+  className="pf-campaign-confirm d-flex align-items-start gap-2 mt-4"
+  style={{
+    fontSize: 13,
+    cursor: "pointer",
+  }}
+>
               <input
                 type="checkbox"
                 checked={confirmSend}
@@ -2115,3 +2182,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+

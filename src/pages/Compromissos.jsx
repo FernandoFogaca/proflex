@@ -206,7 +206,7 @@ export default function Compromissos() {
       <hr className="my-3" />
 
       {/* Novo compromisso */}
-      <div className="p-3 border rounded bg-white mb-3">
+     <div className="p-3 border rounded mb-3 proflex-comp-card">
         <h6>Novo compromisso</h6>
         <div className="row g-2">
           <div className="col-md-2">
@@ -307,7 +307,7 @@ export default function Compromissos() {
       </div>
 
       {/* Lista */}
-      <div className="p-3 border rounded bg-white">
+     <div className="p-3 border rounded proflex-comp-card">
         <h6 className="mb-2">Lista</h6>
         <ul className="list-group list-group-flush">
           {compromissos.length === 0 && (

@@ -56,7 +56,7 @@ export default function Consulta() {
   };
 
   return (
-    <div className="container py-4">
+      <div className="container py-4 proflex-consulta">
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary mb-3"
