@@ -34,9 +34,7 @@ export default function Home() {
 
         <footer className="footer">
           <span>© 2025 Proflex. All rights reserved.</span>
-          <button className="dev-access" onClick={() => navigate("/devlogin")}>
-            Dev Access
-          </button>
+       
         </footer>
       </div>
     </>

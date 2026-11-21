@@ -10,7 +10,7 @@ import Agenda from "./pages/Agenda";
 import AgendamentoPage from "./pages/AgendamentoPage.jsx";
 import Clientes from "./pages/Clientes";
 import Marketing from "./components/Marketing";
-import DevLogin from "./components/DevLogin";
+
 import Compromissos from "./pages/Compromissos";
 import Prontuario from "./pages/Prontuario";
 import Dashboard from "./pages/Dashboard";
@@ -49,7 +49,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/marketing" element={<Marketing />} />
-        <Route path="/devlogin" element={<DevLogin />} />
+        
 
         {/* DASHBOARD */}
 
