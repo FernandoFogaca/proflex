@@ -62,7 +62,7 @@ export default function Login() {
         return;
       }
 
-      login({ role: "owner" });
+     login({ role: "user" });
       navigate("/agenda");
     } catch (erro) {
       console.error("Erro no login:", erro.code);

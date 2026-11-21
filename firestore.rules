@@ -41,6 +41,16 @@ service cloud.firestore {
       }
     }
 
+
+    // Permissões administrativas gerenciadas pelo sistema
+match /permissoes/{userId} {
+  allow read: if request.auth != null
+    && request.auth.uid == userId;
+
+  // Usuários não podem criar ou modificar seus privilégios
+  allow create, update, delete: if false;
+}
+
     // Bloqueia outros caminhos
     match /{document=**} {
       allow read, write: if false;

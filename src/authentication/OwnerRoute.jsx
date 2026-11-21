@@ -18,7 +18,14 @@ export default function OwnerRoute({ children }) {
       }
 
       try {
-        const snapshot = await getDoc(doc(db, "usuarios", user.uid));
+    const permissaoSnapshot = await getDoc(
+  doc(db, "permissoes", user.uid)
+).catch(() => null);
+
+
+const permissao = permissaoSnapshot?.exists()
+  ? permissaoSnapshot.data()
+  : null;
 
         if (!active) return;
 
