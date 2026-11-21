@@ -11,7 +11,11 @@ import { jsPDF } from "jspdf";
 import { salvarFotoTeste } from "../services/cloudinary.js";
 
 // Firebase
-import { onAuthStateChanged } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from "firebase/auth";
 import {
   collection,
   doc,
@@ -20,6 +24,7 @@ import {
   updateDoc,
   deleteDoc,
   onSnapshot,
+  runTransaction,
 } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 
@@ -46,7 +51,41 @@ function novoId(prefixo = "id") {
   return `${prefixo}_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`;
 }
 
-const SENHA_EXCLUIR = import.meta.env.VITE_DELETE_PASS || "1234";
+async function confirmarSenhaParaExclusao() {
+  const usuario = auth.currentUser;
+
+  if (!usuario || !usuario.email) {
+    throw new Error("Usuário não autenticado.");
+  }
+
+  const senha = window.prompt(
+    "Digite sua senha de login para confirmar a exclusão:"
+  );
+
+  if (senha === null) {
+    return false;
+  }
+
+  if (!senha) {
+    alert("Informe sua senha.");
+    return false;
+  }
+
+  try {
+    const credencial = EmailAuthProvider.credential(
+      usuario.email,
+      senha
+    );
+
+    await reauthenticateWithCredential(usuario, credencial);
+
+    return true;
+  } catch (erro) {
+    console.error("Erro na confirmação de identidade:", erro);
+    alert("Não foi possível confirmar sua senha. Exclusão cancelada.");
+    return false;
+  }
+}
 
 export const COMORBIDADES = [
   "Hipertensão",
@@ -517,25 +556,38 @@ const [clientsError, setClientsError] = useState(false);
     );
 
     await deleteDoc(agendamentoRef);
+
+  }
+async function salvarConsultasNoFirebase(idCliente, atualizarConsultas) {
+  const usuario = auth.currentUser;
+
+  if (!usuario) {
+    throw new Error("Usuário não autenticado.");
   }
 
-  async function salvarConsultasNoFirebase(idCliente, consultas) {
-    const usuario = auth.currentUser;
+  const pacienteRef = doc(
+    db,
+    "usuarios",
+    usuario.uid,
+    "pacientes",
+    idCliente
+  );
 
-    if (!usuario) {
-      throw new Error("Usuário não autenticado.");
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(pacienteRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Paciente não encontrado.");
     }
 
-    const pacienteRef = doc(
-      db,
-      "usuarios",
-      usuario.uid,
-      "pacientes",
-      idCliente,
-    );
+    const consultasAtuais = snapshot.data().consultas || [];
+    const consultasAtualizadas = atualizarConsultas(consultasAtuais);
 
-    await updateDoc(pacienteRef, { consultas });
-  }
+    transaction.update(pacienteRef, {
+      consultas: consultasAtualizadas,
+    });
+  });
+}
 
   // ------------------------ CONSULTAS (PRONTUÁRIO)
 
@@ -577,26 +629,38 @@ const [clientsError, setClientsError] = useState(false);
       fotos: [],
     };
 
-    const consultasAtualizadas = [nova, ...(cliente.consultas || [])];
+   await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
+  const proximoNumero = String(
+    Math.max(0, ...consultasAtuais.map((c) => Number(c.numero) || 0)) + 1
+  ).padStart(2, "0");
+
+  nova.numero = proximoNumero;
+
+  return [nova, ...consultasAtuais];
+});
 
     await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
 
     return nova;
   }
 
-  async function updateConsulta(idCliente, idConsulta, alteracoes) {
-    const cliente = clients.find((c) => c.id === idCliente);
-
-    if (!cliente) {
-      throw new Error("Paciente não encontrado.");
-    }
-
-    const consultasAtualizadas = (cliente.consultas || []).map((consulta) =>
-      consulta.id === idConsulta ? { ...consulta, ...alteracoes } : consulta,
+async function updateConsulta(idCliente, idConsulta, alteracoes) {
+  await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
+    const consultaExiste = consultasAtuais.some(
+      (consulta) => consulta.id === idConsulta
     );
 
-    await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
-  }
+    if (!consultaExiste) {
+      throw new Error("Consulta não encontrada.");
+    }
+
+    return consultasAtuais.map((consulta) =>
+      consulta.id === idConsulta
+        ? { ...consulta, ...alteracoes }
+        : consulta
+    );
+  });
+}
 
   async function deleteConsultas(idCliente, idsConsultas) {
     if (!idsConsultas?.length) return;
@@ -609,12 +673,11 @@ const [clientsError, setClientsError] = useState(false);
       return;
     }
 
-    const senha = prompt("Digite a senha de exclusão:");
+ const autorizado = await confirmarSenhaParaExclusao();
 
-    if (senha !== SENHA_EXCLUIR) {
-      alert("Senha incorreta.");
-      return;
-    }
+if (!autorizado) {
+  return;
+}
 
     const cliente = clients.find((c) => c.id === idCliente);
 
@@ -622,11 +685,11 @@ const [clientsError, setClientsError] = useState(false);
       throw new Error("Paciente não encontrado.");
     }
 
-    const consultasAtualizadas = (cliente.consultas || []).filter(
-      (consulta) => !idsConsultas.includes(consulta.id),
-    );
-
-    await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
+   await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
+  return consultasAtuais.filter(
+    (consulta) => !idsConsultas.includes(consulta.id)
+  );
+});
   }
 
   async function deleteClient(idCliente) {
@@ -638,12 +701,11 @@ const [clientsError, setClientsError] = useState(false);
       return;
     }
 
-    const senha = prompt("Digite a senha de exclusão:");
+ const autorizado = await confirmarSenhaParaExclusao();
 
-    if (senha !== SENHA_EXCLUIR) {
-      alert("Senha incorreta.");
-      return;
-    }
+if (!autorizado) {
+  return;
+}
 
     const cliente = clients.find((c) => c.id === idCliente);
 
@@ -784,37 +846,40 @@ const [clientsError, setClientsError] = useState(false);
     return url;
   }
 
-  async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
-    if (!idCliente || !idConsulta || !arquivos?.length) {
-      return [];
-    }
-
-    const limitar = Array.from(arquivos).slice(0, 3);
-    const urls = [];
-
-    for (const arquivo of limitar) {
-      const url = await salvarFotoTeste(arquivo);
-      urls.push(url);
-    }
-
-    setClients((lista) =>
-      lista.map((cliente) => {
-        if (cliente.id !== idCliente) return cliente;
-
-        return {
-          ...cliente,
-          consultas: (cliente.consultas || []).map((consulta) =>
-            consulta.id === idConsulta
-              ? { ...consulta, fotos: urls }
-              : consulta,
-          ),
-        };
-      }),
-    );
-
-    return urls;
+ async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
+  if (!idCliente || !idConsulta || !arquivos?.length) {
+    return [];
   }
 
+  const limitar = Array.from(arquivos).slice(0, 3);
+  const urls = [];
+
+  for (const arquivo of limitar) {
+    const url = await salvarFotoTeste(arquivo);
+    urls.push(url);
+  }
+
+  await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
+    const consultaExiste = consultasAtuais.some(
+      (consulta) => consulta.id === idConsulta
+    );
+
+    if (!consultaExiste) {
+      throw new Error("Consulta não encontrada.");
+    }
+
+    return consultasAtuais.map((consulta) =>
+      consulta.id === idConsulta
+        ? {
+            ...consulta,
+            fotos: [...(consulta.fotos || []), ...urls],
+          }
+        : consulta
+    );
+  });
+
+  return urls;
+}
   // ------------------------ CONTEXTO
 
   const valor = useMemo(
