@@ -18,6 +18,7 @@ export default function OwnerRoute({ children }) {
       }
 
       try {
+        const snapshot = await getDoc(doc(db, "usuarios", user.uid));
     const permissaoSnapshot = await getDoc(
   doc(db, "permissoes", user.uid)
 ).catch(() => null);
@@ -31,10 +32,11 @@ const permissao = permissaoSnapshot?.exists()
 
         const data = snapshot.data();
 
-        const isOwner =
-          snapshot.exists() &&
-          data.uid === user.uid &&
-          data.email === user.email;
+    const isOwner =
+  snapshot.exists() &&
+  data.uid === user.uid &&
+  data.email === user.email &&
+  permissao?.role === "owner";
 
         setStatus(isOwner ? "authorized" : "forbidden");
       } catch (error) {
