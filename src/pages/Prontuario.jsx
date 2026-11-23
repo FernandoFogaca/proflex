@@ -823,10 +823,49 @@ export default function Prontuario() {
 
     const consultas = paciente.consultas || [];
 
-    if (!consultas.length) {
+
+
+const avaliacao = paciente.avaliacaoInicial;
+
+const incluirAvaliacaoInicial =
+  paciente.avaliacaoInicialConcluida === true &&
+  avaliacao &&
+  !consultas.some(
+    (consulta) =>
+      consulta.tipo === "avaliacao-inicial" ||
+      String(consulta.numero).padStart(2, "0") === "01"
+  );
+
+if (incluirAvaliacaoInicial) {
+  checkPage(130);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+
+  doc.text(
+    `Consulta 01 - Avaliação Inicial - ${paciente.avaliacaoInicialData || "-"}`,
+    margin,
+    y
+  );
+
+  y += 20;
+
+  addText("Queixa", avaliacao.queixa);
+  addText("Avaliação", avaliacao.avaliacao);
+  addText("Procedimentos", avaliacao.procedimentos);
+  addText("Evolução", avaliacao.evolucao);
+  addText("Conduta / Plano", avaliacao.conduta);
+
+  y += 12;
+}
+
+
+   if (!consultas.length && !incluirAvaliacaoInicial) {
       addText("Consultas", "Nenhuma consulta registrada");
     } else {
-      consultas.forEach((consulta, index) => {
+     [...consultas]
+  .sort((a, b) => Number(a.numero) - Number(b.numero))
+  .forEach((consulta, index) => {
         checkPage(130);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
@@ -1115,6 +1154,12 @@ export default function Prontuario() {
   const avaliacaoInicialConcluida =
     paciente?.avaliacaoInicialConcluida === true;
 
+
+const totalConsultas =
+  consultas.length +
+  (avaliacaoInicialConcluida && avaliacaoInicial ? 1 : 0);
+
+
   const fotosClinicas = consultas.flatMap((consulta, index) =>
     (consulta.fotos || []).map((foto, fotoIndex) => ({
       id: `${consulta.id || index}-${fotoIndex}`,
@@ -1380,7 +1425,7 @@ export default function Prontuario() {
                         Consultas registradas
                       </div>
 
-                      <div className="pfp-count">{consultas.length}</div>
+                     <div className="pfp-count">{totalConsultas}</div>
                     </div>
 
                     <div className="pfp-stat pfp-span-3">
@@ -1403,7 +1448,7 @@ export default function Prontuario() {
                         Avaliações e atendimentos
                       </div>
 
-                      <div className="pfp-count">{consultas.length}</div>
+                     <div className="pfp-count">{totalConsultas}</div>
                     </div>
 
                     <div className="pfp-stat">
@@ -1418,11 +1463,16 @@ export default function Prontuario() {
                       </div>
 
                       <div className="pfp-count">
-                        {
-                          consultas.filter((consulta) =>
-                            consulta.evolucao?.trim(),
-                          ).length
-                        }
+                        
+{
+  consultas.filter((consulta) =>
+    consulta.evolucao?.trim()
+  ).length +
+  (avaliacaoInicialConcluida && avaliacaoInicial?.evolucao?.trim()
+    ? 1
+    : 0)
+}
+
                       </div>
                     </div>
                   </div>
