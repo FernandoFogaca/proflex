@@ -823,66 +823,63 @@ export default function Prontuario() {
 
     const consultas = paciente.consultas || [];
 
+    const avaliacao = paciente.avaliacaoInicial;
 
+    const incluirAvaliacaoInicial =
+      paciente.avaliacaoInicialConcluida === true &&
+      avaliacao &&
+      !consultas.some(
+        (consulta) =>
+          consulta.tipo === "avaliacao-inicial" ||
+          String(consulta.numero).padStart(2, "0") === "01",
+      );
 
-const avaliacao = paciente.avaliacaoInicial;
+    if (incluirAvaliacaoInicial) {
+      checkPage(130);
 
-const incluirAvaliacaoInicial =
-  paciente.avaliacaoInicialConcluida === true &&
-  avaliacao &&
-  !consultas.some(
-    (consulta) =>
-      consulta.tipo === "avaliacao-inicial" ||
-      String(consulta.numero).padStart(2, "0") === "01"
-  );
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
 
-if (incluirAvaliacaoInicial) {
-  checkPage(130);
+      doc.text(
+        `Consulta 01 - Avaliação Inicial - ${paciente.avaliacaoInicialData || "-"}`,
+        margin,
+        y,
+      );
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+      y += 20;
 
-  doc.text(
-    `Consulta 01 - Avaliação Inicial - ${paciente.avaliacaoInicialData || "-"}`,
-    margin,
-    y
-  );
+      addText("Queixa", avaliacao.queixa);
+      addText("Avaliação", avaliacao.avaliacao);
+      addText("Procedimentos", avaliacao.procedimentos);
+      addText("Evolução", avaliacao.evolucao);
+      addText("Conduta / Plano", avaliacao.conduta);
 
-  y += 20;
+      y += 12;
+    }
 
-  addText("Queixa", avaliacao.queixa);
-  addText("Avaliação", avaliacao.avaliacao);
-  addText("Procedimentos", avaliacao.procedimentos);
-  addText("Evolução", avaliacao.evolucao);
-  addText("Conduta / Plano", avaliacao.conduta);
-
-  y += 12;
-}
-
-
-   if (!consultas.length && !incluirAvaliacaoInicial) {
+    if (!consultas.length && !incluirAvaliacaoInicial) {
       addText("Consultas", "Nenhuma consulta registrada");
     } else {
-     [...consultas]
-  .sort((a, b) => Number(a.numero) - Number(b.numero))
-  .forEach((consulta, index) => {
-        checkPage(130);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.text(
-          `Consulta ${consulta.numero || index + 1} - ${consulta.dataISO || "-"} ${consulta.hora || ""}`,
-          margin,
-          y,
-        );
+      [...consultas]
+        .sort((a, b) => Number(a.numero) - Number(b.numero))
+        .forEach((consulta, index) => {
+          checkPage(130);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.text(
+            `Consulta ${consulta.numero || index + 1} - ${consulta.dataISO || "-"} ${consulta.hora || ""}`,
+            margin,
+            y,
+          );
 
-        y += 20;
-        addText("Queixa", consulta.queixa);
-        addText("Avaliação", consulta.avaliacao);
-        addText("Procedimentos", consulta.procedimentos);
-        addText("Evolução", consulta.evolucao);
-        addText("Conduta / Plano", consulta.conduta);
-        y += 12;
-      });
+          y += 20;
+          addText("Queixa", consulta.queixa);
+          addText("Avaliação", consulta.avaliacao);
+          addText("Procedimentos", consulta.procedimentos);
+          addText("Evolução", consulta.evolucao);
+          addText("Conduta / Plano", consulta.conduta);
+          y += 12;
+        });
     }
 
     checkPage(50);
@@ -1154,11 +1151,8 @@ if (incluirAvaliacaoInicial) {
   const avaliacaoInicialConcluida =
     paciente?.avaliacaoInicialConcluida === true;
 
-
-const totalConsultas =
-  consultas.length +
-  (avaliacaoInicialConcluida && avaliacaoInicial ? 1 : 0);
-
+  const totalConsultas =
+    consultas.length + (avaliacaoInicialConcluida && avaliacaoInicial ? 1 : 0);
 
   const fotosClinicas = consultas.flatMap((consulta, index) =>
     (consulta.fotos || []).map((foto, fotoIndex) => ({
@@ -1425,7 +1419,7 @@ const totalConsultas =
                         Consultas registradas
                       </div>
 
-                     <div className="pfp-count">{totalConsultas}</div>
+                      <div className="pfp-count">{totalConsultas}</div>
                     </div>
 
                     <div className="pfp-stat pfp-span-3">
@@ -1448,7 +1442,7 @@ const totalConsultas =
                         Avaliações e atendimentos
                       </div>
 
-                     <div className="pfp-count">{totalConsultas}</div>
+                      <div className="pfp-count">{totalConsultas}</div>
                     </div>
 
                     <div className="pfp-stat">
@@ -1463,16 +1457,13 @@ const totalConsultas =
                       </div>
 
                       <div className="pfp-count">
-                        
-{
-  consultas.filter((consulta) =>
-    consulta.evolucao?.trim()
-  ).length +
-  (avaliacaoInicialConcluida && avaliacaoInicial?.evolucao?.trim()
-    ? 1
-    : 0)
-}
-
+                        {consultas.filter((consulta) =>
+                          consulta.evolucao?.trim(),
+                        ).length +
+                          (avaliacaoInicialConcluida &&
+                          avaliacaoInicial?.evolucao?.trim()
+                            ? 1
+                            : 0)}
                       </div>
                     </div>
                   </div>
