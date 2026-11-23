@@ -1662,7 +1662,7 @@ avaliacaoInicialData: avaliacaoPreenchida
             </div>
           </div>
 
-          <form className="pf-form" onSubmit={handleSubmit}>
+         <form className="pf-form" onSubmit={(e) => e.preventDefault()}>
             <div className="row g-3">
               {/* ETAPA 1 — DADOS PESSOAIS */}
 
@@ -2450,7 +2450,11 @@ avaliacaoInicialData: avaliacaoPreenchida
                   Continuar →
                 </button>
               ) : (
-                <button type="submit" className="btn pf-next">
+               <button
+  type="button"
+  className="btn pf-next"
+  onClick={handleSubmit}
+>
                   💾{" "}
                   {clienteExistente ? "Salvar alterações" : "Salvar cadastro"}
                 </button>
