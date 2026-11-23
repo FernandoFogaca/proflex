@@ -59,7 +59,7 @@ async function confirmarSenhaParaExclusao() {
   }
 
   const senha = window.prompt(
-    "Digite sua senha de login para confirmar a exclusão:"
+    "Digite sua senha de login para confirmar a exclusão:",
   );
 
   if (senha === null) {
@@ -72,10 +72,7 @@ async function confirmarSenhaParaExclusao() {
   }
 
   try {
-    const credencial = EmailAuthProvider.credential(
-      usuario.email,
-      senha
-    );
+    const credencial = EmailAuthProvider.credential(usuario.email, senha);
 
     await reauthenticateWithCredential(usuario, credencial);
 
@@ -239,9 +236,8 @@ export function AppProvider({ children }) {
 
   const [clients, setClients] = useState(() => []);
   const [clientsLoading, setClientsLoading] = useState(true);
-const [clientsError, setClientsError] = useState(false);
+  const [clientsError, setClientsError] = useState(false);
 
-  
   useEffect(() => {
     if (!uid) {
       setClients([]);
@@ -402,9 +398,12 @@ const [clientsError, setClientsError] = useState(false);
   }
 
   async function addClient(dados) {
+
+    
     const duplicado = buscarPacienteDuplicado(dados);
 
     if (duplicado) {
+
       alert(
         `Atenção! O paciente ${duplicado.nome} já está cadastrado.\n\n` +
           "Abra o cadastro existente para atualizar as informações.",
@@ -453,6 +452,11 @@ const [clientsError, setClientsError] = useState(false);
       anotacoesPaciente: dados.anotacoesPaciente || "",
       areas: dados.areas || {},
 
+     // Controle da avaliação inicial
+avaliacaoInicial: dados.avaliacaoInicial || null,
+avaliacaoInicialConcluida: dados.avaliacaoInicialConcluida === true,
+avaliacaoInicialData: dados.avaliacaoInicialData || null,
+historicoAvaliacaoInicial: dados.historicoAvaliacaoInicial || [],
       // Arquivos e históricos
       fotoPerfilUrl: dados.fotoPerfilUrl || "",
       consultas: Array.isArray(dados.consultas) ? dados.consultas : [],
@@ -547,47 +551,56 @@ const [clientsError, setClientsError] = useState(false);
       throw new Error("Usuário não autenticado.");
     }
 
-    const agendamentoRef = doc(
+    const agendamentoRef = doc(db, "usuarios", usuario.uid, "agendamentos", id);
+
+    await deleteDoc(agendamentoRef);
+  }
+  async function salvarConsultasNoFirebase(idCliente, atualizarConsultas) {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      throw new Error("Usuário não autenticado.");
+    }
+
+    const pacienteRef = doc(
       db,
       "usuarios",
       usuario.uid,
-      "agendamentos",
-      id,
+      "pacientes",
+      idCliente,
     );
 
-    await deleteDoc(agendamentoRef);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(pacienteRef);
 
-  }
-async function salvarConsultasNoFirebase(idCliente, atualizarConsultas) {
-  const usuario = auth.currentUser;
+      if (!snapshot.exists()) {
+        throw new Error("Paciente não encontrado.");
+      }
 
-  if (!usuario) {
-    throw new Error("Usuário não autenticado.");
-  }
+     const dadosPaciente = snapshot.data();
+const consultasAtuais = dadosPaciente.consultas || [];
 
-  const pacienteRef = doc(
-    db,
-    "usuarios",
-    usuario.uid,
-    "pacientes",
-    idCliente
-  );
+const resultado = atualizarConsultas(
+  consultasAtuais,
+  dadosPaciente
+);
 
-  await runTransaction(db, async (transaction) => {
-    const snapshot = await transaction.get(pacienteRef);
+const consultasAtualizadas = Array.isArray(resultado)
+  ? resultado
+  : resultado.consultas;
 
-    if (!snapshot.exists()) {
-      throw new Error("Paciente não encontrado.");
-    }
+const ultimoNumeroConsulta = Math.max(
+  Number(dadosPaciente.ultimoNumeroConsulta) || 1,
+  ...consultasAtuais.map((c) => Number(c.numero) || 0),
+  ...consultasAtualizadas.map((c) => Number(c.numero) || 0)
+);
 
-    const consultasAtuais = snapshot.data().consultas || [];
-    const consultasAtualizadas = atualizarConsultas(consultasAtuais);
-
-    transaction.update(pacienteRef, {
-      consultas: consultasAtualizadas,
+transaction.update(pacienteRef, {
+  consultas: consultasAtualizadas,
+  ultimoNumeroConsulta,
+});
     });
-  });
-}
+  }
 
   // ------------------------ CONSULTAS (PRONTUÁRIO)
 
@@ -629,38 +642,43 @@ async function salvarConsultasNoFirebase(idCliente, atualizarConsultas) {
       fotos: [],
     };
 
-   await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
-  const proximoNumero = String(
-    Math.max(0, ...consultasAtuais.map((c) => Number(c.numero) || 0)) + 1
-  ).padStart(2, "0");
+await salvarConsultasNoFirebase(
+  idCliente,
+  (consultasAtuais, dadosPaciente) => {
+    const maiorNumero = Math.max(
+      1,
+      Number(dadosPaciente.ultimoNumeroConsulta) || 1,
+      ...consultasAtuais.map((c) => Number(c.numero) || 0),
+    );
 
-  nova.numero = proximoNumero;
+    const proximoNumero = String(maiorNumero + 1).padStart(2, "0");
 
-  return [nova, ...consultasAtuais];
-});
+    nova.numero = proximoNumero;
 
-    await salvarConsultasNoFirebase(idCliente, consultasAtualizadas);
+    return [nova, ...consultasAtuais];
+  }
+);
+
+
 
     return nova;
   }
 
-async function updateConsulta(idCliente, idConsulta, alteracoes) {
-  await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
-    const consultaExiste = consultasAtuais.some(
-      (consulta) => consulta.id === idConsulta
-    );
+  async function updateConsulta(idCliente, idConsulta, alteracoes) {
+    await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
+      const consultaExiste = consultasAtuais.some(
+        (consulta) => consulta.id === idConsulta,
+      );
 
-    if (!consultaExiste) {
-      throw new Error("Consulta não encontrada.");
-    }
+      if (!consultaExiste) {
+        throw new Error("Consulta não encontrada.");
+      }
 
-    return consultasAtuais.map((consulta) =>
-      consulta.id === idConsulta
-        ? { ...consulta, ...alteracoes }
-        : consulta
-    );
-  });
-}
+      return consultasAtuais.map((consulta) =>
+        consulta.id === idConsulta ? { ...consulta, ...alteracoes } : consulta,
+      );
+    });
+  }
 
   async function deleteConsultas(idCliente, idsConsultas) {
     if (!idsConsultas?.length) return;
@@ -673,11 +691,11 @@ async function updateConsulta(idCliente, idConsulta, alteracoes) {
       return;
     }
 
- const autorizado = await confirmarSenhaParaExclusao();
+    const autorizado = await confirmarSenhaParaExclusao();
 
-if (!autorizado) {
-  return;
-}
+    if (!autorizado) {
+      return;
+    }
 
     const cliente = clients.find((c) => c.id === idCliente);
 
@@ -686,6 +704,18 @@ if (!autorizado) {
     }
 
    await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
+  const consultaInicialSelecionada = consultasAtuais.some(
+    (consulta) =>
+      idsConsultas.includes(consulta.id) &&
+      Number(consulta.numero) === 1
+  );
+
+  if (consultaInicialSelecionada) {
+    throw new Error(
+      "A Consulta 01 não pode ser excluída."
+    );
+  }
+
   return consultasAtuais.filter(
     (consulta) => !idsConsultas.includes(consulta.id)
   );
@@ -701,11 +731,11 @@ if (!autorizado) {
       return;
     }
 
- const autorizado = await confirmarSenhaParaExclusao();
+    const autorizado = await confirmarSenhaParaExclusao();
 
-if (!autorizado) {
-  return;
-}
+    if (!autorizado) {
+      return;
+    }
 
     const cliente = clients.find((c) => c.id === idCliente);
 
@@ -846,40 +876,40 @@ if (!autorizado) {
     return url;
   }
 
- async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
-  if (!idCliente || !idConsulta || !arquivos?.length) {
-    return [];
-  }
-
-  const limitar = Array.from(arquivos).slice(0, 3);
-  const urls = [];
-
-  for (const arquivo of limitar) {
-    const url = await salvarFotoTeste(arquivo);
-    urls.push(url);
-  }
-
-  await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
-    const consultaExiste = consultasAtuais.some(
-      (consulta) => consulta.id === idConsulta
-    );
-
-    if (!consultaExiste) {
-      throw new Error("Consulta não encontrada.");
+  async function salvarFotosDaConsulta(idCliente, idConsulta, arquivos) {
+    if (!idCliente || !idConsulta || !arquivos?.length) {
+      return [];
     }
 
-    return consultasAtuais.map((consulta) =>
-      consulta.id === idConsulta
-        ? {
-            ...consulta,
-            fotos: [...(consulta.fotos || []), ...urls],
-          }
-        : consulta
-    );
-  });
+    const limitar = Array.from(arquivos).slice(0, 3);
+    const urls = [];
 
-  return urls;
-}
+    for (const arquivo of limitar) {
+      const url = await salvarFotoTeste(arquivo);
+      urls.push(url);
+    }
+
+    await salvarConsultasNoFirebase(idCliente, (consultasAtuais) => {
+      const consultaExiste = consultasAtuais.some(
+        (consulta) => consulta.id === idConsulta,
+      );
+
+      if (!consultaExiste) {
+        throw new Error("Consulta não encontrada.");
+      }
+
+      return consultasAtuais.map((consulta) =>
+        consulta.id === idConsulta
+          ? {
+              ...consulta,
+              fotos: [...(consulta.fotos || []), ...urls],
+            }
+          : consulta,
+      );
+    });
+
+    return urls;
+  }
   // ------------------------ CONTEXTO
 
   const valor = useMemo(
@@ -887,14 +917,14 @@ if (!autorizado) {
       tipoPerfil,
 
       // Pacientes
-clients,
-clientsLoading,
-clientsError,
-setClients,
-getClient,
-addClient,
-updateClient,
-deleteClient,
+      clients,
+      clientsLoading,
+      clientsError,
+      setClients,
+      getClient,
+      addClient,
+      updateClient,
+      deleteClient,
 
       // Agenda
       appointments,
@@ -925,7 +955,14 @@ deleteClient,
       gerarRelatorioPDF,
       COMORBIDADES,
     }),
-   [clients, clientsLoading, clientsError, appointments, professionals, tipoPerfil],
+    [
+      clients,
+      clientsLoading,
+      clientsError,
+      appointments,
+      professionals,
+      tipoPerfil,
+    ],
   );
 
   return <AppContext.Provider value={valor}>{children}</AppContext.Provider>;

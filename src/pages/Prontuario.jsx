@@ -71,7 +71,9 @@ const ICONS = {
   ),
   plus: <path d="M12 5v14M5 12h14" />,
   chevron: <path d="m7 10 5 5 5-5" />,
-  phone: <path d="M22 16.9v3a2 2 0 0 1-2.2 2A19 19 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.8L7 10.5a16 16 0 0 0 6.5 6.5l2-2a2 2 0 0 1 1.8-.6l3 .5a2 2 0 0 1 1.7 2Z" />,
+  phone: (
+    <path d="M22 16.9v3a2 2 0 0 1-2.2 2A19 19 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.8L7 10.5a16 16 0 0 0 6.5 6.5l2-2a2 2 0 0 1 1.8-.6l3 .5a2 2 0 0 1 1.7 2Z" />
+  ),
   mail: (
     <>
       <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -645,13 +647,8 @@ export default function Prontuario() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const {
-    clients,
-    clientsLoading,
-    clientsError,
-    getClient,
-    salvarFotoPerfil,
-  } = useApp();
+  const { clients, clientsLoading, clientsError, getClient, salvarFotoPerfil } =
+    useApp();
 
   const clienteId = params.get("clienteId");
   const paciente = clienteId ? getClient(clienteId) : null;
@@ -661,44 +658,37 @@ export default function Prontuario() {
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [salvandoFoto, setSalvandoFoto] = useState(false);
   const [consultaSelecionada, setConsultaSelecionada] = useState(null);
+  const [mostrarAvisoAvaliacao, setMostrarAvisoAvaliacao] = useState(false);
   const [mostrarAtestado, setMostrarAtestado] = useState(false);
   const [dataAtestado, setDataAtestado] = useState(
-    new Date().toLocaleDateString("en-CA")
+    new Date().toLocaleDateString("en-CA"),
   );
   const [tipoAtestado, setTipoAtestado] = useState("comparecimento");
   const [observacoesAtestado, setObservacoesAtestado] = useState("");
 
   const [tema, setTema] = useState(() => {
-  try {
-    return localStorage.getItem("proflex-tema") === "dark"
-      ? "dark"
-      : "light";
-  } catch {
-    return "light";
-  }
-});
+    try {
+      return localStorage.getItem("proflex-tema") === "dark" ? "dark" : "light";
+    } catch {
+      return "light";
+    }
+  });
 
   useEffect(() => {
-  const sincronizarTema = (event) => {
-    const novoTema = event.detail?.tema;
+    const sincronizarTema = (event) => {
+      const novoTema = event.detail?.tema;
 
-    if (novoTema === "dark" || novoTema === "light") {
-      setTema(novoTema);
-    }
-  };
+      if (novoTema === "dark" || novoTema === "light") {
+        setTema(novoTema);
+      }
+    };
 
-  window.addEventListener(
-    "proflex-theme-change",
-    sincronizarTema
-  );
+    window.addEventListener("proflex-theme-change", sincronizarTema);
 
-  return () => {
-    window.removeEventListener(
-      "proflex-theme-change",
-      sincronizarTema
-    );
-  };
-}, []);
+    return () => {
+      window.removeEventListener("proflex-theme-change", sincronizarTema);
+    };
+  }, []);
 
   useEffect(() => {
     setBusca("");
@@ -776,7 +766,7 @@ export default function Prontuario() {
     const addText = (label, value) => {
       const lines = doc.splitTextToSize(
         String(value || "Não informado"),
-        contentWidth - 120
+        contentWidth - 120,
       );
 
       checkPage(lines.length * 13 + 15);
@@ -843,7 +833,7 @@ export default function Prontuario() {
         doc.text(
           `Consulta ${consulta.numero || index + 1} - ${consulta.dataISO || "-"} ${consulta.hora || ""}`,
           margin,
-          y
+          y,
         );
 
         y += 20;
@@ -867,7 +857,7 @@ export default function Prontuario() {
     doc.text(
       `Prontuário gerado pelo ProFlex em ${new Date().toLocaleString("pt-BR")}`,
       margin,
-      y
+      y,
     );
 
     window.open(doc.output("bloburl"), "_blank");
@@ -886,7 +876,7 @@ export default function Prontuario() {
     const addField = (label, value) => {
       const lines = doc.splitTextToSize(
         String(value || "Não informado"),
-        contentWidth
+        contentWidth,
       );
 
       if (y + lines.length * 14 + 45 > pageHeight - 50) {
@@ -948,7 +938,7 @@ export default function Prontuario() {
     doc.text(
       `Documento gerado pelo ProFlex em ${new Date().toLocaleString("pt-BR")}`,
       margin,
-      y
+      y,
     );
 
     window.open(doc.output("bloburl"), "_blank");
@@ -966,7 +956,7 @@ export default function Prontuario() {
     const adicionarCampo = (titulo, conteudo) => {
       const linhas = doc.splitTextToSize(
         String(conteudo || "Não informado"),
-        largura
+        largura,
       );
 
       if (y + linhas.length * 14 + 45 > altura - 50) {
@@ -1009,14 +999,14 @@ export default function Prontuario() {
             `Avaliação: ${consulta.avaliacao || "Não informada"}`,
             `Evolução: ${consulta.evolucao || "Não informada"}`,
             `Conduta: ${consulta.conduta || "Não informada"}`,
-          ].join("\n")
+          ].join("\n"),
         );
       });
     }
 
     adicionarCampo(
       "Observação",
-      "Documento gerado a partir dos registros clínicos disponíveis no ProFlex. Requer revisão e validação do profissional responsável."
+      "Documento gerado a partir dos registros clínicos disponíveis no ProFlex. Requer revisão e validação do profissional responsável.",
     );
 
     window.open(doc.output("bloburl"), "_blank");
@@ -1079,7 +1069,7 @@ export default function Prontuario() {
     doc.text(
       "RASCUNHO - requer revisão e assinatura de profissional habilitado.",
       margem,
-      altura - 20
+      altura - 20,
     );
 
     window.open(doc.output("bloburl"), "_blank");
@@ -1112,17 +1102,18 @@ export default function Prontuario() {
     doc.text("Profissional responsável", 20, 255);
 
     doc.setFontSize(9);
-    doc.text(
-      "RASCUNHO - requer validação e assinatura profissional.",
-      20,
-      280
-    );
+    doc.text("RASCUNHO - requer validação e assinatura profissional.", 20, 280);
 
     window.open(doc.output("bloburl"), "_blank");
   };
 
   // CONTINUA NA PARTE 2, SEM FECHAR O COMPONENTE AQUI.
-    const consultas = paciente?.consultas || [];
+  const consultas = paciente?.consultas || [];
+
+  const avaliacaoInicial = paciente?.avaliacaoInicial || null;
+
+  const avaliacaoInicialConcluida =
+    paciente?.avaliacaoInicialConcluida === true;
 
   const fotosClinicas = consultas.flatMap((consulta, index) =>
     (consulta.fotos || []).map((foto, fotoIndex) => ({
@@ -1133,7 +1124,7 @@ export default function Prontuario() {
           : foto?.url || foto?.downloadURL || foto?.src || "",
       consulta: consulta.numero || index + 1,
       data: consulta.dataISO || "Sem data",
-    }))
+    })),
   );
 
   const selecionarAba = (chave) => {
@@ -1211,10 +1202,7 @@ export default function Prontuario() {
                 >
                   <span className="pfp-result-photo">
                     {item.fotoPerfilUrl ? (
-                      <img
-                        src={item.fotoPerfilUrl}
-                        alt=""
-                      />
+                      <img src={item.fotoPerfilUrl} alt="" />
                     ) : (
                       iniciais || <Icon name="user" />
                     )}
@@ -1236,25 +1224,20 @@ export default function Prontuario() {
 
   return (
     <div
-      className={`pf-page pf-record-page pfp ${
-        tema === "dark" ? "dark" : ""
-      }`}
+      className={`pf-page pf-record-page pfp ${tema === "dark" ? "dark" : ""}`}
     >
       <style>{premiumCSS}</style>
-
 
       {/* BUSCA PERMANENTE DE PACIENTES */}
       {buscarPaciente}
 
       {!paciente ? (
         <section className="pfp-panel">
-          <h2 className="pfp-section-title">
-            Selecione um paciente
-          </h2>
+          <h2 className="pfp-section-title">Selecione um paciente</h2>
 
           <p className="pfp-section-subtitle">
-            Utilize a busca acima para localizar um paciente
-            e acessar seu prontuário clínico.
+            Utilize a busca acima para localizar um paciente e acessar seu
+            prontuário clínico.
           </p>
 
           <div
@@ -1266,9 +1249,7 @@ export default function Prontuario() {
           >
             <Icon name="user" size={45} />
 
-            <p style={{ marginTop: 15 }}>
-              Nenhum paciente selecionado.
-            </p>
+            <p style={{ marginTop: 15 }}>Nenhum paciente selecionado.</p>
           </div>
         </section>
       ) : (
@@ -1292,9 +1273,7 @@ export default function Prontuario() {
 
                 <p>
                   {paciente.telefone || "Sem telefone"}
-                  {paciente.email
-                    ? ` · ${paciente.email}`
-                    : ""}
+                  {paciente.email ? ` · ${paciente.email}` : ""}
                 </p>
 
                 <label className="pfp-photo-edit">
@@ -1322,7 +1301,7 @@ export default function Prontuario() {
                 className="pfp-primary"
                 onClick={() =>
                   navigate(
-                    `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`
+                    `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`,
                   )
                 }
               >
@@ -1333,9 +1312,7 @@ export default function Prontuario() {
               <button
                 type="button"
                 className="pfp-secondary"
-                onClick={() =>
-                  navigate(`/consulta?clienteId=${paciente.id}`)
-                }
+                onClick={() => navigate(`/consulta?clienteId=${paciente.id}`)}
               >
                 <Icon name="plus" size={19} />
                 Nova consulta
@@ -1345,13 +1322,8 @@ export default function Prontuario() {
 
           {/* MENU LATERAL E CONTEÚDO */}
           <div className="pfp-layout">
-            <nav
-              className="pfp-sidebar"
-              aria-label="Seções do prontuário"
-            >
-              <div className="pfp-sidebar-label">
-                Menu clínico
-              </div>
+            <nav className="pfp-sidebar" aria-label="Seções do prontuário">
+              <div className="pfp-sidebar-label">Menu clínico</div>
 
               {MENU.map((item) => (
                 <button
@@ -1361,9 +1333,7 @@ export default function Prontuario() {
                     aba === item.key ? "active" : ""
                   }`}
                   onClick={() => selecionarAba(item.key)}
-                  aria-current={
-                    aba === item.key ? "page" : undefined
-                  }
+                  aria-current={aba === item.key ? "page" : undefined}
                 >
                   <Icon name={item.icon} size={20} />
                   <span>{item.label}</span>
@@ -1375,9 +1345,7 @@ export default function Prontuario() {
               {/* RESUMO */}
               {aba === "resumo" && (
                 <section className="pfp-panel">
-                  <h2 className="pfp-section-title">
-                    Resumo clínico
-                  </h2>
+                  <h2 className="pfp-section-title">Resumo clínico</h2>
 
                   <p className="pfp-section-subtitle">
                     Informações gerais e histórico do paciente.
@@ -1412,9 +1380,7 @@ export default function Prontuario() {
                         Consultas registradas
                       </div>
 
-                      <div className="pfp-count">
-                        {consultas.length}
-                      </div>
+                      <div className="pfp-count">{consultas.length}</div>
                     </div>
 
                     <div className="pfp-stat pfp-span-3">
@@ -1437,19 +1403,13 @@ export default function Prontuario() {
                         Avaliações e atendimentos
                       </div>
 
-                      <div className="pfp-count">
-                        {consultas.length}
-                      </div>
+                      <div className="pfp-count">{consultas.length}</div>
                     </div>
 
                     <div className="pfp-stat">
-                      <div className="pfp-stat-label">
-                        Fotos clínicas
-                      </div>
+                      <div className="pfp-stat-label">Fotos clínicas</div>
 
-                      <div className="pfp-count">
-                        {fotosClinicas.length}
-                      </div>
+                      <div className="pfp-count">{fotosClinicas.length}</div>
                     </div>
 
                     <div className="pfp-stat">
@@ -1460,7 +1420,7 @@ export default function Prontuario() {
                       <div className="pfp-count">
                         {
                           consultas.filter((consulta) =>
-                            consulta.evolucao?.trim()
+                            consulta.evolucao?.trim(),
                           ).length
                         }
                       </div>
@@ -1483,24 +1443,25 @@ export default function Prontuario() {
               {/* AVALIAÇÃO */}
               {aba === "clinico" && (
                 <section className="pfp-panel">
-                  <h2 className="pfp-section-title">
-                    Avaliação clínica
-                  </h2>
+                  <h2 className="pfp-section-title">Avaliação clínica</h2>
 
                   <p className="pfp-section-subtitle">
-                    Dados e condições clínicas registrados
-                    para este paciente.
+                    Dados e condições clínicas registrados para este paciente.
                   </p>
 
                   <div style={{ marginBottom: 20 }}>
                     <button
                       type="button"
                       className="pfp-primary"
-                      onClick={() =>
-                        navigate(
-                          `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`
-                        )
-                      }
+                      onClick={() => {
+                        if (paciente.avaliacaoInicialConcluida) {
+                          setMostrarAvisoAvaliacao(true);
+                        } else {
+                          navigate(
+                            `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`,
+                          );
+                        }
+                      }}
                     >
                       <Icon name="clipboard" size={18} />
                       Abrir avaliação inicial
@@ -1510,24 +1471,15 @@ export default function Prontuario() {
                   <div className="pfp-grid">
                     {[
                       ["Nascimento", paciente.nascimento],
-                      [
-                        "Peso",
-                        paciente.peso
-                          ? `${paciente.peso} kg`
-                          : "",
-                      ],
+                      ["Peso", paciente.peso ? `${paciente.peso} kg` : ""],
                       [
                         "Altura",
-                        paciente.altura
-                          ? `${paciente.altura} cm`
-                          : "",
+                        paciente.altura ? `${paciente.altura} cm` : "",
                       ],
                       ["Gênero", paciente.genero],
                     ].map(([titulo, valor]) => (
                       <div className="pfp-stat" key={titulo}>
-                        <div className="pfp-stat-label">
-                          {titulo}
-                        </div>
+                        <div className="pfp-stat-label">{titulo}</div>
 
                         <div className="pfp-stat-value">
                           {valor || "Não informado"}
@@ -1540,19 +1492,10 @@ export default function Prontuario() {
 
                   {[
                     ["Comorbidades", paciente.comorbidades],
-                    [
-                      "Condições musculoesqueléticas",
-                      paciente.doencasExtras,
-                    ],
-                    [
-                      "Condições neurológicas",
-                      paciente.doencasNeurologicas,
-                    ],
+                    ["Condições musculoesqueléticas", paciente.doencasExtras],
+                    ["Condições neurológicas", paciente.doencasNeurologicas],
                   ].map(([titulo, valores]) => (
-                    <div
-                      className="pfp-record"
-                      key={titulo}
-                    >
+                    <div className="pfp-record" key={titulo}>
                       <h3
                         style={{
                           fontSize: 15,
@@ -1562,26 +1505,19 @@ export default function Prontuario() {
                         {titulo}
                       </h3>
 
-                      {Array.isArray(valores) &&
-                      valores.length ? (
+                      {Array.isArray(valores) && valores.length ? (
                         <div>
                           {valores.map((valor) => (
-                            <span
-                              className="pfp-chip"
-                              key={valor}
-                            >
+                            <span className="pfp-chip" key={valor}>
                               {valor}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <p className="pfp-muted">
-                          Nenhuma registrada.
-                        </p>
+                        <p className="pfp-muted">Nenhuma registrada.</p>
                       )}
 
-                      {titulo ===
-                        "Condições neurológicas" &&
+                      {titulo === "Condições neurológicas" &&
                         paciente.sindromeDescricao && (
                           <p>
                             <strong>Síndrome:</strong>{" "}
@@ -1592,20 +1528,13 @@ export default function Prontuario() {
                   ))}
 
                   <div className="pfp-record">
-                    <h3 style={{ fontSize: 15 }}>
-                      Medicamentos
-                    </h3>
+                    <h3 style={{ fontSize: 15 }}>Medicamentos</h3>
 
-                    <p>
-                      {paciente.remedios ||
-                        "Nenhum registrado."}
-                    </p>
+                    <p>{paciente.remedios || "Nenhum registrado."}</p>
                   </div>
 
                   <div className="pfp-record">
-                    <h3 style={{ fontSize: 15 }}>
-                      Outros diagnósticos
-                    </h3>
+                    <h3 style={{ fontSize: 15 }}>Outros diagnósticos</h3>
 
                     <p>
                       {paciente.outrosDiagnosticos ||
@@ -1615,9 +1544,7 @@ export default function Prontuario() {
 
                   {paciente.anotacoesPaciente && (
                     <div className="pfp-record">
-                      <h3 style={{ fontSize: 15 }}>
-                        Histórico geral
-                      </h3>
+                      <h3 style={{ fontSize: 15 }}>Histórico geral</h3>
 
                       <p>{paciente.anotacoesPaciente}</p>
                     </div>
@@ -1628,68 +1555,80 @@ export default function Prontuario() {
               {/* CONSULTAS */}
               {aba === "consultas" && (
                 <section className="pfp-panel">
-                  <h2 className="pfp-section-title">
-                    Histórico de consultas
-                  </h2>
+                  <h2 className="pfp-section-title">Histórico de consultas</h2>
 
                   <p className="pfp-section-subtitle">
                     Consulte os atendimentos realizados.
                   </p>
 
+                  {avaliacaoInicialConcluida && avaliacaoInicial && (
+                    <button
+                      type="button"
+                      className="pfp-record pfp-record-button"
+                      onClick={() =>
+                        setConsultaSelecionada({
+                          ...avaliacaoInicial,
+                          id: "avaliacao-inicial",
+                          numero: "01",
+                          dataISO: paciente.avaliacaoInicialData || "",
+                          tipo: "avaliacao-inicial",
+                        })
+                      }
+                    >
+                      <strong>Consulta 01 — Avaliação Inicial</strong>
+
+                      <div className="pfp-muted" style={{ marginTop: 5 }}>
+                        {paciente.avaliacaoInicialData || "Data não informada"}
+                      </div>
+                    </button>
+                  )}
+
                   {!consultas.length ? (
-                    <p className="pfp-muted">
-                      Nenhuma consulta registrada.
-                    </p>
+                    <p className="pfp-muted">Nenhuma consulta registrada.</p>
                   ) : (
-                    [...consultas]
-                      .reverse()
-                      .map((consulta, index) => (
-                        <button
-                          key={consulta.id || index}
-                          type="button"
-                          className="pfp-record pfp-record-button"
-                          onClick={() =>
-                            setConsultaSelecionada(consulta)
-                          }
+                    [...consultas].reverse().map((consulta, index) => (
+                      <button
+                        key={consulta.id || index}
+                        type="button"
+                        className="pfp-record pfp-record-button"
+                        onClick={() => setConsultaSelecionada(consulta)}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 12,
+                          }}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              gap: 12,
-                            }}
-                          >
-                            <div>
-                              <strong>
-                                Consulta{" "}
-                                {consulta.numero ||
-                                  consultas.length - index}
-                              </strong>
+                          <div>
+                            <strong>
+                              Consulta{" "}
+                              {consulta.numero || consultas.length - index}
+                            </strong>
 
-                              <div
-                                className="pfp-muted"
-                                style={{
-                                  fontSize: 12,
-                                  marginTop: 5,
-                                }}
-                              >
-                                {consulta.dataISO || "-"}{" "}
-                                {consulta.hora || ""}
-                              </div>
-                            </div>
-
-                            <span
+                            <div
+                              className="pfp-muted"
                               style={{
-                                color: "var(--pf-turquoise)",
-                                fontSize: 13,
+                                fontSize: 12,
+                                marginTop: 5,
                               }}
                             >
-                              Visualizar →
-                            </span>
+                              {consulta.dataISO || "-"} {consulta.hora || ""}
+                            </div>
                           </div>
-                        </button>
-                      ))
+
+                          <span
+                            style={{
+                              color: "var(--pf-turquoise)",
+                              fontSize: 13,
+                            }}
+                          >
+                            Visualizar →
+                          </span>
+                        </div>
+                      </button>
+                    ))
                   )}
                 </section>
               )}
@@ -1697,57 +1636,42 @@ export default function Prontuario() {
               {/* EVOLUÇÃO */}
               {aba === "evolucao" && (
                 <section className="pfp-panel">
-                  <h2 className="pfp-section-title">
-                    Evolução clínica
-                  </h2>
+                  <h2 className="pfp-section-title">Evolução clínica</h2>
 
                   <p className="pfp-section-subtitle">
-                    Histórico da evolução registrada
-                    nas consultas do paciente.
+                    Histórico da evolução registrada nas consultas do paciente.
                   </p>
 
-                  {!consultas.some((consulta) =>
-                    consulta.evolucao?.trim()
-                  ) ? (
+                  {!consultas.some((consulta) => consulta.evolucao?.trim()) ? (
                     <p className="pfp-muted">
                       Nenhuma evolução clínica registrada.
                     </p>
                   ) : (
-                    [...consultas]
-                      .reverse()
-                      .map((consulta, index) =>
-                        consulta.evolucao?.trim() ? (
+                    [...consultas].reverse().map((consulta, index) =>
+                      consulta.evolucao?.trim() ? (
+                        <div className="pfp-record" key={consulta.id || index}>
                           <div
-                            className="pfp-record"
-                            key={consulta.id || index}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              gap: 12,
+                              marginBottom: 10,
+                            }}
                           >
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent:
-                                  "space-between",
-                                gap: 12,
-                                marginBottom: 10,
-                              }}
-                            >
-                              <strong>
-                                Consulta{" "}
-                                {consulta.numero ||
-                                  consultas.length - index}
-                              </strong>
+                            <strong>
+                              Consulta{" "}
+                              {consulta.numero || consultas.length - index}
+                            </strong>
 
-                              <small className="pfp-muted">
-                                {consulta.dataISO || "-"}{" "}
-                                {consulta.hora || ""}
-                              </small>
-                            </div>
-
-                            <p style={{ marginBottom: 0 }}>
-                              {consulta.evolucao}
-                            </p>
+                            <small className="pfp-muted">
+                              {consulta.dataISO || "-"} {consulta.hora || ""}
+                            </small>
                           </div>
-                        ) : null
-                      )
+
+                          <p style={{ marginBottom: 0 }}>{consulta.evolucao}</p>
+                        </div>
+                      ) : null,
+                    )
                   )}
                 </section>
               )}
@@ -1755,13 +1679,10 @@ export default function Prontuario() {
               {/* FOTOS */}
               {aba === "fotos" && (
                 <section className="pfp-panel">
-                  <h2 className="pfp-section-title">
-                    Fotos clínicas
-                  </h2>
+                  <h2 className="pfp-section-title">Fotos clínicas</h2>
 
                   <p className="pfp-section-subtitle">
-                    Fotografias vinculadas aos atendimentos
-                    deste paciente.
+                    Fotografias vinculadas aos atendimentos deste paciente.
                   </p>
 
                   {!fotosClinicas.length ? (
@@ -1777,11 +1698,7 @@ export default function Prontuario() {
                           style={{ marginBottom: 0 }}
                         >
                           {foto.url ? (
-                            <a
-                              href={foto.url}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
+                            <a href={foto.url} target="_blank" rel="noreferrer">
                               <img
                                 className="pfp-clinical-photo"
                                 src={foto.url}
@@ -1815,13 +1732,10 @@ export default function Prontuario() {
               {/* DOCUMENTOS */}
               {aba === "documentos" && (
                 <section className="pfp-panel">
-                  <h2 className="pfp-section-title">
-                    Documentos do paciente
-                  </h2>
+                  <h2 className="pfp-section-title">Documentos do paciente</h2>
 
                   <p className="pfp-section-subtitle">
-                    Consulte e gere documentos
-                    relacionados ao atendimento.
+                    Consulte e gere documentos relacionados ao atendimento.
                   </p>
 
                   <div className="pfp-document-grid">
@@ -1830,15 +1744,9 @@ export default function Prontuario() {
 
                       <h3>Relatório clínico</h3>
 
-                      <p>
-                        Resumo da avaliação e da
-                        evolução do paciente.
-                      </p>
+                      <p>Resumo da avaliação e da evolução do paciente.</p>
 
-                      <button
-                        type="button"
-                        onClick={gerarRelatorioClinicoPDF}
-                      >
+                      <button type="button" onClick={gerarRelatorioClinicoPDF}>
                         Gerar relatório
                       </button>
                     </div>
@@ -1848,16 +1756,11 @@ export default function Prontuario() {
 
                       <h3>Atestado</h3>
 
-                      <p>
-                        Documento referente ao
-                        atendimento realizado.
-                      </p>
+                      <p>Documento referente ao atendimento realizado.</p>
 
                       <button
                         type="button"
-                        onClick={() =>
-                          setMostrarAtestado(true)
-                        }
+                        onClick={() => setMostrarAtestado(true)}
                       >
                         Gerar atestado
                       </button>
@@ -1868,15 +1771,9 @@ export default function Prontuario() {
 
                       <h3>Receita</h3>
 
-                      <p>
-                        Espaço para documentos de
-                        prescrição autorizados.
-                      </p>
+                      <p>Espaço para documentos de prescrição autorizados.</p>
 
-                      <button
-                        type="button"
-                        onClick={gerarReceitaPDF}
-                      >
+                      <button type="button" onClick={gerarReceitaPDF}>
                         Gerar receita
                       </button>
                     </div>
@@ -1886,6 +1783,68 @@ export default function Prontuario() {
             </main>
           </div>
 
+          {/* AVISO DE AVALIAÇÃO INICIAL */}
+          {mostrarAvisoAvaliacao && paciente && (
+            <div
+              className="pfp-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Avaliação inicial já realizada"
+              onClick={() => setMostrarAvisoAvaliacao(false)}
+            >
+              <div
+                className="pfp-modal-content"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3>📋 Avaliação inicial já realizada</h3>
+
+                <p>
+                  Este paciente já possui uma avaliação inicial registrada. Você
+                  pode consultar ou atualizar as informações existentes.
+                </p>
+
+                <p>
+                  Para registrar um novo atendimento, selecione{" "}
+                  <strong>Nova consulta</strong>.
+                </p>
+
+                <div className="d-flex gap-2 flex-wrap mt-3">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setMostrarAvisoAvaliacao(false);
+                      navigate(
+                        `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`,
+                      );
+                    }}
+                  >
+                    Visualizar / editar avaliação
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={() => {
+                      setMostrarAvisoAvaliacao(false);
+                      navigate(`/consulta?clienteId=${paciente.id}`);
+                    }}
+                  >
+                    Nova consulta
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setMostrarAvisoAvaliacao(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* MODAL DE CONSULTA */}
           {consultaSelecionada && (
             <div
@@ -1893,20 +1852,13 @@ export default function Prontuario() {
               role="dialog"
               aria-modal="true"
               aria-label="Detalhes da consulta"
-              onClick={() =>
-                setConsultaSelecionada(null)
-              }
+              onClick={() => setConsultaSelecionada(null)}
             >
               <div
                 className="pfp-modal-box"
-                onClick={(event) =>
-                  event.stopPropagation()
-                }
+                onClick={(event) => event.stopPropagation()}
               >
-                <h3>
-                  Consulta{" "}
-                  {consultaSelecionada.numero || ""}
-                </h3>
+                <h3>Consulta {consultaSelecionada.numero || ""}</h3>
 
                 <p className="pfp-muted">
                   {consultaSelecionada.dataISO || "-"}{" "}
@@ -1914,32 +1866,18 @@ export default function Prontuario() {
                 </p>
 
                 {[
-                  [
-                    "Queixa principal",
-                    consultaSelecionada.queixa,
-                  ],
-                  [
-                    "Avaliação",
-                    consultaSelecionada.avaliacao,
-                  ],
+                  ["Queixa principal", consultaSelecionada.queixa],
+                  ["Avaliação", consultaSelecionada.avaliacao],
                   [
                     "Procedimentos realizados",
                     consultaSelecionada.procedimentos,
                   ],
-                  [
-                    "Evolução",
-                    consultaSelecionada.evolucao,
-                  ],
-                  [
-                    "Conduta / Plano",
-                    consultaSelecionada.conduta,
-                  ],
+                  ["Evolução", consultaSelecionada.evolucao],
+                  ["Conduta / Plano", consultaSelecionada.conduta],
                 ].map(([titulo, valor]) => (
                   <div key={titulo}>
                     <h4>{titulo}</h4>
-                    <p>
-                      {valor || "Não informado"}
-                    </p>
+                    <p>{valor || "Não informado"}</p>
                   </div>
                 ))}
 
@@ -1947,9 +1885,7 @@ export default function Prontuario() {
                   <button
                     type="button"
                     className="pfp-secondary"
-                    onClick={() =>
-                      gerarConsultaPDF(consultaSelecionada)
-                    }
+                    onClick={() => gerarConsultaPDF(consultaSelecionada)}
                   >
                     Imprimir consulta
                   </button>
@@ -1957,9 +1893,7 @@ export default function Prontuario() {
                   <button
                     type="button"
                     className="pfp-primary"
-                    onClick={() =>
-                      setConsultaSelecionada(null)
-                    }
+                    onClick={() => setConsultaSelecionada(null)}
                   >
                     Fechar
                   </button>
@@ -1975,58 +1909,40 @@ export default function Prontuario() {
               role="dialog"
               aria-modal="true"
               aria-label="Novo atestado"
-              onClick={() =>
-                setMostrarAtestado(false)
-              }
+              onClick={() => setMostrarAtestado(false)}
             >
               <div
                 className="pfp-modal-box"
-                onClick={(event) =>
-                  event.stopPropagation()
-                }
+                onClick={(event) => event.stopPropagation()}
               >
                 <h3>Novo atestado</h3>
 
-                <p className="pfp-muted">
-                  Paciente: {paciente.nome}
-                </p>
+                <p className="pfp-muted">Paciente: {paciente.nome}</p>
 
-                <label htmlFor="pfp-data-atestado">
-                  Data do atendimento
-                </label>
+                <label htmlFor="pfp-data-atestado">Data do atendimento</label>
 
                 <input
                   id="pfp-data-atestado"
                   type="date"
                   value={dataAtestado}
-                  onChange={(event) =>
-                    setDataAtestado(event.target.value)
-                  }
+                  onChange={(event) => setDataAtestado(event.target.value)}
                 />
 
-                <label htmlFor="pfp-tipo-atestado">
-                  Tipo de documento
-                </label>
+                <label htmlFor="pfp-tipo-atestado">Tipo de documento</label>
 
                 <select
                   id="pfp-tipo-atestado"
                   value={tipoAtestado}
-                  onChange={(event) =>
-                    setTipoAtestado(event.target.value)
-                  }
+                  onChange={(event) => setTipoAtestado(event.target.value)}
                 >
                   <option value="comparecimento">
                     Declaração de comparecimento
                   </option>
 
-                  <option value="afastamento">
-                    Atestado de afastamento
-                  </option>
+                  <option value="afastamento">Atestado de afastamento</option>
                 </select>
 
-                <label htmlFor="pfp-observacoes-atestado">
-                  Observações
-                </label>
+                <label htmlFor="pfp-observacoes-atestado">Observações</label>
 
                 <textarea
                   id="pfp-observacoes-atestado"
@@ -2034,9 +1950,7 @@ export default function Prontuario() {
                   placeholder="Informações que serão incluídas no documento..."
                   value={observacoesAtestado}
                   onChange={(event) =>
-                    setObservacoesAtestado(
-                      event.target.value
-                    )
+                    setObservacoesAtestado(event.target.value)
                   }
                 />
 
@@ -2044,9 +1958,7 @@ export default function Prontuario() {
                   <button
                     type="button"
                     className="pfp-secondary"
-                    onClick={() =>
-                      setMostrarAtestado(false)
-                    }
+                    onClick={() => setMostrarAtestado(false)}
                   >
                     Cancelar
                   </button>

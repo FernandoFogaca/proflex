@@ -10,12 +10,40 @@ export default function Consulta() {
 
   const clienteId = params.get("clienteId");
   const paciente = clienteId ? getClient(clienteId) : null;
+  const avaliacaoInicialConcluida =
+  paciente?.avaliacaoInicialConcluida === true;
 
   const [queixa, setQueixa] = useState("");
   const [avaliacao, setAvaliacao] = useState("");
   const [procedimentos, setProcedimentos] = useState("");
   const [evolucao, setEvolucao] = useState("");
   const [conduta, setConduta] = useState("");
+
+  if (paciente && !avaliacaoInicialConcluida) {
+  return (
+    <div className="container py-4">
+      <div className="alert alert-warning">
+        <h4>Avaliação inicial necessária</h4>
+        <p>
+          Para registrar uma nova consulta, é necessário
+          concluir primeiro a avaliação inicial deste paciente.
+        </p>
+
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() =>
+            navigate(
+              `/agendar?clienteId=${paciente.id}&tipo=completo&origem=prontuario`
+            )
+          }
+        >
+          Ir para avaliação inicial
+        </button>
+      </div>
+    </div>
+  );
+}
 
   if (!paciente) {
     return (
@@ -36,12 +64,19 @@ export default function Consulta() {
     );
   }
 
-  const salvarConsulta = (e) => {
-    e.preventDefault();
+const salvarConsulta = async (e) => {
+  e.preventDefault();
 
-    const agora = new Date();
+  if (!avaliacaoInicialConcluida) {
+    alert(
+      "É necessário concluir a avaliação inicial antes de registrar uma nova consulta."
+    );
+    return;
+  }
 
-    addConsulta(paciente.id, {
+  const agora = new Date();
+  try {
+await addConsulta(paciente.id, {
       dataISO: agora.toISOString().slice(0, 10),
       hora: agora.toTimeString().slice(0, 5),
       queixa: queixa.trim(),
@@ -52,7 +87,11 @@ export default function Consulta() {
       texto: "",
     });
 
-    navigate(`/prontuario?clienteId=${paciente.id}`);
+      navigate(`/prontuario?clienteId=${paciente.id}`);
+} catch (erro) {
+  console.error("Erro ao salvar consulta:", erro);
+  alert("Não foi possível salvar a consulta. Tente novamente.");
+}
   };
 
   return (

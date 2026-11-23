@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
@@ -19,8 +18,7 @@ function calcIdade(yyyy_mm_dd) {
 
   const antes =
     hoje.getMonth() < nasc.getMonth() ||
-    (hoje.getMonth() === nasc.getMonth() &&
-      hoje.getDate() < nasc.getDate());
+    (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate());
 
   if (antes) idade--;
 
@@ -657,11 +655,7 @@ function SectionHeader({ number, title, subtitle }) {
         {number}. {title}
       </h5>
 
-      {subtitle && (
-        <small style={{ opacity: 0.9 }}>
-          {subtitle}
-        </small>
-      )}
+      {subtitle && <small style={{ opacity: 0.9 }}>{subtitle}</small>}
     </div>
   );
 }
@@ -670,48 +664,54 @@ function SectionHeader({ number, title, subtitle }) {
 // COMPONENTE PRINCIPAL
 // =====================================================
 
+
+const TextoLongo = ({ titulo, valor, alterar, placeholder = "" }) => (
+    <div className="col-12">
+      <label className="form-label">{titulo}</label>
+
+      <textarea
+        className="form-control"
+        rows={4}
+        value={valor}
+        onChange={(e) => alterar(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+
+
 export default function NovoAgendamento() {
   const [etapa, setEtapa] = useState(1);
 
-  
-const [tema, setTema] = useState(() => {
-  try {
-    return localStorage.getItem("proflex-tema") === "dark"
-      ? "dark"
-      : "light";
-  } catch {
-    return "light";
-  }
-});
-
-// Escuta as alterações realizadas pelo botão
-// Dark/Light do PageHeader.jsx.
-useEffect(() => {
-  const atualizarTema = (evento) => {
-    const novoTema = evento.detail?.tema;
-
-    if (novoTema === "dark" || novoTema === "light") {
-      setTema(novoTema);
+  const [tema, setTema] = useState(() => {
+    try {
+      return localStorage.getItem("proflex-tema") === "dark" ? "dark" : "light";
+    } catch {
+      return "light";
     }
-  };
+  });
 
-  window.addEventListener(
-    "proflex-theme-change",
-    atualizarTema
-  );
+  // Escuta as alterações realizadas pelo botão
+  // Dark/Light do PageHeader.jsx.
+  useEffect(() => {
+    const atualizarTema = (evento) => {
+      const novoTema = evento.detail?.tema;
 
-  return () => {
-    window.removeEventListener(
-      "proflex-theme-change",
+      if (novoTema === "dark" || novoTema === "light") {
+        setTema(novoTema);
+      }
+    };
 
-      atualizarTema
-    );
-  };
-}, []);
+    window.addEventListener("proflex-theme-change", atualizarTema);
 
+    return () => {
+      window.removeEventListener(
+        "proflex-theme-change",
 
-
-
+        atualizarTema,
+      );
+    };
+  }, []);
 
   const etapas = [
     "Dados pessoais",
@@ -750,29 +750,25 @@ useEffect(() => {
   const clienteIdParam = params.get("clienteId") || "";
 
   const dataInicial =
-    params.get("data") ||
-    new Date().toISOString().split("T")[0];
+    params.get("data") || new Date().toISOString().split("T")[0];
 
   const horaInicial = params.get("hora") || "09:00";
   const tipoQuery = params.get("tipo");
 
-  const editandoPeloProntuario =
-    params.get("origem") === "prontuario";
+  const editandoPeloProntuario = params.get("origem") === "prontuario";
 
-  const clienteExistente = clienteIdParam
-    ? getClient(clienteIdParam)
-    : null;
+  const clienteExistente = clienteIdParam ? getClient(clienteIdParam) : null;
 
   // Estados iniciais do formulário
   const [tipo, setTipo] = useState(
-    tipoQuery || (clienteExistente ? "completo" : "rapido")
+    tipoQuery || (clienteExistente ? "completo" : "rapido"),
   );
 
   const [data, setData] = useState(dataInicial);
   const [hora, setHora] = useState(horaInicial);
 
   const [professionalId, setProfessionalId] = useState(
-    params.get("professionalId") || ""
+    params.get("professionalId") || "",
   );
 
   // CONTINUA NA PARTE 2/3
@@ -784,12 +780,11 @@ useEffect(() => {
   const [duracao, setDuracao] = useState(60);
 
   const profissionaisAtivos = (professionals || []).filter(
-    (profissional) => profissional.ativo !== false
+    (profissional) => profissional.ativo !== false,
   );
 
   const profissionalSelecionado = (professionals || []).find(
-    (profissional) =>
-      String(profissional.id) === String(professionalId)
+    (profissional) => String(profissional.id) === String(professionalId),
   );
 
   useEffect(() => {
@@ -800,14 +795,9 @@ useEffect(() => {
 
   useEffect(() => {
     if (profissionalSelecionado) {
-      setDuracao(
-        Number(profissionalSelecionado.duracaoConsulta) || 60
-      );
+      setDuracao(Number(profissionalSelecionado.duracaoConsulta) || 60);
     }
-  }, [
-    profissionalSelecionado?.id,
-    profissionalSelecionado?.duracaoConsulta,
-  ]);
+  }, [profissionalSelecionado?.id, profissionalSelecionado?.duracaoConsulta]);
 
   const validarHorario = () => {
     if (editandoPeloProntuario) return true;
@@ -827,11 +817,7 @@ useEffect(() => {
       return false;
     }
 
-    if (
-      !Number.isFinite(duracaoMin) ||
-      duracaoMin < 5 ||
-      duracaoMin > 480
-    ) {
+    if (!Number.isFinite(duracaoMin) || duracaoMin < 5 || duracaoMin > 480) {
       alert("Informe uma duração entre 5 e 480 minutos.");
       return false;
     }
@@ -841,64 +827,42 @@ useEffect(() => {
       return false;
     }
 
-    if (
-      profissionaisAtivos.length > 0 &&
-      !profissionalSelecionado
-    ) {
+    if (profissionaisAtivos.length > 0 && !profissionalSelecionado) {
       alert("Selecione um profissional.");
       return false;
     }
 
-    const conflito = (appointments || []).some(
-      (agendamento) => {
-        if (agendamento.data !== data) return false;
+    const conflito = (appointments || []).some((agendamento) => {
+      if (agendamento.data !== data) return false;
 
-        if (
-          String(agendamento.professionalId || "") !==
-          String(professionalId || "")
-        ) {
-          return false;
-        }
-
-        if (
-          ["cancelado", "cancelada"].includes(
-            agendamento.status
-          )
-        ) {
-          return false;
-        }
-
-        const [outraHora, outroMinuto] = String(
-          agendamento.hora || ""
-        )
-          .split(":")
-          .map(Number);
-
-        if (
-          !Number.isFinite(outraHora) ||
-          !Number.isFinite(outroMinuto)
-        ) {
-          return false;
-        }
-
-        const outroInicio =
-          outraHora * 60 + outroMinuto;
-
-        const outroFim =
-          outroInicio +
-          (Number(agendamento.duracaoMin) || 60);
-
-        return (
-          inicioMin < outroFim &&
-          fimMin > outroInicio
-        );
+      if (
+        String(agendamento.professionalId || "") !==
+        String(professionalId || "")
+      ) {
+        return false;
       }
-    );
+
+      if (["cancelado", "cancelada"].includes(agendamento.status)) {
+        return false;
+      }
+
+      const [outraHora, outroMinuto] = String(agendamento.hora || "")
+        .split(":")
+        .map(Number);
+
+      if (!Number.isFinite(outraHora) || !Number.isFinite(outroMinuto)) {
+        return false;
+      }
+
+      const outroInicio = outraHora * 60 + outroMinuto;
+
+      const outroFim = outroInicio + (Number(agendamento.duracaoMin) || 60);
+
+      return inicioMin < outroFim && fimMin > outroInicio;
+    });
 
     if (conflito) {
-      alert(
-        "Este profissional já possui uma consulta nesse horário."
-      );
+      alert("Este profissional já possui uma consulta nesse horário.");
       return false;
     }
 
@@ -950,70 +914,37 @@ useEffect(() => {
 
   const [comorb, setComorb] = useState([]);
   const [doencasExtras, setDoencasExtras] = useState([]);
-  const [
-    doencasNeurologicas,
-    setDoencasNeurologicas,
-  ] = useState([]);
+  const [doencasNeurologicas, setDoencasNeurologicas] = useState([]);
 
-  const [
-    sindromeDescricao,
-    setSindromeDescricao,
-  ] = useState("");
+  const [sindromeDescricao, setSindromeDescricao] = useState("");
 
-  const [
-    outrosDiagnosticos,
-    setOutrosDiagnosticos,
-  ] = useState("");
+  const [outrosDiagnosticos, setOutrosDiagnosticos] = useState("");
 
   const [remedios, setRemedios] = useState("");
 
-  const [
-    anotacoesPaciente,
-    setAnotacoesPaciente,
-  ] = useState("");
+  const [anotacoesPaciente, setAnotacoesPaciente] = useState("");
 
   const [areas, setAreas] = useState(() =>
     Object.fromEntries(
-      Object.keys(AREAS).map((grupo) => [
-        grupo,
-        { parts: [], note: "" },
-      ])
-    )
+      Object.keys(AREAS).map((grupo) => [grupo, { parts: [], note: "" }]),
+    ),
   );
 
   // =====================================================
   // AVALIAÇÃO E ATENDIMENTO
   // =====================================================
 
-  const [
-    observacoes,
-    setObservacoes,
-  ] = useState("");
+  const [observacoes, setObservacoes] = useState("");
 
-  const [
-    queixaAtual,
-    setQueixaAtual,
-  ] = useState("");
+  const [queixaAtual, setQueixaAtual] = useState("");
 
-  const [
-    avaliacaoAtual,
-    setAvaliacaoAtual,
-  ] = useState("");
+  const [avaliacaoAtual, setAvaliacaoAtual] = useState("");
 
-  const [
-    procedimentosAtual,
-    setProcedimentosAtual,
-  ] = useState("");
+  const [procedimentosAtual, setProcedimentosAtual] = useState("");
 
-  const [
-    evolucaoAtual,
-    setEvolucaoAtual,
-  ] = useState("");
+  const [evolucaoAtual, setEvolucaoAtual] = useState("");
 
-  const [
-    condutaAtual,
-    setCondutaAtual,
-  ] = useState("");
+  const [condutaAtual, setCondutaAtual] = useState("");
 
   const [carimbo, setCarimbo] = useState("");
 
@@ -1028,7 +959,7 @@ useEffect(() => {
       email: "",
       telefone: "",
       endereco: "",
-    })
+    }),
   );
 
   // =====================================================
@@ -1039,17 +970,13 @@ useEffect(() => {
     if (clienteExistente) {
       setNome(clienteExistente.nome || "");
       setTelefone(clienteExistente.telefone || "");
-      setTemWhatsapp(
-        clienteExistente.temWhatsapp || false
-      );
+      setTemWhatsapp(clienteExistente.temWhatsapp || false);
 
       setEmail(clienteExistente.email || "");
       setSemEmail(!clienteExistente.email);
       setEndereco(clienteExistente.endereco || "");
 
-      setNascimento(
-        clienteExistente.nascimento || ""
-      );
+      setNascimento(clienteExistente.nascimento || "");
 
       setPeso(clienteExistente.peso || "");
       setAltura(clienteExistente.altura || "");
@@ -1058,49 +985,46 @@ useEffect(() => {
       setComorb(
         Array.isArray(clienteExistente.comorbidades)
           ? clienteExistente.comorbidades
-          : []
+          : [],
       );
 
       setDoencasExtras(
         Array.isArray(clienteExistente.doencasExtras)
           ? clienteExistente.doencasExtras
-          : []
+          : [],
       );
 
       setDoencasNeurologicas(
-        Array.isArray(
-          clienteExistente.doencasNeurologicas
-        )
+        Array.isArray(clienteExistente.doencasNeurologicas)
           ? clienteExistente.doencasNeurologicas
-          : []
+          : [],
       );
 
-      setSindromeDescricao(
-        clienteExistente.sindromeDescricao || ""
-      );
+      setSindromeDescricao(clienteExistente.sindromeDescricao || "");
 
-      setOutrosDiagnosticos(
-        clienteExistente.outrosDiagnosticos || ""
-      );
+      setOutrosDiagnosticos(clienteExistente.outrosDiagnosticos || "");
 
-      setRemedios(
-        clienteExistente.remedios || ""
-      );
+      setRemedios(clienteExistente.remedios || "");
 
-      setAnotacoesPaciente(
-        clienteExistente.anotacoesPaciente || ""
-      );
+      setAnotacoesPaciente(clienteExistente.anotacoesPaciente || "");
+
+      const avaliacaoSalva = clienteExistente.avaliacaoInicial || {};
+
+setQueixaAtual(avaliacaoSalva.queixa || "");
+setAvaliacaoAtual(avaliacaoSalva.avaliacao || "");
+setProcedimentosAtual(avaliacaoSalva.procedimentos || "");
+setEvolucaoAtual(avaliacaoSalva.evolucao || "");
+setCondutaAtual(avaliacaoSalva.conduta || "");
 
       if (clienteExistente.areas) {
         setAreas((prev) => {
           const base = { ...prev };
 
           for (const grupo of Object.keys(AREAS)) {
-            base[grupo] =
-              clienteExistente.areas[grupo] || {
-                parts: [],
-                note: "",
-              };
+            base[grupo] = clienteExistente.areas[grupo] || {
+              parts: [],
+              note: "",
+            };
           }
 
           return base;
@@ -1110,9 +1034,7 @@ useEffect(() => {
       setTipo(tipoQuery || "completo");
     }
 
-    setCarimbo(
-      new Date().toLocaleString("pt-BR")
-    );
+    setCarimbo(new Date().toLocaleString("pt-BR"));
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clienteIdParam]);
@@ -1123,16 +1045,18 @@ useEffect(() => {
 
   const consultas = useMemo(
     () => clienteExistente?.consultas || [],
-    [clienteExistente?.consultas]
+    [clienteExistente?.consultas],
   );
 
   const [sel, setSel] = useState([]);
+
+  const [excluindoConsultas, setExcluindoConsultas] = useState(false);
 
   const toggleComorb = (valor) => {
     setComorb((prev) =>
       prev.includes(valor)
         ? prev.filter((item) => item !== valor)
-        : [...prev, valor]
+        : [...prev, valor],
     );
   };
 
@@ -1140,7 +1064,7 @@ useEffect(() => {
     setDoencasExtras((prev) =>
       prev.includes(valor)
         ? prev.filter((item) => item !== valor)
-        : [...prev, valor]
+        : [...prev, valor],
     );
   };
 
@@ -1148,7 +1072,7 @@ useEffect(() => {
     setDoencasNeurologicas((prev) =>
       prev.includes(valor)
         ? prev.filter((item) => item !== valor)
-        : [...prev, valor]
+        : [...prev, valor],
     );
   };
 
@@ -1160,9 +1084,7 @@ useEffect(() => {
       };
 
       const parts = atual.parts.includes(parte)
-        ? atual.parts.filter(
-            (item) => item !== parte
-          )
+        ? atual.parts.filter((item) => item !== parte)
         : [...atual.parts, parte];
 
       return {
@@ -1186,74 +1108,64 @@ useEffect(() => {
   };
 
   const selecionarTudo = (marcar) => {
-    setSel(
-      marcar
-        ? consultas.map((consulta) => consulta.id)
-        : []
+    setSel(marcar ? consultas.map((consulta) => consulta.id) : []);
+  };
+
+const novaConsulta = () => {
+  if (!clienteExistente) {
+    alert("Salve o paciente antes de registrar uma consulta.");
+    return;
+  }
+
+  if (!clienteExistente.avaliacaoInicialConcluida) {
+    alert(
+      "Conclua a avaliação inicial antes de registrar uma nova consulta."
     );
-  };
+    return;
+  }
 
-  const novaConsulta = () => {
-    if (!clienteExistente) {
-      alert(
-        "Salve o paciente primeiro para criar consultas sequenciais."
-      );
-      return;
-    }
-
-    const agora = new Date();
-
-    addConsulta(clienteExistente.id, {
-      dataISO: agora.toISOString().slice(0, 10),
-      hora: agora.toTimeString().slice(0, 5),
-      texto: "",
-    });
-  };
+  navigate(`/consulta?clienteId=${clienteExistente.id}`);
+};
 
   const setTextoConsulta = (cid, texto) => {
     if (!clienteExistente) return;
 
-    updateConsulta(
-      clienteExistente.id,
-      cid,
-      { texto }
-    );
+    updateConsulta(clienteExistente.id, cid, { texto });
   };
 
   const gerarPDFSelecionadas = () => {
     if (!clienteExistente) return;
 
     const selecionadas = consultas
-      .filter((consulta) =>
-        sel.includes(consulta.id)
-      )
-      .sort((a, b) =>
-        String(a.numero).localeCompare(
-          String(b.numero)
-        )
-      );
+      .filter((consulta) => sel.includes(consulta.id))
+      .sort((a, b) => String(a.numero).localeCompare(String(b.numero)));
 
     if (!selecionadas.length) {
       alert("Selecione ao menos uma consulta.");
       return;
     }
 
-    gerarRelatorioPDF(
-      clienteExistente,
-      selecionadas
-    );
+    gerarRelatorioPDF(clienteExistente, selecionadas);
   };
 
-  const excluirSelecionadas = () => {
-    if (!clienteExistente) return;
+ const excluirSelecionadas = async () => {
+  if (!clienteExistente || excluindoConsultas || sel.length === 0) return;
 
-    deleteConsultas(
-      clienteExistente.id,
-      sel
-    );
+  setExcluindoConsultas(true);
+
+  try {
+    const excluiu = await deleteConsultas(clienteExistente.id, sel);
+
+    if (excluiu === false) return;
 
     setSel([]);
-  };
+  } catch (erro) {
+    console.error("Erro ao excluir consultas:", erro);
+    alert("Não foi possível excluir as consultas. Tente novamente.");
+  } finally {
+    setExcluindoConsultas(false);
+  }
+};
 
   const idade = calcIdade(nascimento);
 
@@ -1261,47 +1173,31 @@ useEffect(() => {
   // SALVAR CADASTRO / AVALIAÇÃO / AGENDAMENTO
   // =====================================================
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const avaliacaoAnterior = clienteExistente?.avaliacaoInicial || null;
     if (!validarHorario()) return;
 
     const partesNome = nome.trim().split(/\s+/);
 
-    if (
-      partesNome.length < 2 ||
-      partesNome.some(
-        (parte) => parte.length < 2
-      )
-    ) {
-      alert(
-        "Informe o nome e sobrenome do paciente."
-      );
+    if (partesNome.length < 2 || partesNome.some((parte) => parte.length < 2)) {
+      alert("Informe o nome e sobrenome do paciente.");
       irEtapa(1);
       return;
     }
 
-    const numeroTelefone =
-      telefone.replace(/\D/g, "");
+    const numeroTelefone = telefone.replace(/\D/g, "");
 
-    if (
-      numeroTelefone.length < 7 ||
-      numeroTelefone.length > 15
-    ) {
-      alert(
-        "Informe um telefone válido, com 7 a 15 dígitos."
-      );
+    if (numeroTelefone.length < 7 || numeroTelefone.length > 15) {
+      alert("Informe um telefone válido, com 7 a 15 dígitos.");
       irEtapa(1);
       return;
     }
 
-    if (
-      !/^\+?[\d\s()-]+$/.test(
-        telefone.trim()
-      )
-    ) {
+    if (!/^\+?[\d\s()-]+$/.test(telefone.trim())) {
       alert(
-        "Telefone inválido. Use números e, se necessário, o código internacional com +."
+        "Telefone inválido. Use números e, se necessário, o código internacional com +.",
       );
       irEtapa(1);
       return;
@@ -1330,20 +1226,61 @@ useEffect(() => {
             outrosDiagnosticos,
             remedios,
             areas,
+
+            avaliacaoInicial: {
+              queixa: queixaAtual.trim(),
+              avaliacao: avaliacaoAtual.trim(),
+              procedimentos: procedimentosAtual.trim(),
+              evolucao: evolucaoAtual.trim(),
+              conduta: condutaAtual.trim(),
+            },
           }
         : {};
 
     let cliente = clienteExistente;
 
-    if (cliente) {
-      updateClient(cliente.id, {
+    const avaliacaoPreenchida =
+  tipo === "completo" &&
+  Boolean(queixaAtual.trim()) &&
+  Boolean(avaliacaoAtual.trim());
+
+    const avaliacaoAlterada =
+  avaliacaoAnterior &&
+  JSON.stringify(avaliacaoAnterior) !==
+    JSON.stringify(extras.avaliacaoInicial);
+
+const historicoAvaliacao = avaliacaoAlterada
+  ? [
+      ...(clienteExistente?.historicoAvaliacaoInicial || []),
+      {
+        data: new Date().toISOString(),
+        avaliacaoAnterior,
+      },
+    ]
+  : clienteExistente?.historicoAvaliacaoInicial || [];
+
+   if (cliente) {
+  await updateClient(cliente.id, {
+    ...baseCliente,
+    ...extras,
+    ...(tipo === "completo"
+      ? { historicoAvaliacaoInicial: historicoAvaliacao }
+      : {}),
+...(avaliacaoPreenchida && !cliente.avaliacaoInicialConcluida
+      ? {
+          avaliacaoInicialConcluida: true,
+          avaliacaoInicialData: new Date().toISOString(),
+        }
+      : {}),
+  });
+} else {
+      cliente = await addClient({
         ...baseCliente,
         ...extras,
-      });
-    } else {
-      cliente = addClient({
-        ...baseCliente,
-        ...extras,
+     avaliacaoInicialConcluida: avaliacaoPreenchida,
+avaliacaoInicialData: avaliacaoPreenchida
+  ? new Date().toISOString()
+  : null,
         consultas: [],
         receitas: [],
         atestados: [],
@@ -1357,34 +1294,23 @@ useEffect(() => {
       const linhas = [];
 
       if (doencasExtras.length) {
-        linhas.push(
-          `Doenças adicionais: ${doencasExtras.join(", ")}`
-        );
+        linhas.push(`Doenças adicionais: ${doencasExtras.join(", ")}`);
       }
 
       const blocos = Object.entries(areas)
-        .filter(
-          ([, valor]) =>
-            valor.parts.length || valor.note
-        )
+        .filter(([, valor]) => valor.parts.length || valor.note)
         .map(
           ([grupo, valor]) =>
             `${grupo}: ${valor.parts.join(", ")}${
-              valor.note
-                ? ` — Obs: ${valor.note}`
-                : ""
-            }`
+              valor.note ? ` — Obs: ${valor.note}` : ""
+            }`,
         );
 
       if (blocos.length) {
-        linhas.push(
-          `Áreas afetadas: ${blocos.join(" | ")}`
-        );
+        linhas.push(`Áreas afetadas: ${blocos.join(" | ")}`);
       }
 
-      return linhas.length
-        ? linhas.join("\n") + "\n\n"
-        : "";
+      return linhas.length ? linhas.join("\n") + "\n\n" : "";
     })();
 
     const temDadosConsulta =
@@ -1394,33 +1320,24 @@ useEffect(() => {
       evolucaoAtual.trim() ||
       condutaAtual.trim();
 
-    if (temDadosConsulta) {
-      const dataISO =
-        data ||
-        new Date().toISOString().slice(0, 10);
+    if (temDadosConsulta && !editandoPeloProntuario) {
+      const dataISO = data || new Date().toISOString().slice(0, 10);
 
-      const horaOK =
-        hora ||
-        new Date().toTimeString().slice(0, 5);
+      const horaOK = hora || new Date().toTimeString().slice(0, 5);
 
-      addConsulta(cliente.id, {
+      await addConsulta(cliente.id, {
         dataISO,
         hora: horaOK,
         texto: resumoExtras,
         queixa: queixaAtual.trim(),
         avaliacao: avaliacaoAtual.trim(),
-        procedimentos:
-          procedimentosAtual.trim(),
+        procedimentos: procedimentosAtual.trim(),
         evolucao: evolucaoAtual.trim(),
         conduta: condutaAtual.trim(),
       });
     }
 
-    if (
-      data &&
-      hora &&
-      !editandoPeloProntuario
-    ) {
+    if (data && hora && !editandoPeloProntuario) {
       addAppointment({
         data,
         hora,
@@ -1428,10 +1345,8 @@ useEffect(() => {
         clienteNome: cliente.nome,
         observacoes,
         tipo,
-        professionalId:
-          professionalId || null,
-        profissionalNome:
-          profissionalSelecionado?.nome || "",
+        professionalId: professionalId || null,
+        profissionalNome: profissionalSelecionado?.nome || "",
         duracaoMin: Number(duracao),
         status: "agendado",
       });
@@ -1440,9 +1355,7 @@ useEffect(() => {
     alert("✅ Cadastro salvo!");
 
     if (editandoPeloProntuario) {
-      navigate(
-        `/prontuario?clienteId=${cliente.id}`
-      );
+      navigate(`/prontuario?clienteId=${cliente.id}`);
     } else {
       navigate("/agenda");
     }
@@ -1482,27 +1395,14 @@ useEffect(() => {
     doc.line(40, y, 555, y);
     y += 18;
 
-    doc.text(
-      `${prof.nome || ""} | Registro: ${prof.registro || "-"}`,
-      40,
-      y
-    );
+    doc.text(`${prof.nome || ""} | Registro: ${prof.registro || "-"}`, 40, y);
 
     y += 16;
 
-    doc.text(
-      `${prof.email || ""} | Tel: ${prof.telefone || ""}`,
-      40,
-      y
-    );
+    doc.text(`${prof.email || ""} | Tel: ${prof.telefone || ""}`, 40, y);
   };
 
-  const imprimirDocumento = (
-    cliente,
-    titulo,
-    texto,
-    destinatario = ""
-  ) => {
+  const imprimirDocumento = (cliente, titulo, texto, destinatario = "") => {
     if (!cliente) {
       alert("Salve o paciente primeiro.");
       return false;
@@ -1518,10 +1418,7 @@ useEffect(() => {
     let y = 70;
 
     const escreverLinhas = (conteudo) => {
-      const linhas = doc.splitTextToSize(
-        String(conteudo || ""),
-        515
-      );
+      const linhas = doc.splitTextToSize(String(conteudo || ""), 515);
 
       linhas.forEach((linha) => {
         if (y > 740) {
@@ -1535,43 +1432,28 @@ useEffect(() => {
     };
 
     escreverLinhas(`Paciente: ${cliente.nome}`);
-    escreverLinhas(
-      `Nascimento: ${cliente.nascimento || "-"}`
-    );
+    escreverLinhas(`Nascimento: ${cliente.nascimento || "-"}`);
 
     if (destinatario) {
-      escreverLinhas(
-        `Destinatário: ${destinatario}`
-      );
+      escreverLinhas(`Destinatário: ${destinatario}`);
     }
 
-    escreverLinhas(
-      `Data: ${new Date().toLocaleDateString("pt-BR")}`
-    );
+    escreverLinhas(`Data: ${new Date().toLocaleDateString("pt-BR")}`);
 
     y += 16;
     escreverLinhas(texto);
 
     pdfFooterProf(doc, y);
 
-    const nomeArquivo = String(cliente.nome || "paciente")
-      .replace(/\s+/g, "_");
+    const nomeArquivo = String(cliente.nome || "paciente").replace(/\s+/g, "_");
 
-    doc.save(
-      `${titulo.toLowerCase()}_${nomeArquivo}.pdf`
-    );
+    doc.save(`${titulo.toLowerCase()}_${nomeArquivo}.pdf`);
 
     return true;
   };
 
   const imprimirReceita = (cliente, texto) => {
-    if (
-      !imprimirDocumento(
-        cliente,
-        "RECEITA",
-        texto
-      )
-    ) {
+    if (!imprimirDocumento(cliente, "RECEITA", texto)) {
       return;
     }
 
@@ -1587,19 +1469,8 @@ useEffect(() => {
     });
   };
 
-  const imprimirAtestado = (
-    cliente,
-    para,
-    texto
-  ) => {
-    if (
-      !imprimirDocumento(
-        cliente,
-        "ATESTADO",
-        texto,
-        para
-      )
-    ) {
+  const imprimirAtestado = (cliente, para, texto) => {
+    if (!imprimirDocumento(cliente, "ATESTADO", texto, para)) {
       return;
     }
 
@@ -1649,13 +1520,7 @@ useEffect(() => {
     "Confira as informações antes de salvar",
   ];
 
-  const iconesEtapas = [
-    "👤",
-    "🩺",
-    "📋",
-    "💙",
-    "✓",
-  ];
+  const iconesEtapas = ["👤", "🩺", "📋", "💙", "✓"];
 
   const Campo = ({
     titulo,
@@ -1666,9 +1531,7 @@ useEffect(() => {
     placeholder = "",
   }) => (
     <div className="col-md-6">
-      <label className="form-label">
-        {titulo}
-      </label>
+      <label className="form-label">{titulo}</label>
 
       <input
         className="form-control"
@@ -1681,37 +1544,11 @@ useEffect(() => {
     </div>
   );
 
-  const TextoLongo = ({
-    titulo,
-    valor,
-    alterar,
-    placeholder = "",
-  }) => (
-    <div className="col-12">
-      <label className="form-label">
-        {titulo}
-      </label>
+  
 
-      <textarea
-        className="form-control"
-        rows={4}
-        value={valor}
-        onChange={(e) => alterar(e.target.value)}
-        placeholder={placeholder}
-      />
-    </div>
-  );
-
-  const GrupoOpcoes = ({
-    titulo,
-    opcoes,
-    selecionadas,
-    alterar,
-  }) => (
+  const GrupoOpcoes = ({ titulo, opcoes, selecionadas, alterar }) => (
     <div className="col-12">
-      <label className="form-label d-block">
-        {titulo}
-      </label>
+      <label className="form-label d-block">{titulo}</label>
 
       <div
         style={{
@@ -1721,10 +1558,7 @@ useEffect(() => {
         }}
       >
         {opcoes.map((opcao) => (
-          <label
-            key={opcao}
-            className="proflex-clinical-option"
-          >
+          <label key={opcao} className="proflex-clinical-option">
             <input
               type="checkbox"
               className="form-check-input"
@@ -1744,37 +1578,24 @@ useEffect(() => {
   // =====================================================
 
   return (
-    <div
-      className={`pf-premium ${
-        tema === "dark" ? "pf-dark" : ""
-      }`}
-    >
+    <div className={`pf-premium ${tema === "dark" ? "pf-dark" : ""}`}>
       <style>{premiumStyles}</style>
 
       <div className="pf-shell">
-
         {/* CABEÇALHO */}
-
-
 
         {/* PACIENTE */}
 
         <div className="pf-patientbar">
           <div className="pf-patient-avatar">
-            {nome.trim()
-              ? nome.trim().charAt(0).toUpperCase()
-              : "P"}
+            {nome.trim() ? nome.trim().charAt(0).toUpperCase() : "P"}
           </div>
 
           <div className="pf-patient-identity">
-            <strong>
-              {nome.trim() || "Novo paciente"}
-            </strong>
+            <strong>{nome.trim() || "Novo paciente"}</strong>
 
             <span>
-              {clienteExistente
-                ? "Paciente cadastrado"
-                : "Novo cadastro"}
+              {clienteExistente ? "Paciente cadastrado" : "Novo cadastro"}
             </span>
           </div>
 
@@ -1799,22 +1620,15 @@ useEffect(() => {
               }
             }}
           >
-            <option value="rapido">
-              Cadastro rápido
-            </option>
+            <option value="rapido">Cadastro rápido</option>
 
-            <option value="completo">
-              Cadastro completo
-            </option>
+            <option value="completo">Cadastro completo</option>
           </select>
         </div>
 
         {/* NAVEGAÇÃO DAS CINCO ETAPAS */}
 
-        <nav
-          className="pf-steps"
-          aria-label="Etapas da avaliação"
-        >
+        <nav className="pf-steps" aria-label="Etapas da avaliação">
           {etapas.map((item, index) => {
             const numero = index + 1;
 
@@ -1823,22 +1637,12 @@ useEffect(() => {
                 key={item}
                 type="button"
                 className={`pf-step-button ${
-                  etapa === numero
-                    ? "active"
-                    : etapa > numero
-                    ? "done"
-                    : ""
+                  etapa === numero ? "active" : etapa > numero ? "done" : ""
                 }`}
                 onClick={() => irEtapa(numero)}
-                aria-current={
-                  etapa === numero
-                    ? "step"
-                    : undefined
-                }
+                aria-current={etapa === numero ? "step" : undefined}
               >
-                <span>
-                  {etapa > numero ? "✓" : numero}
-                </span>
+                <span>{etapa > numero ? "✓" : numero}</span>
 
                 <b>{item}</b>
               </button>
@@ -1850,9 +1654,7 @@ useEffect(() => {
 
         <div className="pf-workspace">
           <div className="pf-stage-head">
-            <div className="pf-stage-icon">
-              {iconesEtapas[etapa - 1]}
-            </div>
+            <div className="pf-stage-icon">{iconesEtapas[etapa - 1]}</div>
 
             <div>
               <h2>{tituloEtapa}</h2>
@@ -1860,44 +1662,32 @@ useEffect(() => {
             </div>
           </div>
 
-          <form
-            className="pf-form"
-            onSubmit={handleSubmit}
-          >
+          <form className="pf-form" onSubmit={handleSubmit}>
             <div className="row g-3">
-
               {/* ETAPA 1 — DADOS PESSOAIS */}
 
               {etapa === 1 && (
                 <>
                   <div className="col-md-3">
-                    <label className="form-label">
-                      Data
-                    </label>
+                    <label className="form-label">Data</label>
 
                     <input
                       type="date"
                       className="form-control"
                       value={data}
-                      onChange={(e) =>
-                        setData(e.target.value)
-                      }
+                      onChange={(e) => setData(e.target.value)}
                     />
                   </div>
 
                   <div className="col-md-3">
-                    <label className="form-label">
-                      Hora
-                    </label>
+                    <label className="form-label">Hora</label>
 
                     <input
                       type="time"
                       step="300"
                       className="form-control"
                       value={hora}
-                      onChange={(e) =>
-                        setHora(e.target.value)
-                      }
+                      onChange={(e) => setHora(e.target.value)}
                     />
                   </div>
 
@@ -1911,33 +1701,23 @@ useEffect(() => {
                         <select
                           className="form-select"
                           value={professionalId}
-                          onChange={(e) =>
-                            setProfessionalId(
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => setProfessionalId(e.target.value)}
                         >
-                          <option value="">
-                            Selecione
-                          </option>
+                          <option value="">Selecione</option>
 
-                          {profissionaisAtivos.map(
-                            (profissional) => (
-                              <option
-                                key={profissional.id}
-                                value={profissional.id}
-                              >
-                                {profissional.nome}
-                              </option>
-                            )
-                          )}
+                          {profissionaisAtivos.map((profissional) => (
+                            <option
+                              key={profissional.id}
+                              value={profissional.id}
+                            >
+                              {profissional.nome}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
                       <div className="col-md-2">
-                        <label className="form-label">
-                          Duração (min)
-                        </label>
+                        <label className="form-label">Duração (min)</label>
 
                         <input
                           type="number"
@@ -1946,11 +1726,7 @@ useEffect(() => {
                           step="5"
                           className="form-control"
                           value={duracao}
-                          onChange={(e) =>
-                            setDuracao(
-                              Number(e.target.value)
-                            )
-                          }
+                          onChange={(e) => setDuracao(Number(e.target.value))}
                         />
                       </div>
                     </>
@@ -1962,67 +1738,55 @@ useEffect(() => {
                     subtitle="Identificação e contato"
                   />
 
-                  {tipo === "rapido" &&
-                    !clienteExistente && (
-                      <div className="col-12">
-                        <label className="form-label">
-                          Buscar paciente existente
-                        </label>
+                  {tipo === "rapido" && !clienteExistente && (
+                    <div className="col-12">
+                      <label className="form-label">
+                        Buscar paciente existente
+                      </label>
 
-                        <input
-                          className="form-control"
-                          value={buscaPaciente}
-                          onChange={(e) =>
-                            setBuscaPaciente(
-                              e.target.value
-                            )
-                          }
-                          placeholder="Nome, telefone, e-mail ou CPF"
-                        />
+                      <input
+                        className="form-control"
+                        value={buscaPaciente}
+                        onChange={(e) => setBuscaPaciente(e.target.value)}
+                        placeholder="Nome, telefone, e-mail ou CPF"
+                      />
 
-                        {buscaPaciente.trim().length >=
-                          2 && (
-                          <div className="list-group mt-2">
-                            {pacientesEncontrados.map(
-                              (paciente) => (
-                                <button
-                                  key={paciente.id}
-                                  type="button"
-                                  className="list-group-item list-group-item-action"
-                                  onClick={() =>
-                                    navigate(
-                                      `/agendar?${new URLSearchParams(
-                                        {
-                                          data,
-                                          hora,
-                                          clienteId:
-                                            paciente.id,
-                                          tipo: "rapido",
-                                          ...(professionalId
-                                            ? {
-                                                professionalId,
-                                              }
-                                            : {}),
+                      {buscaPaciente.trim().length >= 2 && (
+                        <div className="list-group mt-2">
+                          {pacientesEncontrados.map((paciente) => (
+                            <button
+                              key={paciente.id}
+                              type="button"
+                              className="list-group-item list-group-item-action"
+                              onClick={() =>
+                                navigate(
+                                  `/agendar?${new URLSearchParams({
+                                    data,
+                                    hora,
+                                    clienteId: paciente.id,
+                                    tipo: "rapido",
+                                    ...(professionalId
+                                      ? {
+                                          professionalId,
                                         }
-                                      ).toString()}`
-                                    )
-                                  }
-                                >
-                                  {paciente.nome}
-                                </button>
-                              )
-                            )}
+                                      : {}),
+                                  }).toString()}`,
+                                )
+                              }
+                            >
+                              {paciente.nome}
+                            </button>
+                          ))}
 
-                            {pacientesEncontrados.length ===
-                              0 && (
-                              <div className="list-group-item">
-                                Nenhum paciente encontrado.
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          {pacientesEncontrados.length === 0 && (
+                            <div className="list-group-item">
+                              Nenhum paciente encontrado.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <Campo
                     titulo="Nome completo"
@@ -2031,46 +1795,33 @@ useEffect(() => {
                   />
 
                   <div className="col-md-6">
-                    <label className="form-label">
-                      Telefone
-                    </label>
+                    <label className="form-label">Telefone</label>
 
                     <input
                       className="form-control"
                       value={telefone}
-                      onChange={(e) =>
-                        setTelefone(e.target.value)
-                      }
+                      onChange={(e) => setTelefone(e.target.value)}
                     />
 
                     <label className="d-flex align-items-center gap-2 mt-2">
                       <input
                         type="checkbox"
                         checked={temWhatsapp}
-                        onChange={(e) =>
-                          setTemWhatsapp(
-                            e.target.checked
-                          )
-                        }
+                        onChange={(e) => setTemWhatsapp(e.target.checked)}
                       />
-
                       Este número também é WhatsApp
                     </label>
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label">
-                      E-mail
-                    </label>
+                    <label className="form-label">E-mail</label>
 
                     <input
                       type="email"
                       className="form-control"
                       value={email}
                       disabled={semEmail}
-                      onChange={(e) =>
-                        setEmail(e.target.value)
-                      }
+                      onChange={(e) => setEmail(e.target.value)}
                     />
 
                     <label className="d-flex align-items-center gap-2 mt-2">
@@ -2078,16 +1829,13 @@ useEffect(() => {
                         type="checkbox"
                         checked={semEmail}
                         onChange={(e) => {
-                          setSemEmail(
-                            e.target.checked
-                          );
+                          setSemEmail(e.target.checked);
 
                           if (e.target.checked) {
                             setEmail("");
                           }
                         }}
                       />
-
                       Não possui e-mail
                     </label>
                   </div>
@@ -2115,9 +1863,8 @@ useEffect(() => {
                   {tipo === "rapido" ? (
                     <div className="col-12">
                       <p className="text-muted">
-                        O cadastro rápido utiliza os dados
-                        principais do paciente. Para registrar
-                        informações clínicas, selecione
+                        O cadastro rápido utiliza os dados principais do
+                        paciente. Para registrar informações clínicas, selecione
                         Cadastro completo no cabeçalho.
                       </p>
                     </div>
@@ -2130,16 +1877,12 @@ useEffect(() => {
                       />
 
                       <div className="col-md-3">
-                        <label className="form-label">
-                          Nascimento
-                        </label>
+                        <label className="form-label">Nascimento</label>
                         <input
                           type="date"
                           className="form-control"
                           value={nascimento}
-                          onChange={(e) =>
-                            setNascimento(e.target.value)
-                          }
+                          onChange={(e) => setNascimento(e.target.value)}
                         />
                         <small className="text-muted">
                           Idade: {idade || "-"}
@@ -2147,52 +1890,34 @@ useEffect(() => {
                       </div>
 
                       <div className="col-md-3">
-                        <label className="form-label">
-                          Peso (kg)
-                        </label>
+                        <label className="form-label">Peso (kg)</label>
                         <input
                           className="form-control"
                           value={peso}
-                          onChange={(e) =>
-                            setPeso(e.target.value)
-                          }
+                          onChange={(e) => setPeso(e.target.value)}
                         />
                       </div>
 
                       <div className="col-md-3">
-                        <label className="form-label">
-                          Altura (cm)
-                        </label>
+                        <label className="form-label">Altura (cm)</label>
                         <input
                           className="form-control"
                           value={altura}
-                          onChange={(e) =>
-                            setAltura(e.target.value)
-                          }
+                          onChange={(e) => setAltura(e.target.value)}
                         />
                       </div>
 
                       <div className="col-md-3">
-                        <label className="form-label">
-                          Gênero
-                        </label>
+                        <label className="form-label">Gênero</label>
                         <select
                           className="form-select"
                           value={genero}
-                          onChange={(e) =>
-                            setGenero(e.target.value)
-                          }
+                          onChange={(e) => setGenero(e.target.value)}
                         >
                           <option value="">Selecione</option>
-                          <option value="Masculino">
-                            Masculino
-                          </option>
-                          <option value="Feminino">
-                            Feminino
-                          </option>
-                          <option value="Outro">
-                            Outro
-                          </option>
+                          <option value="Masculino">Masculino</option>
+                          <option value="Feminino">Feminino</option>
+                          <option value="Outro">Outro</option>
                         </select>
                       </div>
 
@@ -2217,9 +1942,7 @@ useEffect(() => {
                         alterar={toggleNeurologica}
                       />
 
-                      {doencasNeurologicas.includes(
-                        "Síndrome"
-                      ) && (
+                      {doencasNeurologicas.includes("Síndrome") && (
                         <div className="col-12">
                           <label className="form-label">
                             Especifique a síndrome
@@ -2228,9 +1951,7 @@ useEffect(() => {
                             className="form-control"
                             value={sindromeDescricao}
                             onChange={(e) =>
-                              setSindromeDescricao(
-                                e.target.value
-                              )
+                              setSindromeDescricao(e.target.value)
                             }
                           />
                         </div>
@@ -2242,77 +1963,57 @@ useEffect(() => {
                         subtitle="Selecione as regiões e registre observações"
                       />
 
-                      {Object.entries(AREAS).map(
-                        ([grupo, partes]) => (
+                      {Object.entries(AREAS).map(([grupo, partes]) => (
+                        <div key={grupo} className="col-12">
                           <div
-                            key={grupo}
-                            className="col-12"
+                            className="p-3 rounded"
+                            style={{
+                              border: "1px solid var(--line)",
+                              background: "var(--soft)",
+                            }}
                           >
+                            <strong>{grupo}</strong>
+
                             <div
-                              className="p-3 rounded"
+                              className="mt-3"
                               style={{
-                                border:
-                                  "1px solid var(--line)",
-                                background:
-                                  "var(--soft)",
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 8,
                               }}
                             >
-                              <strong>{grupo}</strong>
-
-                              <div
-                                className="mt-3"
-                                style={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 8,
-                                }}
-                              >
-                                {partes.map((parte) => (
-                                  <label
-                                    key={parte}
-                                    className="proflex-clinical-option"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      className="form-check-input"
-                                      checked={Boolean(
-                                        areas[
-                                          grupo
-                                        ]?.parts?.includes(
-                                          parte
-                                        )
-                                      )}
-                                      onChange={() =>
-                                        toggleAreaPart(
-                                          grupo,
-                                          parte
-                                        )
-                                      }
-                                    />
-                                    <span>{parte}</span>
-                                  </label>
-                                ))}
-                              </div>
-
-                              <textarea
-                                className="form-control mt-3"
-                                rows={2}
-                                placeholder={`Observações sobre ${grupo.toLowerCase()}`}
-                                value={
-                                  areas[grupo]?.note ||
-                                  ""
-                                }
-                                onChange={(e) =>
-                                  setAreaNote(
-                                    grupo,
-                                    e.target.value
-                                  )
-                                }
-                              />
+                              {partes.map((parte) => (
+                                <label
+                                  key={parte}
+                                  className="proflex-clinical-option"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={Boolean(
+                                      areas[grupo]?.parts?.includes(parte),
+                                    )}
+                                    onChange={() =>
+                                      toggleAreaPart(grupo, parte)
+                                    }
+                                  />
+                                  <span>{parte}</span>
+                                </label>
+                              ))}
                             </div>
+
+                            <textarea
+                              className="form-control mt-3"
+                              rows={2}
+                              placeholder={`Observações sobre ${grupo.toLowerCase()}`}
+                              value={areas[grupo]?.note || ""}
+                              onChange={(e) =>
+                                setAreaNote(grupo, e.target.value)
+                              }
+                            />
                           </div>
-                        )
-                      )}
+                        </div>
+                      ))}
 
                       <TextoLongo
                         titulo="Outros diagnósticos"
@@ -2356,9 +2057,8 @@ useEffect(() => {
 
                   <div className="col-12">
                     <p className="text-muted mb-0">
-                      As informações desta etapa serão
-                      incluídas no registro da consulta
-                      quando o cadastro for salvo.
+                      As informações desta etapa serão incluídas no registro da
+                      consulta quando o cadastro for salvo.
                     </p>
                   </div>
                 </>
@@ -2410,71 +2110,54 @@ useEffect(() => {
                   <div className="col-12 pf-review">
                     <h3>Revisão do cadastro</h3>
                     <p>
-                      Confira as informações antes de
-                      finalizar. Para corrigir algum dado,
-                      retorne à etapa correspondente.
+                      Confira as informações antes de finalizar. Para corrigir
+                      algum dado, retorne à etapa correspondente.
                     </p>
 
                     <div className="pf-review-grid">
                       <div>
                         <small>Paciente</small>
-                        <strong>
-                          {nome || "Não informado"}
-                        </strong>
+                        <strong>{nome || "Não informado"}</strong>
                       </div>
 
                       <div>
                         <small>Telefone</small>
-                        <strong>
-                          {telefone || "Não informado"}
-                        </strong>
+                        <strong>{telefone || "Não informado"}</strong>
                       </div>
 
                       <div>
                         <small>E-mail</small>
                         <strong>
-                          {email ||
-                            (semEmail
-                              ? "Não possui"
-                              : "Não informado")}
+                          {email || (semEmail ? "Não possui" : "Não informado")}
                         </strong>
                       </div>
 
                       <div>
                         <small>Endereço</small>
-                        <strong>
-                          {endereco || "Não informado"}
-                        </strong>
+                        <strong>{endereco || "Não informado"}</strong>
                       </div>
 
                       <div>
                         <small>Data</small>
-                        <strong>
-                          {data || "Não informada"}
-                        </strong>
+                        <strong>{data || "Não informada"}</strong>
                       </div>
 
                       <div>
                         <small>Horário</small>
-                        <strong>
-                          {hora || "Não informado"}
-                        </strong>
+                        <strong>{hora || "Não informado"}</strong>
                       </div>
 
                       <div>
                         <small>Tipo de cadastro</small>
                         <strong>
-                          {tipo === "completo"
-                            ? "Completo"
-                            : "Rápido"}
+                          {tipo === "completo" ? "Completo" : "Rápido"}
                         </strong>
                       </div>
 
                       <div>
                         <small>Profissional</small>
                         <strong>
-                          {profissionalSelecionado?.nome ||
-                            "Não selecionado"}
+                          {profissionalSelecionado?.nome || "Não selecionado"}
                         </strong>
                       </div>
 
@@ -2482,35 +2165,26 @@ useEffect(() => {
                         <>
                           <div>
                             <small>Nascimento</small>
-                            <strong>
-                              {nascimento ||
-                                "Não informado"}
-                            </strong>
+                            <strong>{nascimento || "Não informado"}</strong>
                           </div>
 
                           <div>
                             <small>Idade</small>
-                            <strong>
-                              {idade || "-"}
-                            </strong>
+                            <strong>{idade || "-"}</strong>
                           </div>
 
                           <div>
                             <small>Comorbidades</small>
                             <strong>
-                              {comorb.join(", ") ||
-                                "Nenhuma informada"}
+                              {comorb.join(", ") || "Nenhuma informada"}
                             </strong>
                           </div>
 
                           <div>
-                            <small>
-                              Condições neurológicas
-                            </small>
+                            <small>Condições neurológicas</small>
                             <strong>
-                              {doencasNeurologicas.join(
-                                ", "
-                              ) || "Nenhuma informada"}
+                              {doencasNeurologicas.join(", ") ||
+                                "Nenhuma informada"}
                             </strong>
                           </div>
                         </>
@@ -2518,151 +2192,124 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {clienteExistente &&
-                    consultas.length > 0 && (
-                      <div className="col-12 mt-4">
-                        <SectionHeader
-                          number="6"
-                          title="Histórico de consultas"
-                          subtitle="Consultas anteriores do paciente"
-                        />
+                  {clienteExistente && consultas.length > 0 && (
+                    <div className="col-12 mt-4">
+                      <SectionHeader
+                        number="6"
+                        title="Histórico de consultas"
+                        subtitle="Consultas anteriores do paciente"
+                      />
 
-                        <div className="proflex-history-toolbar mb-3">
-                          <h5>
-                            Consultas (
-                            {consultas.length})
-                          </h5>
+                      <div className="proflex-history-toolbar mb-3">
+                        <h5>Consultas ({consultas.length})</h5>
 
-                          <div className="proflex-history-actions">
-                            <label className="d-flex align-items-center gap-2">
+                        <div className="proflex-history-actions">
+                          <label className="d-flex align-items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={
+                                consultas.length > 0 &&
+                                consultas.every((consulta) =>
+                                  sel.includes(consulta.id),
+                                )
+                              }
+                              onChange={(e) => selecionarTudo(e.target.checked)}
+                            />
+                            Selecionar tudo
+                          </label>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={gerarPDFSelecionadas}
+                          >
+                            Relatório (PDF)
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger"
+                            onClick={excluirSelecionadas}
+                          >
+                            Excluir selecionadas
+                          </button>
+                          {excluindoConsultas && (
+  <div
+    className="alert alert-info d-flex align-items-center gap-2 mt-3"
+    role="status"
+    aria-live="polite"
+  >
+    <span
+      className="spinner-border spinner-border-sm"
+      aria-hidden="true"
+    />
+
+    <span>
+      <strong>Excluindo consultas...</strong>
+      <br />
+      Aguarde enquanto os registros são removidos.
+    </span>
+  </div>
+)}
+
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={novaConsulta}
+                          >
+                            Nova consulta
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="list-group">
+                        {consultas.map((consulta) => (
+                          <div className="list-group-item" key={consulta.id}>
+                            <div className="d-flex align-items-center gap-2 mb-2">
                               <input
                                 type="checkbox"
-                                checked={
-                                  consultas.length > 0 &&
-                                  consultas.every(
-                                    (consulta) =>
-                                      sel.includes(
-                                        consulta.id
-                                      )
-                                  )
-                                }
+                                checked={sel.includes(consulta.id)}
                                 onChange={(e) =>
-                                  selecionarTudo(
+                                  setSel((prev) =>
                                     e.target.checked
+                                      ? [...prev, consulta.id]
+                                      : prev.filter((id) => id !== consulta.id),
                                   )
                                 }
                               />
-                              Selecionar tudo
-                            </label>
 
-                            <button
-                              type="button"
-                              className="btn btn-outline-secondary"
-                              onClick={
-                                gerarPDFSelecionadas
+                              <strong>Consulta {consulta.numero || ""}</strong>
+
+                              <small className="text-muted">
+                                {consulta.dataISO || ""} {consulta.hora || ""}
+                              </small>
+                            </div>
+
+                            <textarea
+                              className="form-control"
+                              rows={3}
+                              value={consulta.texto || ""}
+                              onChange={(e) =>
+                                setTextoConsulta(consulta.id, e.target.value)
                               }
-                            >
-                              Relatório (PDF)
-                            </button>
-
-                            <button
-                              type="button"
-                              className="btn btn-outline-danger"
-                              onClick={
-                                excluirSelecionadas
-                              }
-                            >
-                              Excluir selecionadas
-                            </button>
-
-                            <button
-                              type="button"
-                              className="btn btn-primary"
-                              onClick={novaConsulta}
-                            >
-                              Nova consulta
-                            </button>
+                            />
                           </div>
-                        </div>
-
-                        <div className="list-group">
-                          {consultas.map(
-                            (consulta) => (
-                              <div
-                                className="list-group-item"
-                                key={consulta.id}
-                              >
-                                <div className="d-flex align-items-center gap-2 mb-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={sel.includes(
-                                      consulta.id
-                                    )}
-                                    onChange={(e) =>
-                                      setSel(
-                                        (prev) =>
-                                          e.target
-                                            .checked
-                                            ? [
-                                                ...prev,
-                                                consulta.id,
-                                              ]
-                                            : prev.filter(
-                                                (id) =>
-                                                  id !==
-                                                  consulta.id
-                                              )
-                                      )
-                                    }
-                                  />
-
-                                  <strong>
-                                    Consulta{" "}
-                                    {consulta.numero ||
-                                      ""}
-                                  </strong>
-
-                                  <small className="text-muted">
-                                    {consulta.dataISO ||
-                                      ""}{" "}
-                                    {consulta.hora ||
-                                      ""}
-                                  </small>
-                                </div>
-
-                                <textarea
-                                  className="form-control"
-                                  rows={3}
-                                  value={
-                                    consulta.texto ||
-                                    ""
-                                  }
-                                  onChange={(e) =>
-                                    setTextoConsulta(
-                                      consulta.id,
-                                      e.target.value
-                                    )
-                                  }
-                                />
-                              </div>
-                            )
-                          )}
-                        </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                  {clienteExistente &&
-                    consultas.length === 0 && (
-                      <div className="col-12">
-                        <button
-                          type="button"
-                          className="btn btn-outline-primary"
-                          onClick={novaConsulta}
-                        >
-                          + Nova consulta
-                        </button>
-                      </div>
-                    )}
+                  {clienteExistente && consultas.length === 0 && (
+                    <div className="col-12">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={novaConsulta}
+                      >
+                        + Nova consulta
+                      </button>
+                    </div>
+                  )}
 
                   {clienteExistente && (
                     <>
@@ -2673,28 +2320,19 @@ useEffect(() => {
                       />
 
                       <div className="col-12">
-                        <label className="form-label">
-                          Receita
-                        </label>
+                        <label className="form-label">Receita</label>
                         <textarea
                           className="form-control"
                           rows={4}
                           value={receitaTexto}
-                          onChange={(e) =>
-                            setReceitaTexto(
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => setReceitaTexto(e.target.value)}
                         />
 
                         <button
                           type="button"
                           className="btn btn-outline-primary mt-2"
                           onClick={() =>
-                            imprimirReceita(
-                              clienteExistente,
-                              receitaTexto
-                            )
+                            imprimirReceita(clienteExistente, receitaTexto)
                           }
                         >
                           Gerar receita (PDF)
@@ -2708,27 +2346,17 @@ useEffect(() => {
                         <input
                           className="form-control"
                           value={atestadoPara}
-                          onChange={(e) =>
-                            setAtestadoPara(
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => setAtestadoPara(e.target.value)}
                         />
                       </div>
 
                       <div className="col-12">
-                        <label className="form-label">
-                          Texto do atestado
-                        </label>
+                        <label className="form-label">Texto do atestado</label>
                         <textarea
                           className="form-control"
                           rows={4}
                           value={atestadoTexto}
-                          onChange={(e) =>
-                            setAtestadoTexto(
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => setAtestadoTexto(e.target.value)}
                         />
 
                         <button
@@ -2738,7 +2366,7 @@ useEffect(() => {
                             imprimirAtestado(
                               clienteExistente,
                               atestadoPara,
-                              atestadoTexto
+                              atestadoTexto,
                             )
                           }
                         >
@@ -2759,26 +2387,16 @@ useEffect(() => {
                         ["Telefone", "telefone"],
                         ["Endereço", "endereco"],
                       ].map(([rotulo, chave]) => (
-                        <div
-                          className="col-md-6"
-                          key={chave}
-                        >
-                          <label className="form-label">
-                            {rotulo}
-                          </label>
+                        <div className="col-md-6" key={chave}>
+                          <label className="form-label">{rotulo}</label>
                           <input
                             className="form-control"
-                            value={
-                              prof[chave] || ""
-                            }
+                            value={prof[chave] || ""}
                             onChange={(e) =>
-                              setProf(
-                                (prev) => ({
-                                  ...prev,
-                                  [chave]:
-                                    e.target.value,
-                                })
-                              )
+                              setProf((prev) => ({
+                                ...prev,
+                                [chave]: e.target.value,
+                              }))
                             }
                           />
                         </div>
@@ -2807,7 +2425,6 @@ useEffect(() => {
                   )}
                 </>
               )}
-
             </div>
 
             {/* NAVEGAÇÃO INFERIOR */}
@@ -2817,40 +2434,28 @@ useEffect(() => {
                 type="button"
                 className="btn btn-outline-secondary"
                 disabled={etapa === 1}
-                onClick={() =>
-                  irEtapa(etapa - 1)
-                }
+                onClick={() => irEtapa(etapa - 1)}
               >
                 ← Voltar
               </button>
 
-              <span className="pf-save-note">
-                Etapa {etapa} de 5
-              </span>
+              <span className="pf-save-note">Etapa {etapa} de 5</span>
 
               {etapa < 5 ? (
                 <button
                   type="button"
                   className="btn pf-next"
-                  onClick={() =>
-                    irEtapa(etapa + 1)
-                  }
+                  onClick={() => irEtapa(etapa + 1)}
                 >
                   Continuar →
                 </button>
               ) : (
-                <button
-                  type="submit"
-                  className="btn pf-next"
-                >
+                <button type="submit" className="btn pf-next">
                   💾{" "}
-                  {clienteExistente
-                    ? "Salvar alterações"
-                    : "Salvar cadastro"}
+                  {clienteExistente ? "Salvar alterações" : "Salvar cadastro"}
                 </button>
               )}
             </div>
-
           </form>
         </div>
       </div>
