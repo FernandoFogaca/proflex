@@ -738,6 +738,37 @@ export default function Prontuario() {
     }
   };
 
+  const formatarDataBR = (valor) => {
+    if (!valor) return "-";
+
+    const texto = String(valor);
+    const partes = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+    if (!partes) return texto;
+
+    return `${partes[3]}/${partes[2]}/${partes[1]}`;
+  };
+
+  const formatarDataHoraBR = (valor) => {
+    if (!valor) return "Data não informada";
+
+    const data = new Date(valor);
+
+    if (Number.isNaN(data.getTime())) {
+      return formatarDataBR(valor);
+    }
+
+    return data
+      .toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      .replace(",", "");
+  };
+
   const gerarProntuarioPDF = () => {
     if (!paciente) return;
 
@@ -841,7 +872,8 @@ export default function Prontuario() {
       doc.setFontSize(11);
 
       doc.text(
-        `Consulta 01 - Avaliação Inicial - ${paciente.avaliacaoInicialData || "-"}`,
+        `Consulta 01 - Avaliação Inicial - ${formatarDataBR(paciente.avaliacaoInicialData)}`,
+
         margin,
         y,
       );
@@ -867,7 +899,8 @@ export default function Prontuario() {
           doc.setFont("helvetica", "bold");
           doc.setFontSize(11);
           doc.text(
-            `Consulta ${consulta.numero || index + 1} - ${consulta.dataISO || "-"} ${consulta.hora || ""}`,
+            `Consulta ${consulta.numero || index + 1} - ${formatarDataBR(consulta.dataISO)} ${consulta.hora || ""}`,
+
             margin,
             y,
           );
@@ -1024,20 +1057,45 @@ export default function Prontuario() {
     adicionarCampo("Data de emissão", new Date().toLocaleDateString("pt-BR"));
 
     const consultas = paciente.consultas || [];
+    const avaliacao = paciente.avaliacaoInicial;
 
-    if (!consultas.length) {
+    const incluirAvaliacaoInicial =
+      paciente.avaliacaoInicialConcluida === true &&
+      avaliacao &&
+      !consultas.some(
+        (consulta) =>
+          consulta.tipo === "avaliacao-inicial" ||
+          Number(consulta.numero) === 1,
+      );
+
+    if (!consultas.length && !incluirAvaliacaoInicial) {
       adicionarCampo("Histórico clínico", "Nenhuma consulta registrada.");
     } else {
-      consultas.forEach((consulta, index) => {
+      if (incluirAvaliacaoInicial) {
         adicionarCampo(
-          `Consulta ${consulta.numero || index + 1} - ${consulta.dataISO || ""}`,
+          `Consulta 01 - Avaliação Inicial - ${formatarDataBR(paciente.avaliacaoInicialData)}`,
           [
-            `Avaliação: ${consulta.avaliacao || "Não informada"}`,
-            `Evolução: ${consulta.evolucao || "Não informada"}`,
-            `Conduta: ${consulta.conduta || "Não informada"}`,
+            `Queixa: ${avaliacao.queixa || "Não informada"}`,
+            `Avaliação: ${avaliacao.avaliacao || "Não informada"}`,
+            `Procedimentos: ${avaliacao.procedimentos || "Não informados"}`,
+            `Evolução: ${avaliacao.evolucao || "Não informada"}`,
+            `Conduta: ${avaliacao.conduta || "Não informada"}`,
           ].join("\n"),
         );
-      });
+      }
+
+      [...consultas]
+        .sort((a, b) => Number(a.numero) - Number(b.numero))
+        .forEach((consulta, index) => {
+          adicionarCampo(
+            `Consulta ${consulta.numero || index + 1} - ${formatarDataBR(consulta.dataISO)}`,
+            [
+              `Avaliação: ${consulta.avaliacao || "Não informada"}`,
+              `Evolução: ${consulta.evolucao || "Não informada"}`,
+              `Conduta: ${consulta.conduta || "Não informada"}`,
+            ].join("\n"),
+          );
+        });
     }
 
     adicionarCampo(
@@ -1619,7 +1677,7 @@ export default function Prontuario() {
                       <strong>Consulta 01 — Avaliação Inicial</strong>
 
                       <div className="pfp-muted" style={{ marginTop: 5 }}>
-                        {paciente.avaliacaoInicialData || "Data não informada"}
+                        {formatarDataHoraBR(paciente.avaliacaoInicialData)}
                       </div>
                     </button>
                   )}
@@ -1655,7 +1713,8 @@ export default function Prontuario() {
                                 marginTop: 5,
                               }}
                             >
-                              {consulta.dataISO || "-"} {consulta.hora || ""}
+                              {formatarDataBR(consulta.dataISO)}{" "}
+                              {consulta.hora || ""}
                             </div>
                           </div>
 
@@ -1705,7 +1764,8 @@ export default function Prontuario() {
                             </strong>
 
                             <small className="pfp-muted">
-                              {consulta.dataISO || "-"} {consulta.hora || ""}
+                              {formatarDataBR(consulta.dataISO)}{" "}
+                              {consulta.hora || ""}
                             </small>
                           </div>
 
