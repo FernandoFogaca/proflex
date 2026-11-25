@@ -4,6 +4,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from "firebase/auth";
 import { auth } from "../services/firebase";
 import { login } from "../authentication/session.jsx";
@@ -13,6 +16,7 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [manterConectado, setManterConectado] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
 
@@ -50,11 +54,18 @@ export default function Login() {
     setCarregando(true);
 
     try {
-      const credencial = await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        senha,
-      );
+  await setPersistence(
+    auth,
+    manterConectado
+      ? browserLocalPersistence
+      : browserSessionPersistence
+  );
+
+  const credencial = await signInWithEmailAndPassword(
+    auth,
+    email.trim(),
+    senha,
+  );
 
       if (!credencial.user.emailVerified) {
         await signOut(auth);
@@ -129,6 +140,26 @@ export default function Login() {
             onChange={(e) => setSenha(e.target.value)}
           />
         </div>
+
+
+
+<div className="form-check mb-3">
+  <input
+    id="manterConectado"
+    type="checkbox"
+    className="form-check-input"
+    checked={manterConectado}
+    onChange={(e) => setManterConectado(e.target.checked)}
+  />
+
+  <label
+    htmlFor="manterConectado"
+    className="form-check-label"
+  >
+    Manter-me conectado neste dispositivo
+  </label>
+</div>
+
 
         <div className="text-end mb-3">
           <button
