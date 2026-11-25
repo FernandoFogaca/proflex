@@ -308,9 +308,7 @@ export function AppProvider({ children }) {
     return Array.isArray(dados) ? dados : [];
   });
 
-  useEffect(() => {
-    salvarNoNavegador("appointments", appointments);
-  }, [appointments]);
+ 
 
   useEffect(() => {
     salvarNoNavegador("proflexProfessionals", professionals);
@@ -719,7 +717,7 @@ await salvarConsultasNoFirebase(
   return consultasAtuais.filter(
     (consulta) => !idsConsultas.includes(consulta.id)
   );
-});
+}); 
   }
 
   async function deleteClient(idCliente) {
