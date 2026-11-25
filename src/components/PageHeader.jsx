@@ -344,28 +344,7 @@ export default function PageHeader() {
                 {today}
               </div>
 
-              <button
-                type="button"
-                className="proflex-theme-toggle"
-                onClick={alternarTema}
-                aria-label={
-                  tema === "dark"
-                    ? "Ativar modo claro"
-                    : "Ativar modo escuro"
-                }
-              >
-                {tema === "dark" ? (
-                  <>
-                    <Sun size={21} />
-                    Light
-                  </>
-                ) : (
-                  <>
-                    <Moon size={21} />
-                    Dark
-                  </>
-                )}
-              </button>
+              
             </div>
           </div>
         ) : (

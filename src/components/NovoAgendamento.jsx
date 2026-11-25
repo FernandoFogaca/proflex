@@ -1601,7 +1601,9 @@ avaliacaoInicialData: avaliacaoPreenchida
 
           <div className="pf-patient-date">
             <small>Data</small>
-            <strong>{data || "Não definida"}</strong>
+            <strong>
+  {data ? data.split("-").reverse().join("/") : "Não definida"}
+</strong>
           </div>
 
           <div className="pf-patient-date">
@@ -2139,7 +2141,9 @@ avaliacaoInicialData: avaliacaoPreenchida
 
                       <div>
                         <small>Data</small>
-                        <strong>{data || "Não informada"}</strong>
+                   <strong>
+  {data ? data.split("-").reverse().join("/") : "Não informada"}
+</strong>
                       </div>
 
                       <div>
